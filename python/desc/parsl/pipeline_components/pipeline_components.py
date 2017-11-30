@@ -70,6 +70,12 @@ class Jeeves(object):
             self._visits = [row[0] for row in self.registry.execute(query)]
         return self._visits
 
+    def check_patch(self, dataId):
+        tempExp_dir \
+            = os.path.join(self.repo, 'deepCoadd', dataId['filter'],
+                           str(dataId['tract']), '%(patch)stempExp' % dataId)
+        return os.path.isdir(tempExp_dir)
+
     def get_patch_ids(self, tract=0):
         return ['%i,%i' % x.getIndex() for x in self.sky_map[tract]]
 
@@ -133,5 +139,4 @@ def loop_over_filters(task_app, task_name, output_repo, dataId, filters,
             )
         else:
             task_outputs.append(task_app(output_repo, dataId, **my_logs))
-    [x.result() for x in task_outputs]
     return task_outputs

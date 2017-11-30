@@ -31,11 +31,15 @@ for patch_id in jeeves.get_patch_ids():
 
     dataId = dict(tract=0, patch=patch_id)
 
-    pc.loop_over_filters(pc.makeCoaddTempExp, 'makeCoaddTempExp', output_repo,
-                         dataId, jeeves.filters, log_files)
+    outputs = pc.loop_over_filters(pc.makeCoaddTempExp, 'makeCoaddTempExp',
+                                   output_repo, dataId, jeeves.filters,
+                                   log_files)
+    [x.result() for x in outputs]
 
-    pc.loop_over_filters(pc.assembleCoadd, 'assembleCoadd', output_repo,
-                         dataId, jeeves.filters, log_files)
+    outputs = pc.loop_over_filters(pc.assembleCoadd, 'assembleCoadd',
+                                   output_repo, dataId, jeeves.filters,
+                                   log_files)
+    [x.result() for x in outputs]
 
     coadd_tasks = (
         'detectCoaddSources',
@@ -45,5 +49,6 @@ for patch_id in jeeves.get_patch_ids():
     )
 
     for task_name in coadd_tasks:
-        pc.loop_over_filters(run_coadd_task, task_name, output_repo,
-                             dataId, jeeves.filters, log_files)
+        outputs = pc.loop_over_filters(run_coadd_task, task_name, output_repo,
+                                       dataId, jeeves.filters, log_files)
+        [x.result() for x in outputs]
