@@ -1,11 +1,17 @@
+import os
 import sys
 import desc.parsl.pipeline_components as pc
 
-eimage_pattern = '../eimages/lsst_*.fits.gz'
-ref_cats = '/global/cscratch1/sd/descdm/DC1/rerun/DC1-imsim-dithered/ref_cats'
+eimage_pattern = os.environ['EIMAGE_PATTERN']
+ref_cat_file = os.environ['REF_CAT_FILE']
 
-output_repo = pc.set_output_repo('output', ref_cats)
+output_repo = pc.set_output_repo('output')
 log_files = pc.ParslLogFiles('logs')
+log_files.enable = (os.environ['LOG_FILE_ENABLE']=='true')
+
+ref_cat = pc.ingestReferenceCatalog(output_repo, ref_cat_file,
+                                    **log_files('ingestReferenceCatalog'))
+ref_cat.result()
 
 sim_images = pc.ingestSimImages(output_repo, eimage_pattern,
                                 **log_files('ingestSimImages'))

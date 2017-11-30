@@ -6,7 +6,6 @@ import numpy as np
 from lsst.sims.catalogs.definitions import InstanceCatalog
 from lsst.sims.catUtils.baseCatalogModels import StarObj
 from lsst.sims.catUtils.mixins import AstrometryStars, PhotometryStars
-from lsst.sims.photUtils import cache_LSST_seds
 from lsst.sims.utils import ObservationMetaData
 
 class DcRefCat(InstanceCatalog, AstrometryStars, PhotometryStars):
@@ -29,10 +28,8 @@ parser.add_argument('--outdir', type=str, default='.',
                     help='Output directory for reference catalog.')
 args = parser.parse_args()
 
-cache_LSST_seds()
-
 obs = ObservationMetaData(pointingRA=args.RA,
-                          pointingDec=args.Dec
+                          pointingDec=args.Dec,
                           boundType='circle',
                           boundLength=args.radius)
 

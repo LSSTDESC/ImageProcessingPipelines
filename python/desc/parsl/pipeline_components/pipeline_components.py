@@ -5,6 +5,7 @@ import parsl
 __all__ = ['set_output_repo',
            'Jeeves',
            'ParslLogFiles',
+           'ingestReferenceCatalog',
            'ingestSimImages',
            'processEimage',
            'makeDiscreteSkyMap',
@@ -21,7 +22,7 @@ def make_id_string(dataId):
     else:
         return ' '.join(['%s=%s' % item for item in dataId.items()])
 
-def set_output_repo(output_repo, ref_cat_path,
+def set_output_repo(output_repo,
                     mapper_name='lsst.obs.lsstSim.LsstSimMapper'):
     try:
         os.mkdir(output_repo)
@@ -29,8 +30,6 @@ def set_output_repo(output_repo, ref_cat_path,
         pass
     with open(os.path.join(output_repo, '_mapper'), 'w') as output:
         output.write('%s\n' % mapper_name)
-    if not os.path.isdir(os.path.join(output_repo, 'ref_cats')):
-        os.symlink(ref_cat_path, os.path.join(output_repo, 'ref_cats'))
     return output_repo
 
 class Jeeves(object):
@@ -111,6 +110,11 @@ class ParslLogFiles(object):
         else:
             log_file = None
         return dict(stderr=log_file, stdout=log_file)
+
+@parsl.App('bash', dfk)
+def ingestReferenceCatalog(output_repo, ref_cat_file, stdout=None, stderr=None):
+    command = '''ingestReferenceCatalog.py {0} {1} --configfile configs/IngestIndexedReferenceTask.py --doraise --clobber-config --clobber-versions'''
+    return command
 
 @parsl.App('bash', dfk)
 def ingestSimImages(output_repo, eimage_pattern, stdout=None, stderr=None):

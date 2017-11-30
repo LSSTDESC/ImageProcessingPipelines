@@ -9,7 +9,8 @@ config.id_name = 'uniqueId'
 
 # The values in the reference catalog are assumed to be in AB magnitudes.
 # List of column names to use for photometric information.  At least one entry is required.
-config.mag_column_list = ['lsst_g', 'lsst_r', 'lsst_i']
+config.mag_column_list = ['lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z',
+                          'lsst_y']
 
 # Name of column stating if the object is resolved (optional).
 config.is_resolved_name = 'isresolved'
