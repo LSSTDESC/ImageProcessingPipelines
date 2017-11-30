@@ -10,8 +10,7 @@ __all__ = ['set_output_repo',
            'makeDiscreteSkyMap',
            'makeCoaddTempExp',
            'assembleCoadd',
-           'run_coadd_task',
-           'loop_over_filters']
+           'run_coadd_task']
 
 workers = parsl.ThreadPoolExecutor(max_workers=1)
 dfk = parsl.DataFlowKernel(executors=[workers])
@@ -70,7 +69,7 @@ class Jeeves(object):
             self._visits = [row[0] for row in self.registry.execute(query)]
         return self._visits
 
-    def check_patch(self, dataId):
+    def has_patch(self, dataId):
         tempExp_dir \
             = os.path.join(self.repo, 'deepCoadd', dataId['filter'],
                            str(dataId['tract']), '%(patch)stempExp' % dataId)
@@ -82,6 +81,22 @@ class Jeeves(object):
     def get_rafts(self, visit):
         query = 'select distinct raft from raw where visit=%s' % visit
         return [row[0] for row in self.registry.execute(query)]
+
+    def loop_over_filters(self, task_app, task_name, dataId, log_files,
+                          check_patch=True):
+        outputs = []
+        for filt in self.filters:
+            my_dataId = dict(filter=filt)
+            my_dataId.update(dataId)
+            if check_patch and not self.has_patch(my_dataId):
+                continue
+            my_logs = log_files('%s_%s_%s' % (task_name, filt, dataId['patch']))
+            if task_app == run_coadd_task:
+                outputs.append(run_coadd_task(task_name, self.repo, my_dataId,
+                                              **my_logs))
+            else:
+                outputs.append(task_app(self.repo, my_dataId, **my_logs))
+        return outputs
 
 class ParslLogFiles(object):
     def __init__(self, log_dir, enable=True):
@@ -126,17 +141,3 @@ def assembleCoadd(output_repo, dataId, stdout=None, stderr=None):
 def run_coadd_task(task_name, output_repo, dataId, stdout=None, stderr=None):
     command = '''{0}.py {1}/ --output {1} --id %s --doraise --clobber-config --no-versions''' % make_id_string(dataId)
     return command
-
-def loop_over_filters(task_app, task_name, output_repo, dataId, filters,
-                      log_files):
-    task_outputs = []
-    for filt in filters:
-        dataId['filter'] = filt
-        my_logs = log_files('%s_%s_%s' % (task_name, filt, dataId['patch']))
-        if task_app == run_coadd_task:
-            task_outputs.append(
-                run_coadd_task(task_name, output_repo, dataId, **my_logs)
-            )
-        else:
-            task_outputs.append(task_app(output_repo, dataId, **my_logs))
-    return task_outputs

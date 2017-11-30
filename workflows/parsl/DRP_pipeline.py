@@ -13,13 +13,13 @@ sim_images.result()
 
 jeeves = pc.Jeeves(output_repo)
 
-calexps = []
+outputs = []
 for visit in jeeves.visits:
     for raft in jeeves.get_rafts(visit):
         dataId = dict(visit=visit, raft=raft)
-        calexps.append(pc.processEimage(output_repo, dataId,
+        outputs.append(pc.processEimage(output_repo, dataId,
                                         **log_files('processEimage_%s' % visit)))
-[x.result() for x in calexps]
+[x.result() for x in outputs]
 
 discrete_sky_map = pc.makeDiscreteSkyMap(output_repo,
                                          **log_files('makeDiscreteSkyMap'))
@@ -31,14 +31,12 @@ for patch_id in jeeves.get_patch_ids():
 
     dataId = dict(tract=0, patch=patch_id)
 
-    outputs = pc.loop_over_filters(pc.makeCoaddTempExp, 'makeCoaddTempExp',
-                                   output_repo, dataId, jeeves.filters,
-                                   log_files)
+    outputs = jeeves.loop_over_filters(pc.makeCoaddTempExp, 'makeCoaddTempExp',
+                                       dataId, log_files, check_patch=False)
     [x.result() for x in outputs]
 
-    outputs = pc.loop_over_filters(pc.assembleCoadd, 'assembleCoadd',
-                                   output_repo, dataId, jeeves.filters,
-                                   log_files)
+    outputs = jeeves.loop_over_filters(pc.assembleCoadd, 'assembleCoadd',
+                                       dataId, log_files)
     [x.result() for x in outputs]
 
     coadd_tasks = (
@@ -49,6 +47,6 @@ for patch_id in jeeves.get_patch_ids():
     )
 
     for task_name in coadd_tasks:
-        outputs = pc.loop_over_filters(run_coadd_task, task_name, output_repo,
-                                       dataId, jeeves.filters, log_files)
+        outputs = jeeves.loop_over_filters(run_coadd_task, task_name,
+                                           dataId, log_files)
         [x.result() for x in outputs]
