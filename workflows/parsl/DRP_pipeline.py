@@ -53,6 +53,6 @@ for patch_id in jeeves.get_patch_ids():
     )
 
     for task_name in coadd_tasks:
-        outputs = jeeves.loop_over_filters(run_coadd_task, task_name,
+        outputs = jeeves.loop_over_filters(pc.run_coadd_task, task_name,
                                            dataId, log_files)
         [x.result() for x in outputs]

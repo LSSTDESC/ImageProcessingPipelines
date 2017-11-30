@@ -113,7 +113,7 @@ class ParslLogFiles(object):
 
 @parsl.App('bash', dfk)
 def ingestReferenceCatalog(output_repo, ref_cat_file, stdout=None, stderr=None):
-    command = '''ingestReferenceCatalog.py {0} {1} --configfile configs/IngestIndexedReferenceTask.py --doraise --clobber-config --clobber-versions'''
+    command = '''ingestReferenceCatalog.py {0} {1} --configfile configs/DC1_IngestRefConfig.py --doraise --clobber-config --clobber-versions'''
     return command
 
 @parsl.App('bash', dfk)
