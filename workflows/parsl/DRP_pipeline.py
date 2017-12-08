@@ -1,33 +1,35 @@
+import parsl
 import os
 import sys
 import desc.parsl.pipeline_components as pc
 
+parsl.set_stream_logger()
+
 eimage_pattern = os.environ['EIMAGE_PATTERN']
 ref_cat_file = os.environ['REF_CAT_FILE']
 
-output_repo = pc.set_output_repo('output')
-log_files = pc.ParslLogFiles('logs')
+output_repo = pc.set_output_repo(os.environ['OUTPUT_REPO'])
+log_files = pc.ParslLogFiles(os.environ['LOG_DIR'])
 log_files.enable = (os.environ['LOG_FILE_ENABLE']=='true')
 
 ref_cat = pc.ingestReferenceCatalog(output_repo, ref_cat_file,
                                     **log_files('ingestReferenceCatalog'))
-ref_cat.result()
 
 sim_images = pc.ingestSimImages(output_repo, eimage_pattern,
                                 **log_files('ingestSimImages'))
+
 sim_images.result()
+jeeves = pc.get_Jeeves(output_repo, sim_images)
 
-jeeves = pc.Jeeves(output_repo)
-
-outputs = []
+eimages = []
 for visit in jeeves.visits:
     for raft in jeeves.get_rafts(visit):
         dataId = dict(visit=visit, raft=raft)
-        outputs.append(pc.processEimage(output_repo, dataId,
+        eimages.append(pc.processEimage(output_repo, dataId,
                                         **log_files('processEimage_%s' % visit)))
-[x.result() for x in outputs]
 
 discrete_sky_map = pc.makeDiscreteSkyMap(output_repo,
+                                         inputs=[x.result() for x in eimages],
                                          **log_files('makeDiscreteSkyMap'))
 discrete_sky_map.result()
 

@@ -2,9 +2,11 @@ import os
 import sqlite3
 import parsl
 
-__all__ = ['set_output_repo',
+__all__ = ['dfk',
+           'set_output_repo',
            'Jeeves',
            'ParslLogFiles',
+           'get_Jeeves',
            'ingestReferenceCatalog',
            'ingestSimImages',
            'processEimage',
@@ -13,8 +15,7 @@ __all__ = ['set_output_repo',
            'assembleCoadd',
            'run_coadd_task']
 
-workers = parsl.ThreadPoolExecutor(max_workers=1)
-dfk = parsl.DataFlowKernel(executors=[workers])
+from parsl_setup import dfk
 
 def make_id_string(dataId):
     if dataId is None:
@@ -111,6 +112,10 @@ class ParslLogFiles(object):
             log_file = None
         return dict(stderr=log_file, stdout=log_file)
 
+def get_Jeeves(output_repo, sim_images):
+    sim_images.result()
+    return Jeeves(output_repo)
+
 @parsl.App('bash', dfk)
 def ingestReferenceCatalog(output_repo, ref_cat_file, stdout=None, stderr=None):
     command = '''ingestReferenceCatalog.py {0} {1} --configfile configs/DC1_IngestRefConfig.py --doraise --clobber-config --clobber-versions'''
@@ -127,7 +132,8 @@ def processEimage(output_repo, dataId, stdout=None, stderr=None):
     return command
 
 @parsl.App('bash', dfk)
-def makeDiscreteSkyMap(output_repo, dataId=None, stdout=None, stderr=None):
+def makeDiscreteSkyMap(output_repo, dataId=None, inputs=[], stdout=None,
+                       stderr=None):
     command = '''makeDiscreteSkyMap.py {0}/ --output {0} --id %s --doraise --clobber-config --clobber-versions --configfile configs/makeDiscreteSkyMap_deep.py''' % make_id_string(dataId)
     return command
 
