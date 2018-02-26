@@ -1,7 +1,7 @@
 
 .. raw:: html
 
-   <img src="https://github.com/LSSTDESC/desc-tex/raw/logos/header.png"></img>
+   <img src="https://github.com/LSSTDESC/desc-tex/raw/master/logos/header.png"></img>
 
 The DC2 Cookbook: Recipes for Emulating the LSST DM Data Release Processing Pipeline
 ====================================================================================
