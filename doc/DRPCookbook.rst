@@ -1,7 +1,7 @@
 
 .. raw:: html
 
-   ![](https://github.com/LSSTDESC/desc-tex/raw/logos/header.png)
+   <img src="https://github.com/LSSTDESC/desc-tex/raw/logos/header.png"></img>
 
 The DC2 Cookbook: Recipes for Emulating the LSST DM Data Release Processing Pipeline
 ====================================================================================
@@ -54,7 +54,7 @@ following Figure:
 
 .. raw:: html
 
-   ![](https://github.com/lsst/LDM-151/blob/master/figures/drp_summary.png)
+   <img src="https://github.com/lsst/LDM-151/blob/master/figures/drp_summary.png"></img>
 
 Anticipating that difference image analysis (DIA) will not be required
 in the DC2 main survey area, it makes sense to preserve the DC1 grouping
@@ -93,8 +93,8 @@ Image Coaddition and ``Object`` Detection
 -----------------------------------------
 
 This recipe started life as the original Twinkles Cookbook recipe,
-`*"Recipe: Emulating the DM Level 2
-Pipeline"* <https://github.com/LSSTDESC/Twinkles/blob/master/doc/Cookbook/DM_Level2_Recipe.md>`__.
+`"Recipe: Emulating the DM Level 2
+Pipeline" <https://github.com/LSSTDESC/Twinkles/blob/master/doc/Cookbook/DM_Level2_Recipe.md>`__.
 This was intended to show how to process simulated image data as if we
 were running the static sky part of the LSST DM DRP. The primary
 products are catalogs of ``Objects.``
