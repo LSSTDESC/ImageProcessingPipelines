@@ -1,1 +1,0 @@
-config.coaddName='deep'
