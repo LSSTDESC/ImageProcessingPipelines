@@ -1,6 +1,5 @@
-.. figure:: 
+.. image:: https://github.com/LSSTDESC/desc-tex/raw/master/logos/header.png
    :name: header
-   :target: https://github.com/LSSTDESC/desc-tex/raw/master/logos/header.png
    :align: center
 
 The DC2 Cookbook: Recipes for Emulating the LSST DM Data Release Processing Pipeline
