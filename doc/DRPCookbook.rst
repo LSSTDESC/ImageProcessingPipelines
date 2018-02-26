@@ -1,7 +1,7 @@
-
-.. raw:: html
-
-   <img src="https://github.com/LSSTDESC/desc-tex/raw/master/logos/header.png"></img>
+.. figure:: 
+   :name: header
+   :target: https://github.com/LSSTDESC/desc-tex/raw/master/logos/header.png
+   :align: center
 
 The DC2 Cookbook: Recipes for Emulating the LSST DM Data Release Processing Pipeline
 ====================================================================================
@@ -58,15 +58,25 @@ following Figure:
 
 Anticipating that difference image analysis (DIA) will not be required
 in the DC2 main survey area, it makes sense to preserve the DC1 grouping
-of the DRP pipelines, into static sky and dynamic sky pipelines. \* The
+of the DRP pipelines, into static sky and dynamic sky pipelines. The
 static sky analysis involves image characterization, calibration and
-coaddition followed by ``Object`` generation and measurement. \* The
+coaddition followed by ``Object`` generation and measurement. The
 dynamic sky analysis makes use of the calibrated images, but involves 1)
 the construction of a ``TemplateCoadd`` image followed by image
 differencing, ``DIASource`` detection in the difference images, and then
 2) association of those ``DIASources`` into ``DIAObjects`` which then
 form the target positions for forced photometry. Light curves can then
 be extracted from the ``DIAForcedSource`` table.
+
+With reference to the image coaddition and differencing diagram in
+LDM-151 (reproduced below), we can identify the static sky pipeline as
+being just steps 1, 2, 3 and 5. (Steps 2 and 3 could be skipped in an
+initial implementation: this was the approach taken in Twinkles.) The
+dynamic sky pipeline *should* just be step 4 (i.e. it should re-use the `calexp`s from step 1 in the static sky pipeline).
+
+.. raw:: html
+
+   <img src="https://github.com/lsst/LDM-151/raw/master/figures/drp_coaddition_and_diffim.png"></img>
 
 At the time of writing, multi-epoch object characterization is not yet
 available in the DM stack. As a result, the ``Objects`` are the same as
