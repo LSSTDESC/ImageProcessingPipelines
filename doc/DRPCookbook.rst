@@ -1,7 +1,7 @@
 
 .. raw:: html
 
-   ![](./header.png)
+   ![](https://github.com/LSSTDESC/desc-tex/raw/logos/header.png)
 
 The DC2 Cookbook: Recipes for Emulating the LSST DM Data Release Processing Pipeline
 ====================================================================================
@@ -10,7 +10,7 @@ The DC2 Cookbook: Recipes for Emulating the LSST DM Data Release Processing Pipe
 
 *This Note has not yet undergone DESC working group review, and hence
 should be read with caution. To cite this work in progress, please use
-"Krughoff et al 2018 in preparation" and provide a link to* 
+"Krughoff et al 2018 in preparation" and provide a link to*
 `this development branch URL <https://github.com/LSSTDESC/DC2_Repo/blob/issue/73/cookbook/Notebooks/DC2Cookbook.ipynb>`__.
 
 Introduction
@@ -25,10 +25,10 @@ provide links to the original DC1 recipes at the appropriate points
 below.
 
 The target DRP pipeline is described in the LSST Project document
-`LDM-151 <ls.st/ldm-151>`__, *"LSST Data Management Science Pipelines
+`LDM-151 <http://ls.st/ldm-151>`__, *"LSST Data Management Science Pipelines
 Design."* We will refer to this document extensively, importing figures
 and quoting from it as needed. In DC1, the simulated images that we
-produced were so-called "e-images", ecah one of which emulates a
+produced were so-called "e-images", each one of which emulates a
 calibrated frame; in DC2, we will produce amplifier (science) and
 accompanying calibration images, and extend the Twinkles pipeline to
 include instrument signature removal. We also adopt the recently
@@ -38,7 +38,7 @@ DM pipeline to look similar to the DC1 pipeline.
 
 This Note is organized as follows. We first provide an
 `overview <#overview>`__ of the DRP pipeline, summarizing the relevant
-section in `LDM-151 <ls.st/ldm-151>`__. Then, we present the recipes in
+section in `LDM-151 <http://ls.st/ldm-151>`__. Then, we present the recipes in
 three sections: 1. `Image Coaddition and Object Detection <#coadds>`__
 2. `Difference Image Analysis and DIASource Detection <#diasources>`__
 3. `DIAObject Generation and Light Curve Forced
@@ -49,8 +49,12 @@ We then provide some brief `concluding remarks <#conclusions>`__.
 Data Release Processing Overview
 -----------------------------------
 
-The DRP pipelines are summarized in `LDM-151 <ls.st/ldm-151>`__ by the
+The DRP pipelines are summarized in `LDM-151 <http://ls.st/ldm-151>`__ by the
 following Figure:
+
+.. raw:: html
+
+   ![](https://github.com/lsst/LDM-151/blob/master/figures/drp_summary.png)
 
 Anticipating that difference image analysis (DIA) will not be required
 in the DC2 main survey area, it makes sense to preserve the DC1 grouping
@@ -178,12 +182,12 @@ called ``andConfig.py`` and looks like this:
     'index-010616004.fits']
 
 **ACTION: edit this recipe so that the correct assumptions about the DM
-stack installation are made.** 
+stack installation are made.**
 `(issue #89) <https://github.com/LSSTDESC/DC2_Repo/issues/89>`__
 
 .. raw:: html
 
-   <!-- 
+   <!--
 
    ### Set up the data to run DM processing
 
@@ -355,7 +359,7 @@ analysis. This probably means we'll want to switch to this new way of
 producing calibrated exposures.
 
 **ACTION: Simplify this recipe by re-using the calexps from the static
-sky processing** 
+sky processing**
 `(issue #91) <https://github.com/LSSTDESC/DC2_Repo/issues/91>`__
 
 Produce the ``calexp``\ s needed for DIA
