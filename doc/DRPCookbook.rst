@@ -1,7 +1,6 @@
-
-.. raw:: html
-
-   <!-- ![](./header.png) -->
+.. image:: https://github.com/LSSTDESC/desc-tex/raw/master/logos/header.png
+   :name: header
+   :align: center
 
 The DC2 Cookbook: Recipes for Emulating the LSST DM Data Release Processing Pipeline
 ====================================================================================
@@ -10,9 +9,8 @@ The DC2 Cookbook: Recipes for Emulating the LSST DM Data Release Processing Pipe
 
 *This Note has not yet undergone DESC working group review, and hence
 should be read with caution. To cite this work in progress, please use
-"Krughoff et al 2018 in preparation" and provide a link to `this
-development branch
-URL <https://github.com/LSSTDESC/DC2_Repo/blob/issue/73/cookbook/Notebooks/DC2Cookbook.ipynb>`__.*
+"Krughoff et al 2018 in preparation" and provide a link to*
+`this development branch URL <https://github.com/LSSTDESC/DC2_Repo/blob/issue/73/cookbook/Notebooks/DC2Cookbook.ipynb>`__.
 
 Introduction
 ------------
@@ -26,10 +24,10 @@ provide links to the original DC1 recipes at the appropriate points
 below.
 
 The target DRP pipeline is described in the LSST Project document
-`LDM-151 <ls.st/ldm-151>`__, *"LSST Data Management Science Pipelines
+`LDM-151 <http://ls.st/ldm-151>`__, *"LSST Data Management Science Pipelines
 Design."* We will refer to this document extensively, importing figures
 and quoting from it as needed. In DC1, the simulated images that we
-produced were so-called "e-images", ecah one of which emulates a
+produced were so-called "e-images", each one of which emulates a
 calibrated frame; in DC2, we will produce amplifier (science) and
 accompanying calibration images, and extend the Twinkles pipeline to
 include instrument signature removal. We also adopt the recently
@@ -37,32 +35,54 @@ developed object association code, in order to make ``DIAObjects`` from
 our ``DIASources``. Other than these two extensions, we expect the DC2
 DM pipeline to look similar to the DC1 pipeline.
 
- This Note is organized as follows. We first provide an
+This Note is organized as follows. We first provide an
 `overview <#overview>`__ of the DRP pipeline, summarizing the relevant
-section in `LDM-151 <ls.st/ldm-151>`__. Then, we present the recipes in
+section in `LDM-151 <http://ls.st/ldm-151>`__. Then, we present the recipes in
 three sections: 1. `Image Coaddition and Object Detection <#coadds>`__
 2. `Difference Image Analysis and DIASource Detection <#diasources>`__
 3. `DIAObject Generation and Light Curve Forced
 Photometry <#forcedphot>`__
-
 We then provide some brief `concluding remarks <#conclusions>`__.
 
- ## Data Release Processing Overview
 
-The DRP pipelines are summarized in `LDM-151 <ls.st/ldm-151>`__ by the
+Data Release Processing Overview
+-----------------------------------
+
+The DRP pipelines are summarized in `LDM-151 <http://ls.st/ldm-151>`__ by the
 following Figure:
+
+.. figure:: https://github.com/lsst/LDM-151/blob/master/figures/drp_summary.png
+   :name: LDM-151-Fig-8
+   :target: http://ls.st/LDM-151
+   :align: center
+
+   Reproduction of Figure 8 from `LDM-151 <http://ls.st/ldm-151>`__, the summary of the Data Release Production image processing flow. Each blue square is referred to by the DM team as "a pipeline."
 
 Anticipating that difference image analysis (DIA) will not be required
 in the DC2 main survey area, it makes sense to preserve the DC1 grouping
-of the DRP pipelines, into static sky and dynamic sky pipelines. \* The
+of the DRP pipelines, into static sky and dynamic sky pipelines. The
 static sky analysis involves image characterization, calibration and
-coaddition followed by ``Object`` generation and measurement. \* The
+coaddition followed by ``Object`` generation and measurement. The
 dynamic sky analysis makes use of the calibrated images, but involves 1)
 the construction of a ``TemplateCoadd`` image followed by image
 differencing, ``DIASource`` detection in the difference images, and then
 2) association of those ``DIASources`` into ``DIAObjects`` which then
 form the target positions for forced photometry. Light curves can then
 be extracted from the ``DIAForcedSource`` table.
+
+With reference to the image coaddition and differencing diagram in
+LDM-151 (reproduced below), we can identify the static sky pipeline as
+being just steps 1, 2, 3 and 5. (Steps 2 and 3 could be skipped in an
+initial implementation: this was the approach taken in Twinkles.) The
+dynamic sky pipeline *should* just be step 4 (i.e. it should re-use the `calexp`s from step 1 in the static sky pipeline).
+
+.. figure:: https://github.com/lsst/LDM-151/raw/master/figures/drp_coaddition_and_diffim.png
+   :name: LDM-151-Fig-9
+   :target: http://ls.st/LDM-151
+   :align: center
+
+   Reproduction of Figure 9 from `LDM-151 <http://ls.st/ldm-151>`__, the Data flow diagram for the Data Release Production image coaddition and image differencing pipelines.
+
 
 At the time of writing, multi-epoch object characterization is not yet
 available in the DM stack. As a result, the ``Objects`` are the same as
@@ -85,11 +105,12 @@ the focus on the *data release reprocessing* of the visit images.
 
 `Back to the table of contents. <#toc>`__
 
- ## Image Coaddition and ``Object`` Detection
+Image Coaddition and ``Object`` Detection
+-----------------------------------------
 
 This recipe started life as the original Twinkles Cookbook recipe,
-`*"Recipe: Emulating the DM Level 2
-Pipeline"* <https://github.com/LSSTDESC/Twinkles/blob/master/doc/Cookbook/DM_Level2_Recipe.md>`__.
+`"Recipe: Emulating the DM Level 2
+Pipeline" <https://github.com/LSSTDESC/Twinkles/blob/master/doc/Cookbook/DM_Level2_Recipe.md>`__.
 This was intended to show how to process simulated image data as if we
 were running the static sky part of the LSST DM DRP. The primary
 products are catalogs of ``Objects.``
@@ -103,8 +124,8 @@ This is an approximation, but for many purposes a good one. **ACTION:
 check that this is still the approach we want to take.**
 
 **ACTION: Simon: replace the recipe below with the DC1 approach (which
-did not use astrometry.net) following the scripts pointed out by Jim
-`(issue #87) <https://github.com/LSSTDESC/DC2_Repo/issues/87>`__**
+did not use astrometry.net) following the scripts pointed out by Jim**
+`(issue #87) <https://github.com/LSSTDESC/DC2_Repo/issues/87>`__
 
 Currently the reference catalogs need to be formatted as astrometry.net
 index files. I can convert the reference catalog produced by
@@ -177,12 +198,12 @@ called ``andConfig.py`` and looks like this:
     'index-010616004.fits']
 
 **ACTION: edit this recipe so that the correct assumptions about the DM
-stack installation are made. (`issue
-#89 <https://github.com/LSSTDESC/DC2_Repo/issues/89>`__)**
+stack installation are made.**
+`(issue #89) <https://github.com/LSSTDESC/DC2_Repo/issues/89>`__
 
 .. raw:: html
 
-   <!-- 
+   <!--
 
    ### Set up the data to run DM processing
 
@@ -228,13 +249,12 @@ files from
 Then untar the tarball in a working directory.
 
 **ACTION: Update this part to reflect new calibration procedure, and
-follow multi-band processing described in DM documentation
+follow multi-band processing described in DM documentation**
 `here <http://doxygen.lsst.codes/stack/doxygen/x_masterDoxyDoc/pipe_tasks_multi_band.html>`__
-`(issue #88) <https://github.com/LSSTDESC/DC2_Repo/issues/88>`__**
+`(issue #88) <https://github.com/LSSTDESC/DC2_Repo/issues/88>`__
 
 **ACTION: Include description of ISR, if we are starting with amplifier
-images `(issue
-#90) <https://github.com/LSSTDESC/DC2_Repo/issues/90>`__**
+images** `(issue #90) <https://github.com/LSSTDESC/DC2_Repo/issues/90>`__
 
 After you have the data, you can start following the steps below to get,
 for example, forced photometry in three bands. First, set up the
@@ -329,14 +349,15 @@ sky ``Objects`` may provide some useful comparisons, so we include it.
 
 `Back to the table of contents. <#toc>`__
 
- ## Difference Image Analysis and ``DIASource`` Detection
+Difference Image Analysis and ``DIASource`` Detection
+-----------------------------------------------------
 
 The dynamic sky analysis was treated in two steps in the Twinkles
 pathfinder, partly because at that time ``DIAObjects`` were not yet
 readily made. The first part of the difference image analysis stopped at
 the generation of ``DIASources``, and it is this Twinkles recipe,
-`*"Recipe: How to create DIASources using PSF Homogenized
-coadds"* <https://github.com/LSSTDESC/Twinkles/blob/master/doc/Cookbook/Coadd_Diffim_Recipe.md>`__
+`"Recipe: How to create DIASources using PSF Homogenized
+coadds" <https://github.com/LSSTDESC/Twinkles/blob/master/doc/Cookbook/Coadd_Diffim_Recipe.md>`__
 that we adapt for DC2 here.
 
 The basic sequence of operations is as follows:
@@ -354,8 +375,8 @@ analysis. This probably means we'll want to switch to this new way of
 producing calibrated exposures.
 
 **ACTION: Simplify this recipe by re-using the calexps from the static
-sky processing (`issue
-#91 <https://github.com/LSSTDESC/DC2_Repo/issues/91>`__)**
+sky processing**
+`(issue #91) <https://github.com/LSSTDESC/DC2_Repo/issues/91>`__
 
 Produce the ``calexp``\ s needed for DIA
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -386,11 +407,10 @@ Make the calibrated exposures:
 
 NB. This task must be configured to have fixed size PSF measuremnt
 kernels *or the PSF matching in the next step doesn't work.* These
-configs are provided by the ```processEimage.py``
-config <https://github.com/lsst/obs_lsstSim/blob/twinkles_395/config/processEimage.py>`__
+configs are provided by the ``processEimage.py`` `config <https://github.com/lsst/obs_lsstSim/blob/twinkles_395/config/processEimage.py>`__
 in the
 `twinkles\_395 <https://github.com/lsst/obs_lsstSim/tree/twinkles_395>`__
-branch of the ``obs_lsstSim`` repository. > This means that PSFEX cannot
+branch of the ``obs_lsstSim`` repository. This means that PSFEX cannot
 be used as the PSF measurement algorithm in this task or the PSF
 matching will not work.
 
@@ -462,9 +482,8 @@ reflect this choice. In concrete terms, ``modelPsf.defaultFwhm`` must be
 equal to or greater than ``select.maxPsfFwhm``, and we recommend they be
 set to be equal to minimize loss to the broader coadd PSF.
 
-NB. The config file must specify the same `size for the
-``modelPsf`` <https://github.com/lsst/obs_lsstSim/blob/twinkles_395/config/makeCoaddTempExp.py#L6>`__
-as was specified for the Psf measurement kernel in the above step.
+NB. The config file must specify the same size for the
+``modelPsf`` as was specified for the PSF measurement kernel in the above step. See  `this Twinkles script <https://github.com/lsst/obs_lsstSim/blob/twinkles_395/config/makeCoaddTempExp.py#L6>`__ for details.
 
 ::
 
@@ -501,7 +520,8 @@ difference image.
 
 `Back to the table of contents. <#toc>`__
 
- ## ``DIAObject`` Generation and Light Curve Forced Photometry
+``DIAObject`` Generation and Light Curve Forced Photometry
+----------------------------------------------------------
 
 Now that we have a table of ``DIASources``, from differencing all visit
 images against the same template image, we can make ``DIAObjects`` by
@@ -511,10 +531,10 @@ that will take place during DRP is cleaner and simpler than the
 iterative ``DIAObject`` definition that will take place during nightly
 processing of the observations in the Alert Production Pipeline.
 
-The following recipe was originally written for Twinkles as `*"Recipe:
+The following recipe was originally written for Twinkles as `"Recipe:
 Emulating the Level 1 Reprocessing of DIAObjects: Difference Image
 Forced
-Photometry"* <https://github.com/LSSTDESC/Twinkles/blob/master/doc/Cookbook/Reprocessed_DIAObjects_Recipe.md>`__.
+Photometry" <https://github.com/LSSTDESC/Twinkles/blob/master/doc/Cookbook/Reprocessed_DIAObjects_Recipe.md>`__.
 It consists of the following steps:
 
 1. Assemble ``DIAObjects`` from ``DIASources``
@@ -551,8 +571,8 @@ pre-existing tool as our first go at emulating Level 2 association. This
 will require a new ``Task`` to fetch the ``DIASource`` catalogs and feed
 them through ``MultiMatch``.
 
-**ACTION: Update the above with the new DM object association code
-`(issue #92) <https://github.com/LSSTDESC/DC2_Repo/issues/92>`__**
+**ACTION: Update the above with the new DM object association code**
+`(issue #92) <https://github.com/LSSTDESC/DC2_Repo/issues/92>`__
 
 Aggregate quantities for ``DIAObjects``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -575,8 +595,8 @@ difference image, the task will force photometer at the location of each
 forced photometry catalog in the ``reproDIASource`` dataset.
 
 **ACTION: Include code to carry out and store forced photometry on
-DIAobjects (`issue
-#93 <https://github.com/LSSTDESC/DC2_Repo/issues/93>`__)**
+DIAobjects**
+`(issue #93) <https://github.com/LSSTDESC/DC2_Repo/issues/93>`__
 
 Wish List
 ~~~~~~~~~
@@ -591,6 +611,7 @@ The above will be filled in as we implement the various pieces. We need:
 
 `Back to the table of contents. <#toc>`__
 
- ## Concluding Remarks
+Concluding Remarks
+------------------
 
 `Back to the table of contents. <#toc>`__
