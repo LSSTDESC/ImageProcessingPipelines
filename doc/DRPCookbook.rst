@@ -51,9 +51,12 @@ Data Release Processing Overview
 The DRP pipelines are summarized in `LDM-151 <http://ls.st/ldm-151>`__ by the
 following Figure:
 
-.. raw:: html
+.. figure:: https://github.com/lsst/LDM-151/blob/master/figures/drp_summary.png
+   :name: LDM-151-Fig-8
+   :target: http://ls.st/LDM-151
+   :align: center
 
-   <img src="https://github.com/lsst/LDM-151/blob/master/figures/drp_summary.png"></img>
+   Reproduction of Figure 8 from `LDM-151 <http://ls.st/ldm-151>`__, the summary of the Data Release Production image processing flow. Each blue square is referred to by the DM team as "a pipeline."
 
 Anticipating that difference image analysis (DIA) will not be required
 in the DC2 main survey area, it makes sense to preserve the DC1 grouping
@@ -73,9 +76,13 @@ being just steps 1, 2, 3 and 5. (Steps 2 and 3 could be skipped in an
 initial implementation: this was the approach taken in Twinkles.) The
 dynamic sky pipeline *should* just be step 4 (i.e. it should re-use the `calexp`s from step 1 in the static sky pipeline).
 
-.. raw:: html
+.. figure:: https://github.com/lsst/LDM-151/raw/master/figures/drp_coaddition_and_diffim.png
+   :name: LDM-151-Fig-9
+   :target: http://ls.st/LDM-151
+   :align: center
 
-   <img src="https://github.com/lsst/LDM-151/raw/master/figures/drp_coaddition_and_diffim.png"></img>
+   Reproduction of Figure 9 from `LDM-151 <http://ls.st/ldm-151>`__, the Data flow diagram for the Data Release Production image coaddition and image differencing pipelines.
+
 
 At the time of writing, multi-epoch object characterization is not yet
 available in the DM stack. As a result, the ``Objects`` are the same as
