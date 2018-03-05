@@ -1,3 +1,5 @@
+# DC1 config where reference catalog only contained stars
+
 # Name of RA column
 config.ra_name='raJ2000'
 
