@@ -1,11 +1,8 @@
-SRS DRP pipeline files
-======================
+# SRS DRP pipeline files
 
-Data and software directories
------------------------------
+## Data and software directories
 
-@CC-IN2P3
-.........
+### @CC-IN2P3
 
 Here is an attempt to organise the data and softwares at CC-IN2P3:
 
@@ -24,13 +21,11 @@ its content will only be modifiable by a handful of people (Dominique,
 Johann, Fabio, Nicolas) through the modification of its Access Control
 List (ACL).
 
-@NESRC
-......
+### @NESRC
 
 TBD
 
-Structure of this directory
---------------------------
+## Structure of this directory
 
 Here is the structure and content of this directory::
 
@@ -42,20 +37,18 @@ Here is the structure and content of this directory::
   └── README.rst    -> this file
 
 
-Pipeline
---------
+## Pipeline
 
 The step by step instruction to run the pipeline are for now kept
 `here
 <https://github.com/LSSTDESC/ImageProcessingPipelines/wiki/Step-by-step-instructions-for-initial-cross-check-of-DM-DC2>`_. After
 validation, all the steps are add to the pipeline structure.
 
-Status
-------
+## Status
 
 -[-] data transfer from NERSC to CC-IN2P3
-  -[] Creation of a stable directory structure at NERSC
-  -[] Automatic copy of its content to CC-IN2P3
+  -[ ] Creation of a stable directory structure at NERSC
+  -[ ] Automatic copy of its content to CC-IN2P3
 -[x] Creation of a list of data to ingest (``pipe_scripts/createIngestFileList.py``)
 
 
