@@ -1,11 +1,11 @@
 SRS DRP pipeline files
 ======================
 
-@CC-IN2P3
-=========
+Data and software directories
+-----------------------------
 
-Directory structure
--------------------
+@CC-IN2P3
+.........
 
 Here is an attempt to organise the data and softwares at CC-IN2P3:
 
@@ -24,8 +24,11 @@ its content will only be modifiable by a handful of people (Dominique,
 Johann, Fabio, Nicolas) through the modification of its Access Control
 List (ACL).
 
-Pipeline directories
---------------------
+@NESRC
+......
+
+Structure of this directory
+--------------------------
 
 Here is the structure and content of this directory::
 
