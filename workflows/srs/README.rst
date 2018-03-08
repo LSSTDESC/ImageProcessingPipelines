@@ -27,6 +27,8 @@ List (ACL).
 @NESRC
 ......
 
+TBD
+
 Structure of this directory
 --------------------------
 
@@ -39,6 +41,22 @@ Here is the structure and content of this directory::
   ├── pipe_streams  -> configuration files used for the different streams
   └── README.rst    -> this file
 
+
+Pipeline
+--------
+
+The step by step instruction to run the pipeline are for now kept
+`here
+<https://github.com/LSSTDESC/ImageProcessingPipelines/wiki/Step-by-step-instructions-for-initial-cross-check-of-DM-DC2>`_. After
+validation, all the steps are add to the pipeline structure.
+
+Status
+------
+
+-[-] data transfer from NERSC to CC-IN2P3
+  -[] Creation of a stable directory structure at NERSC
+  -[] Automatic copy of its content to CC-IN2P3
+-[x] Creation of a list of data to ingest (``pipe_scripts/createIngestFileList.py``)
 
 
 
