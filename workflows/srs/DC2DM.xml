@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pipeline xmlns="http://glast-ground.slac.stanford.edu/pipeline" 
+          xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" 
+          xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
+			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
+  
+  <task name="DC2DM_NCTEST" type="LSST" version="0.3">
+    <notation>Test on running the DM stack on DC2 simulated images</notation>
+    <variables>
+      <!-- Job site and configuration-->
+      <var name="JOBSITE">LSST-IN2P3</var>
+      <var name="MAXCPU">10000</var>
+      <var name="MAXCPULONG">10000</var>
+      <var name="BATCH_OPTIONS">-l sps=1,os=cl7,xrootd=0</var>
+      <!-- Base directory where script files will be placed -->
+      <var name="SCRIPT_LOCATION">ReprocessingTaskForce/workflows/DC2</var>
+      <var name="SLAC_SCRIPT_LOCATION">/u/ki/boutigny/ki19/${SCRIPT_LOCATION}</var>
+      <var name="IN2P3_SCRIPT_LOCATION">/sps/lsst/users/lsstprod/${SCRIPT_LOCATION}</var>
+      <var name="logRoot">/sps/lsst/users/descprod/Pipeline2/Logs</var>
+      <!-- Script names -->
+      <var name="SCRIPT_NAME">DC2Workflow.py</var>
+      <var name="BATCH_NAME">DC2Batch.sh</var>
+    </variables>
+
+    <!-- ingest images -->
+    <process name="ingest" site="${JOBSITE}">
+      <notation>Ingest the input data serially</notation>
+      <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS} -q mc_huge -pe multicores 8"
+	   executable="${IN2P3_SCRIPT_LOCATION}/${BATCH_NAME}"/>
+    </process>
+    
+  </task>
+</pipeline>
