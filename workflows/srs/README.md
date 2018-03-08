@@ -6,24 +6,24 @@
 
 Here is an attempt to organise the data and softwares at CC-IN2P3:
 
-- Raw data : ``/sps/lsst/datasets/desc/DC2/Run?.?``
+- Raw data : `/sps/lsst/datasets/desc/DC2/Run?.?`
 
-- Producted data set: ``/sps/lsst/data/desc/DC2/Run?.?``
+- Producted data set: `/sps/lsst/data/desc/DC2/Run?.?`
 
-- Dedicated software: ``/pbs/throng/lsst/software/desc/DC2/Run?.?``
+- Dedicated software: `/pbs/throng/lsst/software/desc/DC2/Run?.?`
 
-- DM stack: ``/sps/lsst/software/lsst_distrib/w_2018_??``
+- DM stack: `/sps/lsst/software/lsst_distrib/w_2018_??`
 
-In each ``DC2`` folders will be found several sub-folders corresponding
+In each `DC2` folders will be found several sub-folders corresponding
 to the different runs carries out during the test and production
-phases (Run1.1, Run1.2, Run1.etc) The ``dedicated software`` folder and
+phases (Run1.1, Run1.2, Run1.etc) The `dedicated software` folder and
 its content will only be modifiable by a handful of people (Dominique,
 Johann, Fabio, Nicolas) through the modification of its Access Control
 List (ACL).
 
 ### @NESRC
 
-TBD
+- Raw data : `/global/projecta/projectdirs/lsst/production/DC2/`
 
 ## Structure of this directory
 
@@ -40,14 +40,15 @@ Here is the structure and content of this directory:
 ## Pipeline
 
 The step by step instruction to run the pipeline are for now kept
-[here](https://github.com/LSSTDESC/ImageProcessingPipelines/wiki/Step-by-step-instructions-for-initial-cross-check-of-DM-DC2). After validation, all the steps are add to the pipeline structure.
+[here](https://github.com/LSSTDESC/ImageProcessingPipelines/wiki/Step-by-step-instructions-for-initial-cross-check-of-DM-DC2). After
+validation, each step is incrementaly added to the pipeline.
 
 ## Status for the mini-DRP pipeline
 
 - [ ] Data transfer from NERSC to CC-IN2P3
   - [ ] Creation of a stable directory structure at NERSC
   - [ ] Automatic copy of its content to CC-IN2P3
-- [x] Creation of a list of data to ingest (``pipe_scripts/createIngestFileList.py``)
+- [x] Creation of a list of data to ingest (`pipe_scripts/createIngestFileList.py`)
 - [x] Data ingestion using `ingestDriver.py`
 - [ ] Build a reference catalog with stars and galaxies
   - [ ] What software do we need for that?
