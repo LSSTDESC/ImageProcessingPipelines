@@ -53,12 +53,21 @@ validation, each step is incrementaly added to the pipeline.
 - [ ] Build a reference catalog with stars and galaxies
   - [ ] What software do we need for that?
   - [ ] What configuration?
+  - Dominique has created these catalogs, that can be found here
+
+    	      /sps/lsst/users/lsstprod/desc/DC2-test/input/ref_cats
+
 - [x] Creation of a list of visits to process (incremental mode available)
 - [ ] Run `processEimage.py`
   - [ ] Config file?
-  - [ ] Version or branch of `obs_lsstSim` to use?
+
+      	       in `/sps/lsst/users/lsstprod/desc/DC2-test/processEimage.py`
+	       or `/sps/lsst/users/nchotard/dc2/obs_lsstSim/config/processEimage.py`
+
+  - [ ] Version or branch of `obs_lsstSim` to use? We want master.
 - [ ] Run `makeFpSummary` to produce control plots for eyeballers
   - For now, available in `u/krughoff/fp_overview` branch of `obs_lsstSim`
+  - See details [there](https://github.com/LSSTDESC/ImageProcessingPipelines/wiki/Step-by-step-instructions-for-initial-cross-check-of-DM-DC2#run-makefpsummarypy)
   
 
 
