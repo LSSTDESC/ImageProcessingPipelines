@@ -42,12 +42,23 @@ Here is the structure and content of this directory:
 The step by step instruction to run the pipeline are for now kept
 [here](https://github.com/LSSTDESC/ImageProcessingPipelines/wiki/Step-by-step-instructions-for-initial-cross-check-of-DM-DC2). After validation, all the steps are add to the pipeline structure.
 
-## Status
+## Status for the mini-DRP pipeline
 
-- [ ] data transfer from NERSC to CC-IN2P3
+- [ ] Data transfer from NERSC to CC-IN2P3
   - [ ] Creation of a stable directory structure at NERSC
   - [ ] Automatic copy of its content to CC-IN2P3
 - [x] Creation of a list of data to ingest (``pipe_scripts/createIngestFileList.py``)
+- [x] Data ingestion using `ingestDriver.py`
+- [ ] Build a reference catalog with stars and galaxies
+  - [ ] What software do we need for that?
+  - [ ] What configuration?
+- [x] Creation of a list of visits to process (incremental mode available)
+- [ ] Run `processEimage.py`
+  - [ ] Config file?
+  - [ ] Version or branch of `obs_lsstSim` to use?
+- [ ] Run `makeFpSummary` to produce control plots for eyeballers
+  - For now, available in `u/krughoff/fp_overview` branch of `obs_lsstSim`
+  
 
 
 
