@@ -8,7 +8,7 @@ Here is an attempt to organise the data and softwares at CC-IN2P3:
 
 - Raw data : `/sps/lsst/datasets/desc/DC2/Run?.?`
 
-- Producted data set: `/sps/lsst/dataprod/desc/DC2/Run?.?`
+- Production data set: `/sps/lsst/dataprod/desc/DC2/Run?.?`
 
 - Dedicated software: `/pbs/throng/lsst/software/desc/DC2/Run?.?`
 
@@ -24,6 +24,16 @@ List (ACL).
 ### @NESRC
 
 - Raw data : `/global/projecta/projectdirs/lsst/production/DC2/`
+
+- Raw Data for transfer to IN2P3 : `/global/projecta/projectdirs/lsst/global/DC2`
+
+- Production data set : `/global/projecta/projectdirs/lsst/production/DC2/DRP`
+
+- Dedicated Pipeline software : `/global/homes/d/descdm/dc2/drp`
+
+- DM stack Haswell : `/global/common/software/lsst/cori-haswell-gcc/stack/?`
+- DM stack KNL : `/global/common/software/lsst/cori-knl-gcc/stack/?`
+- DM stack Shifter : TBD
 
 ## Structure of this directory
 
