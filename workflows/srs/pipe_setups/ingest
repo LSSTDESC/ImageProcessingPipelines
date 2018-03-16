@@ -8,6 +8,7 @@ mkdir -p ${IN_DIR}
 export OMP_NUM_THREADS=1
 if [[ $SITE == "NERSC" ]]
 then
+  cp ${SCRIPT_LOCATION}/../dm_configs/_mapper ${IN_DIR}/
   ingestDriver.py ${IN_DIR} @${VISIT_FILE} --cores 8 --mode link --batch-type none --output ${IN_DIR} -c clobber=True allowError=True register.ignore=True
 else
   # If the output directory does not contain a mapper file, create one

@@ -8,7 +8,7 @@ export DM_SETUP="/global/common/software/lsst/cori-haswell-gcc/stack/${DM_SETUP_
 export PIPELINESCRIPTS=""
 
 # Base directory for input and output data
-export VISIT_DIR="/global/cscratch1/sd/descdm/DC2/dc2_test/filesToIngest.txt"
+export VISIT_FILE="/global/cscratch1/sd/descdm/DC2/dc2_test/filesToIngest.txt"
 export OUTPUT_DATA_DIR="/global/cscratch1/sd/descdm/DC2/dc2_test"
 
 # The filters
