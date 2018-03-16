@@ -1,9 +1,15 @@
 # Make sure the output directory exists
 mkdir -p ${IN_DIR}
-# If the output directory does not contain a mapper file, create one
-cp ${RTF}/config/$DM_CONFIG/_mapper ${IN_DIR}/
-# Create the list of file to ingest
+#
+# Create the list of files to ingest
 
 # Ready to ingest
 export OMP_NUM_THREADS=1
-ingestDriver.py ${IN_DIR} @${VISIT_FILE} --cores 8 -c clobber=True allowError=True register.ignore=True
+if [$SITE == "NERSC"]
+then
+  ingestDriver.py ${IN_DIR} @${VISIT_FILE} --cores 8 --mode link --batch-type none --output ${IN_DIR} -c clobber=True allowError=True register.ignore=True
+else
+  # If the output directory does not contain a mapper file, create one
+  cp ${RTF}/config/$DM_CONFIG/_mapper ${IN_DIR}/
+  ingestDriver.py ${IN_DIR} @${VISIT_FILE} --cores 8 -c clobber=True allowError=True register.ignore=True
+fi
