@@ -8,9 +8,9 @@ then
 fi
 
 # Get the local configuration
-source ${LOCAL_CONFIG}
+source ${SCRIPT_LOCATION}/../pipe_streams/NERSC_LOCAL_CONFIG.sh
 
-if [$SITE == "LSST-IN2P3" ]
+if [[ $SITE == "LSST-IN2P3" ]]
 then
   # Setup DM stack
   source ${SCRIPT_LOCATION}/DMsetup.sh

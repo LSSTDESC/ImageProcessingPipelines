@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Workaround for EUPS trying to write to home directory
-if [$SITE == "NERSC"]
+if [[ $SITE == "NERSC" ]]
 then
   export HOME=/tmp/${USER}/${PIPELINE_PROCESSINSTANCE}
   mkdir -p $HOME

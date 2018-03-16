@@ -1,3 +1,4 @@
+#!/bin/bash
 # Make sure the output directory exists
 mkdir -p ${IN_DIR}
 #
@@ -5,7 +6,7 @@ mkdir -p ${IN_DIR}
 
 # Ready to ingest
 export OMP_NUM_THREADS=1
-if [$SITE == "NERSC"]
+if [[ $SITE == "NERSC" ]]
 then
   ingestDriver.py ${IN_DIR} @${VISIT_FILE} --cores 8 --mode link --batch-type none --output ${IN_DIR} -c clobber=True allowError=True register.ignore=True
 else
