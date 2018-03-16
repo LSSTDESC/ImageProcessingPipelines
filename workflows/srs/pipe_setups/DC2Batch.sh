@@ -8,7 +8,7 @@ then
 fi
 
 # Get the local configuration
-source ${SCRIPT_LOCATION}/../pipe_streams/NERSC_LOCAL_CONFIG.sh
+source ${LOCAL_CONFIG}
 
 if [[ $SITE == "LSST-IN2P3" ]]
 then
