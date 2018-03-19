@@ -1,7 +1,14 @@
+#!/usr/bin/env python
+
+
+"""Create a list of files to ingest."""
+
+
 from __future__ import print_function
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from glob import glob
 import numpy as np
+
 
 if __name__ == "__main__":
 

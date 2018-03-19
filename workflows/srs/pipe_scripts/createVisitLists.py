@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+
+
 """Build the list of visits for all filters"""
 
 
