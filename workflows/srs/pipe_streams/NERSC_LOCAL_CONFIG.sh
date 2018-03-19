@@ -8,8 +8,10 @@ export DM_SETUP="/global/common/software/lsst/cori-haswell-gcc/stack/${DM_SETUP_
 export PIPELINESCRIPTS=""
 
 # Base directory for input and output data
-export VISIT_FILE="/global/cscratch1/sd/descdm/DC2/dc2_test/filesToIngest.txt"
-export OUTPUT_DATA_DIR="/global/cscratch1/sd/descdm/DC2/dc2_test"
+export VISIT_FILE=${NERSC_DRP_ROOT}/${TASKNAME}/filesToIngest.txt
+#"/global/cscratch1/sd/descdm/DC2/HMK-DC2-ingest/filesToIngest.txt"
+export OUTPUT_DATA_DIR=${NERSC_DRP_ROOT}/${TASKNAME}
+#export OUTPUT_DATA_DIR="/global/cscratch1/sd/descdm/DC2/HMK-DC2-ingest"
 
 # The filters
 export FILTERS="u,g,r,i,z,y"

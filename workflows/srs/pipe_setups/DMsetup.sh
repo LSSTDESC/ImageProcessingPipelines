@@ -14,6 +14,11 @@ fi
 source ${DM_SETUP}
 setup lsst_distrib
 
+if [[ $SITE=="NERSC" ]]
+then
+  setup obs_lsstSim w.2018.04-32-g6deb1ad -t w_2018_09
+fi
+
 if [[ $DM_SETUP == *"/sps/lsst/software/lsst_distrib/"* ]]
 then
     cd /sps/lsst/users/nchotard/obs_cfht
