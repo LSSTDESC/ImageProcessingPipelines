@@ -16,6 +16,21 @@ def run_processCcd():
             num += 1
 
 
+def run_processEimage():
+    process = pipeline.getProcessInstance("setup_processEimage")
+    vars = HashMap(process.getVariables())
+    workdir = vars.remove("WORK_DIR")
+    filters = vars.remove("FILTERS").split(',')
+    num = 0
+    for filt in filters:
+        nscript = vars.remove('n' + filt + 'scripts')
+        for i in range(1, int(nscript) + 1):
+            script = workdir + "/02-processEimage/scripts/%s/visit_%03d_script.sh" % (filt, i)
+            vars.put("CUR_SCRIPT", script)
+            pipeline.createSubstream("processEimageFilter", num, vars)
+            num += 1
+
+
 def run_singleFrameDriver():
     process = pipeline.getProcessInstance("setup_singleFrameDriver")
     vars = HashMap(process.getVariables())

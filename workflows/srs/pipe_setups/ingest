@@ -13,6 +13,6 @@ else
   # Make sure the output directory exists
   mkdir -p ${IN_DIR}
   # If the output directory does not contain a mapper file, create one
-  cp ${RTF}/config/$DM_CONFIG/_mapper ${IN_DIR}/
+  cp ${SCRIPT_LOCATION}/../dm_configs/_mapper ${IN_DIR}/
   ingestDriver.py ${IN_DIR} @${VISIT_FILE} --cores 8 -c clobber=True allowError=True register.ignore=True
 fi

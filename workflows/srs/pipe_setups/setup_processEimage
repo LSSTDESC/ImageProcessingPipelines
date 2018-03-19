@@ -1,0 +1,19 @@
+mkdir -p ${WORK_DIR}/02-processEimage
+cd ${WORK_DIR}/input
+ln -sfn /sps/lsst/datasets/refcats/htm_baseline ref_cats
+cd ${WORK_DIR}/02-processEimage
+ln -sfn ${WORK_DIR} pardir
+cp $RTF/config/$DM_CONFIG/singleFrameDriver* .
+build_visit_lists.py -i ${WORK_DIR}/input
+singleFrameDriver.py pardir/input --output pardir/output --configfile singleFrameDriverConfig.py --cores=8 --clobber-config
+run_singleFrameDriver.py -c `ls *Config*.py | paste -sd ","` --fromslac --multicore -f ${FILTERS}
+for FILT in $(echo ${FILTERS} | tr "," "\n")
+do
+	pipelineSet n${FILT}scripts `ls scripts/${FILT}/*.sh 2>/dev/null | wc -l`
+done
+pipelineSet WORK_DIR ${WORK_DIR}
+pipelineSet FILTERS ${FILTERS}
+pipelineSet DM_RELEASE ${DM_RELEASE}
+pipelineSet DM_SETUP ${DM_SETUP}
+pipelineSet DM_CONFIG ${DM_CONFIG}
+pipelineSet OUTPUT_DATA_DIR ${OUTPUT_DATA_DIR}
