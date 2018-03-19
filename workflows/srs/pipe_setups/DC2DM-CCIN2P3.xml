@@ -18,9 +18,9 @@
       <var name="BATCH_OPTIONS">${SITE=="NERSC" ? "${NERSC_BATCH_OPTIONS}" : "${IN2P3_BATCH_OPTIONS} "}</var>
       <var name="EXTRA_OPTIONS">${SITE=="NERSC" ? " " : "${IN2P3_EXTRA_OPTIONS} "}</var>
       <!-- Base directory where script files will be placed -->
-      <var name="SCRIPT_SUBDIR">ReprocessingTaskForce/workflows/DC2</var>
-      <!-- At SLAC -->
-      <var name="IN2P3_SLAC_SCRIPT_LOCATION">/u/ki/boutigny/ki19/${SCRIPT_SUBDIR}</var>
+      <var name="SCRIPT_SUBDIR">ImageProcessingPipelines/workflows/srs/pipe_setups</var>
+      <!-- At SLAC // SHOULD BE THE SAME FOR NERSC AND IN2P3 -->
+      <var name="IN2P3_SLAC_SCRIPT_LOCATION">/afs/slac.stanford.edu/u/ec/nchotard/software/desc/DC2/Run1.1/${SCRIPT_SUBDIR}</var>
       <var name="NERSC_SLAC_SCRIPT_LOCATION">/nfs/farm/g/lsst/u1/users/heather/minidrp/pipe_setups</var>
       <var name="SLAC_SCRIPT_LOCATION">${SITE=="NERSC" ? NERSC_SLAC_SCRIPT_LOCATION : IN2P3_SLAC_SCRIPT_LOCATION}</var>
       <!-- Local to JOBSITE -->
