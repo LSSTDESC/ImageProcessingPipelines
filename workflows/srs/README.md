@@ -7,15 +7,12 @@
 Here is an attempt to organise the data and softwares at CC-IN2P3:
 
 - Raw data : `/sps/lsst/datasets/desc/DC2/Run?.?`
-
 - Production data set: `/sps/lsst/dataprod/desc/DC2/Run?.?`
-
 - Dedicated software: `/pbs/throng/lsst/software/desc/DC2/Run?.?`
-
 - DM stack: `/sps/lsst/software/lsst_distrib/w_2018_??`
 
 In each `DC2` folders will be found several sub-folders corresponding
-to the different runs carries out during the test and production
+to the different runs carried out during the test and production
 phases (Run1.1, Run1.2, Run1.etc) The `dedicated software` folder and
 its content will only be modifiable by a handful of people (Dominique,
 Johann, Fabio, Nicolas) through the modification of its Access Control
@@ -24,13 +21,9 @@ List (ACL).
 ### @NESRC
 
 - Raw data : `/global/projecta/projectdirs/lsst/production/DC2/`
-
 - Raw Data for transfer to IN2P3 : `/global/projecta/projectdirs/lsst/global/DC2`
-
 - Production data set : `/global/projecta/projectdirs/lsst/production/DC2/DRP`
-
 - Dedicated Pipeline software : `/global/homes/d/descdm/dc2/drp`
-
 - DM stack Haswell : `/global/common/software/lsst/cori-haswell-gcc/stack/?`
 - DM stack KNL : `/global/common/software/lsst/cori-knl-gcc/stack/?`
 - DM stack Shifter : TBD
@@ -57,8 +50,8 @@ validation, each step is incrementaly added to the pipeline.
 
 - [ ] Data transfer from NERSC to CC-IN2P3
   - [ ] Creation of a stable directory structure at NERSC
-  - [ ] Automatic copy of its content to CC-IN2P3
-  - [ ] Identify datasets to exercise mini DRP pipeline
+  - [x] Semi-automatic copy of its content to CC-IN2P3
+  - [x] Identify datasets to exercise mini DRP pipeline
 - [x] Creation of a list of data to ingest (`pipe_scripts/createIngestFileList.py`)
 - [x] Data ingestion using `ingestDriver.py`
 - [ ] Build a reference catalog with stars and galaxies

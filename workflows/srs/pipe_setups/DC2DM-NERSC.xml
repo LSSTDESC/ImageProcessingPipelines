@@ -4,11 +4,11 @@
           xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
 			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
   
-  <task name="DC2DM_NCTEST" type="LSST" version="0.4">
-    <notation>Test on running the DM stack on DC2 simulated images</notation>
+  <task name="DC2DM" type="LSST" version="0.0">
+    <notation>Task to run the DM stack on DC2 simulated images</notation>
     <variables>
       <!-- Job site and configuration-->
-      <var name="SITE">LSST-IN2P3</var>
+      <var name="SITE">NERSC</var>
       <var name="JOBSITE">${SITE=="NERSC" ? "CORIP" : SITE}</var>
       <var name="MAXCPU">10000</var>
       <var name="MAXCPULONG">10000</var>
