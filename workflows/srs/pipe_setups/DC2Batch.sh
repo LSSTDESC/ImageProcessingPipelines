@@ -13,7 +13,7 @@ source ${LOCAL_CONFIG}
 if [[ $SITE == "LSST-IN2P3" ]]
 then
   # Setup DM stack
-  source ${SCRIPT_LOCATION}/DMsetup.sh
+  source ${SETUP_LOCATION}/DMsetup.sh
 fi
 
 ulimit -c ${CORE_LIMIT:-1000} # Limit core dump
@@ -31,14 +31,14 @@ then
 fi
 
 # Setup reprocessing scripts
-export PATH=$PATH:$PIPELINESCRIPTS
+export PATH=$PATH:$SCRIPT_LOCATION
 
-# Launch the script
-export SCRIPT=${SCRIPT_LOCATION}/${PIPELINE_PROCESS:-$1}
+# Launch the setup/script
+export SCRIPT=${SETUP_LOCATION}/${PIPELINE_PROCESS:-$1}
 
 if [ $SITE == "NERSC" ]
 then
-  source ${SCRIPT_LOCATION}/DMsetup.sh; set -xe; export SHELLOPTS; source ${SCRIPT}
+  source ${SETUP_LOCATION}/DMsetup.sh; set -xe; export SHELLOPTS; source ${SCRIPT}
 else # IN2P3
   # set -xe; export SHELLOPTS;
   source ${SCRIPT}

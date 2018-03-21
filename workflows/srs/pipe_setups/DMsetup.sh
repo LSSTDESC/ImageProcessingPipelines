@@ -5,7 +5,7 @@ if [[ $SITE == "NERSC" ]]
 then
   export HOME=/tmp/${USER}/${PIPELINE_PROCESSINSTANCE}
   mkdir -p $HOME
-  (cd $HOME && tar -xzf ${SCRIPT_LOCATION}/home.tgz)
+  (cd $HOME && tar -xzf ${SETUP_LOCATION}/home.tgz)
 else
   export HOME=`pwd`
 fi
@@ -14,15 +14,12 @@ fi
 source ${DM_SETUP}
 setup lsst_distrib
 
+
+# A specific version of obs_lsstSim is needed for now
 if [[ $SITE=="NERSC" ]]
 then
-  setup obs_lsstSim w.2018.04-32-g6deb1ad -t w_2018_09
-fi
-
-if [[ $DM_SETUP == *"/sps/lsst/software/lsst_distrib/"* ]]
-then
-    cd /sps/lsst/users/nchotard/obs_cfht
-    eups declare -r . obs_cfht tractbugfix
-    setup obs_cfht tractbugfix
-    cd -
+    setup obs_lsstSim w.2018.04-32-g6deb1ad -t w_2018_09
+else
+    eups declare -r $ROOT_SOFTS/obs_lsstSim obs_lsstSim localver
+    setup obs_lsstSim localver
 fi

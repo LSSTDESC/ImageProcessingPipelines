@@ -8,6 +8,7 @@
     <notation>Task to run the DM stack on DC2 simulated images</notation>
     <variables>
       <!-- Job site and configuration-->
+      <var name="RUNID">Run1.1-test</var>
       <var name="SITE">LSST-IN2P3</var>
       <var name="JOBSITE">${SITE=="NERSC" ? "CORIP" : SITE}</var>
       <var name="MAXCPU">10000</var>
@@ -18,15 +19,24 @@
       <var name="BATCH_OPTIONS">${SITE=="NERSC" ? "${NERSC_BATCH_OPTIONS}" : "${IN2P3_BATCH_OPTIONS} "}</var>
       <var name="EXTRA_OPTIONS">${SITE=="NERSC" ? " " : "${IN2P3_EXTRA_OPTIONS} "}</var>
       <!-- Base directory where script files will be placed -->
-      <var name="SCRIPT_SUBDIR">ImageProcessingPipelines/workflows/srs/pipe_setups</var>
+      <var name="PIPE_SUBDIR">ImageProcessingPipelines/workflows/srs</var>
+      <var name="PIPE_SETUPS">${PIPE_SUBDIR}/pipe_setups</var>
+      <var name="PIPE_SCRIPTS">${PIPE_SUBDIR}/pipe_scripts</var>
+      <var name="DM_CONFIGS">${PIPE_SUBDIR}/pipe_scripts</var>
       <!-- At SLAC // SHOULD BE THE SAME FOR NERSC AND IN2P3 -->
       <var name="IN2P3_SLAC_SCRIPT_LOCATION">/afs/slac.stanford.edu/u/ec/nchotard/software/desc/DC2/Run1.1/${SCRIPT_SUBDIR}</var>
       <var name="NERSC_SLAC_SCRIPT_LOCATION">/nfs/farm/g/lsst/u1/users/heather/minidrp/pipe_setups</var>
       <var name="SLAC_SCRIPT_LOCATION">${SITE=="NERSC" ? NERSC_SLAC_SCRIPT_LOCATION : IN2P3_SLAC_SCRIPT_LOCATION}</var>
       <!-- Local to JOBSITE -->
-      <var name="IN2P3_SCRIPT_LOCATION">/sps/lsst/users/lsstprod/${SCRIPT_SUBDIR}</var>
-      <var name="NERSC_SCRIPT_LOCATION">/global/homes/d/descdm/minidrp/pipe_setups</var>
+      <var name="IN2P3_ROOT_SOFTS">/pbs/throng/lsst/software/desc/DC2/${RUNID}</var>
+      <var name="NERSC_ROOT_SOFTS">/global/homes/d/descdm/minidrp</var>  <!-- Is that right? -->
+      <var name="ROOT_SOFTS">${SITE=="NERSC" ? NERSC_ROOT_SOFTS : IN2P3_ROOT_SOFTS}</var>
+      <var name="IN2P3_SCRIPT_LOCATION">${IN2P3_ROOT_SOFTS}/${PIPE_SCRIPTS}</var>
+      <var name="IN2P3_SETUP_LOCATION">${IN2P3_ROOT_SOFTS}/${PIPE_SETUPS}</var>
+      <var name="NERSC_SCRIPT_LOCATION">/global/homes/d/descdm/minidrp/pipe_scripts</var>
+      <var name="NERSC_SETUP_LOCATION">/global/homes/d/descdm/minidrp/pipe_setups</var>
       <var name="SCRIPT_LOCATION">${SITE=="NERSC" ? NERSC_SCRIPT_LOCATION : IN2P3_SCRIPT_LOCATION}</var>
+      <var name="SETUP_LOCATION">${SITE=="NERSC" ? NERSC_SETUP_LOCATION : IN2P3_SETUP_LOCATION}</var>
       <!-- Log Files -->
       <var name="IN2P3_logRoot">/sps/lsst/users/descprod/Pipeline2/Logs</var>    
       <var name="NERSC_logRoot">/global/homes/d/descdm/minidrp/logs</var>    
