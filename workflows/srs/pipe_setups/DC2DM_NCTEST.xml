@@ -4,7 +4,7 @@
           xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
 			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
   
-  <task name="DC2DM_NCTEST" type="LSST" version="0.12">
+  <task name="DC2DM_NCTEST" type="LSST" version="0.13">
     <notation>Task to run the DM stack on DC2 simulated images</notation>
     <variables>
       <!-- Job site and configuration-->
@@ -46,12 +46,24 @@
       <var name="BATCH_NAME">DC2Batch.sh</var>
     </variables>
 
+    <!-- setup ingests -->
+    <process name="setup_ingest" site="${JOBSITE}">
+      <notation>Ingest the input data serially</notation>
+      <job maxCPU="${MAXCPU}" 
+           batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS}"
+	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
+    </process>
+
+    
     <!-- ingest images -->
     <process name="ingest" site="${JOBSITE}">
       <notation>Ingest the input data serially</notation>
       <job maxCPU="${MAXCPU}" 
            batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS}"
 	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
+      <depends>
+        <after process="setup_ingest"/>
+      </depends>
     </process>
 
     <!-- ingest reference catalog -->
@@ -60,6 +72,9 @@
       <job maxCPU="${MAXCPU}" 
            batchOptions="${BATCH_OPTIONS}"
 	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
+      <depends>
+        <after process="setup_ingest"/>
+      </depends>
     </process>
 
     <!-- processEimage -->
@@ -68,8 +83,9 @@
       <notation>Setup for processEimage</notation>
       <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
 	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
-    <depends>
+      <depends>
         <after process="ingest"/>
+	<after process="ingestRefCat"/>
       </depends>
     </process>
     <!--   launch jobs -->
