@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# Make a local copy of the configuration file in the local directory 
+cp $REFCATCONFIG .
+# Ingest the reference catalog
+ingestReferenceCatalog.py ${IN_DIR} $REFCAT --configfile $REFCATCONFIG
