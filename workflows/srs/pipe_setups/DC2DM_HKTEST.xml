@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pipeline xmlns="http://glast-ground.slac.stanford.edu/pipeline" 
+          xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" 
+          xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
+			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
+  
+  <task name="HMK-DC2-ingest" type="LSST" version="0.7">
+    <notation>Test on running the DM stack on DC2 simulated images</notation>
+    <variables>
+      <!-- Job site and configuration-->
+      <var name="SITE">NERSC</var>
+      <var name="JOBSITE">${SITE=="NERSC" ? "CORIP" : SITE}</var>
+      <var name="MAXCPU">10000</var>
+      <var name="MAXCPULONG">10000</var>
+      <var name="IN2P3_BATCH_OPTIONS"> -l sps=1,os=cl7,xrootd=0 </var>
+      <var name="IN2P3_EXTRA_OPTIONS"> -q mc_huge -pe multicores 8 </var>
+      <var name="NERSC_BATCH_OPTIONS"> -p MINIDRPHK | -L SCRATCH,projecta | -C haswell </var>
+      <var name="BATCH_OPTIONS">${SITE=="NERSC" ? "${NERSC_BATCH_OPTIONS}" : "${IN2P3_BATCH_OPTIONS} "}</var>
+      <var name="EXTRA_OPTIONS">${SITE=="NERSC" ? " " : "${IN2P3_EXTRA_OPTIONS} "}</var>
+
+      <var name="TASKNAME">HMK-DC2-ingest</var>
+      <var name="NERSC_DRP_ROOT">/global/cscratch1/sd/descdm/DC2</var>
+      <var name="NERSC_DRP_OUTPUT">${NERSC_DRP_ROOT}/${TASKNAME}/output</var>
+
+      <!-- Base directory where script files will be placed -->
+      <var name="SCRIPT_SUBDIR">ReprocessingTaskForce/workflows/DC2</var>
+      <!-- At SLAC -->
+      <var name="IN2P3_SLAC_SCRIPT_LOCATION">/u/ki/boutigny/ki19/${SCRIPT_SUBDIR}</var>
+      <var name="NERSC_SLAC_SCRIPT_LOCATION">/nfs/farm/g/lsst/u/heather/minidrp/pipe_setups</var>
+      <var name="SLAC_SCRIPT_LOCATION">${SITE=="NERSC" ? NERSC_SLAC_SCRIPT_LOCATION : IN2P3_SLAC_SCRIPT_LOCATION}</var>
+      <!-- Local to JOBSITE -->
+      <var name="IN2P3_SCRIPT_LOCATION">/sps/lsst/users/lsstprod/${SCRIPT_SUBDIR}</var>
+      <var name="NERSC_SCRIPT_LOCATION">/global/homes/d/descdm/minidrp/pipe_setups</var>
+      <var name="SCRIPT_LOCATION">${SITE=="NERSC" ? NERSC_SCRIPT_LOCATION : IN2P3_SCRIPT_LOCATION}</var>
+      <!-- Log Files -->
+      <var name="IN2P3_logRoot">/sps/lsst/users/descprod/Pipeline2/Logs</var>    
+      <var name="NERSC_logRoot">${NERSC_DRP_ROOT}/logs</var>    
+      <var name="logRoot">${SITE=="NERSC" ? NERSC_logRoot : IN2P3_logRoot}</var>
+      <!-- Script names -->
+      <var name="SCRIPT_NAME">DC2Workflow.py</var>
+      <var name="BATCH_NAME">DC2Batch.sh</var>
+    </variables>
+
+    <!-- ingest images -->
+    <process name="ingest" site="${JOBSITE}">
+      <notation>Ingest the input data serially</notation>
+      <job maxCPU="${MAXCPU}" 
+           batchOptions="${BATCH_OPTIONS} | ${EXTRA_OPTIONS}"
+	       executable="${SCRIPT_LOCATION}/${BATCH_NAME}"/>
+    </process>
+    
+   <!-- processEimage -->
+    <!--   setup -->
+    <process name="setup_processEimage" site="${JOBSITE}">
+      <notation>Setup for processEimage</notation>
+      <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
+       executable="${SCRIPT_LOCATION}/${BATCH_NAME}"/>
+    <depends>
+        <after process="ingest"/>
+      </depends>
+    </process>
+    <!--   launch jobs -->
+    <process name="processEimage" site="${JOBSITE}">
+      <notation>Run processEimage for all filter and visits</notation>
+      <script><![CDATA[
+      execfile("%s/%s" % (SLAC_SCRIPT_LOCATION, SCRIPT_NAME))
+      run_processEimage()
+      ]]>
+      </script>
+      <depends>
+        <after process="setup_processEimage"/>
+      </depends>
+      <createsSubtasks>
+        <subtask>processEimageFilter</subtask>
+      </createsSubtasks>    
+    </process>
+
+<!--   Subtasks -->
+    <!--   Subtask to run processEimage  -->
+    <task name="processEimageFilter" type="LSST">
+      <process name="runProcessEimageFilter" site="${JOBSITE}">
+<!--
+    <variables>
+      <var name="streamID">${format(pipeline.stream, "%01d")}</var>
+    </variables>
+-->
+    <job maxCPU="${MAXCPU}" 
+         batchOptions="${BATCH_OPTIONS} | ${EXTRA_OPTIONS}" 
+         executable="${CUR_SCRIPT}"/>
+      </process>                
+    </task>
+
+  </task>
+</pipeline>
