@@ -1,6 +1,9 @@
 #!/bin/bash
 
-# Make a local copy of the configuration file in the local directory 
-cp $REFCATCONFIG .
+# Move to the working directory
+cd ${WORK_DIR}/input
+
 # Ingest the reference catalog
-ingestReferenceCatalog.py ${IN_DIR} $REFCAT --configfile $REFCATCONFIG
+#ingestReferenceCatalog.py ${IN_DIR} $REFCAT --configfile $REFCATCONFIG -L debug
+ln -sfn /sps/lsst/users/nchotard/dc2/test/input/ref_cats ref_cats
+
