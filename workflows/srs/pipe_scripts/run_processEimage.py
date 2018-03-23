@@ -95,7 +95,6 @@ if __name__ == "__main__":
 
             # Only submit the job if asked
             prefix = "visit_%03d_script" % (i + 1)
-            #prefix = "%i_" % (i + 1) + "_".join(vs)
             LR.submit(cmd, prefix, filt, autosubmit=opts.autosubmit,
                       ct=opts.ct, vmem=opts.vmem, queue=opts.queue,
                       system=opts.system, otheroptions=opts.otheroptions,

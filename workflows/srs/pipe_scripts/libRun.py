@@ -88,7 +88,7 @@ def submit(cmd, prefix, filt=None, autosubmit=False, ct=60000, vmem='4G',
         script.write("#$ -o %s\n" % log)
         if "singleFrameDriver.py" in cmd:
             script.write("export OMP_NUM_THREADS=1\n")
-        script.write("source ${IN2P3_SCRIPT_LOCATION}/DMsetup.sh\n")
+        script.write("source ${SETUP_LOCATION}/DMsetup.sh\n")
         script.write("cd " + cwd + "\n")
         script.write(cmd + "\n")
     script.close()
