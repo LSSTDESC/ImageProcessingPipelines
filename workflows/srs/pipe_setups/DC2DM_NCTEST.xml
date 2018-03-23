@@ -4,7 +4,7 @@
           xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
 			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
   
-  <task name="DC2DM_NCTEST" type="LSST" version="0.20">
+  <task name="DC2DM_NCTEST" type="LSST" version="0.21">
     <notation>Task to run the DM stack on DC2 simulated images</notation>
     <variables>
       <!-- Job site and configuration-->
@@ -24,7 +24,7 @@
       <var name="PIPE_SCRIPTS">${PIPE_SUBDIR}/pipe_scripts</var>
       <var name="DM_CONFIGS">${PIPE_SUBDIR}/pipe_scripts</var>
       <!-- At SLAC // SHOULD BE THE SAME FOR NERSC AND IN2P3 -->
-      <var name="IN2P3_SLAC_SETUP_LOCATION">/afs/slac.stanford.edu/u/ec/nchotard/software/desc/DC2/Run1.1/${PIPE_SUBDIR}</var>
+      <var name="IN2P3_SLAC_SETUP_LOCATION">/afs/slac.stanford.edu/u/ec/nchotard/software/desc/DC2/Run1.1/${PIPE_SETUPS}</var>
       <var name="NERSC_SLAC_SETUP_LOCATION">/nfs/farm/g/lsst/u1/users/heather/minidrp/pipe_setups</var>
       <var name="SLAC_SETUP_LOCATION">${SITE=="NERSC" ? NERSC_SLAC_SETUP_LOCATION : IN2P3_SLAC_SETUP_LOCATION}</var>
       <!-- Local to JOBSITE -->
