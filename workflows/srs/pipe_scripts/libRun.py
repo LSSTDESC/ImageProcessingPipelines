@@ -123,6 +123,8 @@ def organize_items(items, njobs):
     return items
 
 def select_config(configs, filt):
+    if configs is None:
+        return configs
     if "_" + filt + ".py" in configs:                
         config = [c for c in configs.split(',') if "_"+filt in c][0]
     else:
