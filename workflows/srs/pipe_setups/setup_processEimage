@@ -1,7 +1,7 @@
 mkdir -p ${WORK_DIR}/02-processEimage
 cd ${WORK_DIR}/02-processEimage
 ln -sfn ${WORK_DIR} pardir
-createVisitLists.py -i ${WORK_DIR}/input --increment
+createVisitLists.py --increment ${WORK_DIR}/input
 processEimage.py pardir/input --output pardir/output
 run_processEimage.py --fromslac -f ${FILTERS}
 for FILT in $(echo ${FILTERS} | tr "," "\n")
