@@ -33,6 +33,9 @@ def build_cmd(visits, config, filt, input='pardir/input', output='pardir/output'
         cmd += " --configfile " + config
     if opts.multicore:
         cmd += " -j 8 --timeout 999999999"
+    cmd += "\n"
+    cmd += "makeFpSummary.py %s --output %s @" % (input, output) + \
+           filename
     print("\nCMD: ", cmd)
 
     return cmd

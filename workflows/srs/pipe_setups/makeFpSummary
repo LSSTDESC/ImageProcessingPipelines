@@ -1,8 +1,4 @@
-# Make sur the work directory exists
-mkdir -p ${WORK_DIR}/03-makeSkyMap
-cd ${WORK_DIR}/03-makeSkyMap
-ln -sfn ${WORK_DIR} pardir
-cp $RTF/config/$DM_CONFIG/makeSkyMapConfig.py .
+# Move to the working directory
+cd ${WORK_DIR}
+# Run the script
 
-build_visit_lists.py -i pardir/input -l pardir/02-*/log/\*/\*.log
-build_patch_lists2.py --output pardir/output -f ${FILTERS}

@@ -4,7 +4,7 @@
           xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
 			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
   
-  <task name="DC2DM_NCTEST" type="LSST" version="0.14">
+  <task name="DC2DM_NCTEST" type="LSST" version="0.15">
     <notation>Task to run the DM stack on DC2 simulated images</notation>
     <variables>
       <!-- Job site and configuration-->
@@ -84,7 +84,7 @@
       <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
 	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
       <depends>
-        <after process="ingest"/>
+        <after process="ingestData"/>
 	<after process="ingestRefCat"/>
       </depends>
     </process>
@@ -104,29 +104,9 @@
       </createsSubtasks>	
     </process>
 
-    <!-- makeFpSummary -->
-    <process name="makeFpSummary" site="${JOBSITE}">
-      <notation>Run makeFpSummary</notation>
-      <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
-	   executable="${IN2P3_SETUP_LOCATION}/${BATCH_NAME}"/>
-      <depends>
-        <after process="processEimageFilter.processEimagefilter"/>
-      </depends>
-    </process>
-
     <!-- validateDrp -->
     <process name="validateDrp" site="${JOBSITE}">
       <notation>Run validateDrp</notation>
-      <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
-	   executable="${IN2P3_SETUP_LOCATION}/${BATCH_NAME}"/>
-      <depends>
-        <after process="processEimageFilter.processEimagefilter"/>
-      </depends>
-    </process>
-
-    <!-- makeSkyMap -->
-    <process name="makeSkyMap" site="${JOBSITE}">
-      <notation>Make the sky map</notation>
       <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
 	   executable="${IN2P3_SETUP_LOCATION}/${BATCH_NAME}"/>
       <depends>

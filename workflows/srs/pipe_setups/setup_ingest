@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Ready to ingest
+# Setup the input working directory and get the mapper
 if [[ $SITE == "NERSC" ]]
 then
   mkdir -p ${NERSC_DRP_OUTPUT}
