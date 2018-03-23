@@ -66,8 +66,12 @@ if __name__ == "__main__":
             continue
 
         # Get the list of visits
-        visits = [visit.split('=')[1].strip("'")
-                  for visit in N.loadtxt(filt+".list", dtype='str', unpack=True)[1]]
+        allvisits = N.loadtxt(filt+".list", dtype='str', unpack=True)
+        if isinstance(allvisits[1], str):
+            allvisits = [allvisits[1]]
+        else:
+            allvisits = allvisits[1]
+        visits = [visit.split('=')[1].strip("'") for visit in allvisits]
         print("INFO: %i visits loaded: " % len(visits), visits)
 
         # How many jobs should we be running (and how many visit in each?)?
