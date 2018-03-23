@@ -16,7 +16,7 @@ setup lsst_distrib
 
 
 # A specific version of obs_lsstSim is needed for now
-if [[ $SITE=="NERSC" ]]
+if [[ $SITE == "NERSC" ]]
 then
     setup obs_lsstSim w.2018.04-32-g6deb1ad -t w_2018_09
 else

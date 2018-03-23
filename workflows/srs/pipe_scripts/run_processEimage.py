@@ -3,8 +3,8 @@
 """
 .. _run_processEimage:
 
-Run processCdd.py for a list of visits
-======================================
+Run processEimage.py for a list of visits
+=========================================
 """
 
 from __future__ import print_function
@@ -24,11 +24,13 @@ def build_cmd(visits, config, filt, input='pardir/input', output='pardir/output'
 
     # Create and save a sub list of visit
     filename = "scripts/" + filt + "/" + "_".join(visits) + ".list"
-    N.savetxt(filename, ["--id visit=%s ccd=0..35" % visit for visit in visits], fmt="%s")
+    N.savetxt(filename, ["--id visit=%s" % visit for visit in visits], fmt="%s")
 
     # Create the command line
     cmd = "processEimage.py %s --output %s @" % (input, output) + \
-          filename + " --configfile " + config
+          filename
+    if config is not None:
+        cmd += " --configfile " + config
     if opts.multicore:
         cmd += " -j 8 --timeout 999999999"
     print("\nCMD: ", cmd)
@@ -42,8 +44,10 @@ if __name__ == "__main__":
 
     description = """This script will run processEimage for a given list of filters and visits. The 
     default if to use f.list files (where 'f' is a filter in ugriz), and launch processEimage in 
-    several batch jobs. You thus need to be running it at CC-IN2P3 to make it work. To run all 
-    filters, you can do something like %prog -f ugriz -m 1 -c processConfig.py,processConfig_u.py -a
+    several batch jobs. To run all filters, you can do something like 
+    
+    %prog -f ugriz -m 1 -c processConfig.py -a
+
     """
 
     opts, args = LR.standard_options(usage=usage, description=description)
@@ -66,9 +70,7 @@ if __name__ == "__main__":
         visits = LR.organize_items(visits, njobs)
 
         # specific options for processEimage
-        opts.ct = 259200
-        opts.vmem = "32G"
-        opts.queue = "huge"
+        opts.queue = "long"
         if opts.multicore:
             opts.queue = "mc_huge"
             opts.otheroptions = "-pe multicores 8"

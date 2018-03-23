@@ -4,7 +4,7 @@
           xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
 			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
   
-  <task name="DC2DM_NCTEST" type="LSST" version="0.13">
+  <task name="DC2DM_NCTEST" type="LSST" version="0.14">
     <notation>Task to run the DM stack on DC2 simulated images</notation>
     <variables>
       <!-- Job site and configuration-->
@@ -56,7 +56,7 @@
 
     
     <!-- ingest images -->
-    <process name="ingest" site="${JOBSITE}">
+    <process name="ingestData" site="${JOBSITE}">
       <notation>Ingest the input data serially</notation>
       <job maxCPU="${MAXCPU}" 
            batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS}"
