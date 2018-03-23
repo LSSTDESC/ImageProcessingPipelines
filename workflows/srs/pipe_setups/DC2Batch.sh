@@ -24,11 +24,8 @@ stream=$(echo $PIPELINE_STREAMPATH | cut -f1 -d.)
 export WORK_DIR=${OUTPUT_DATA_DIR}/work/${stream}
 
 # Only set IN_DIR and OUT_DIR if not already set
-if [[ $SITE=="LSST-IN2P3" ]]
-then
-  export OUT_DIR=${OUT_DIR:-${WORK_DIR}/output}
-  export IN_DIR=${IN_DIR:-${WORK_DIR}/input}
-fi
+export OUT_DIR=${OUT_DIR:-${WORK_DIR}/output}
+export IN_DIR=${IN_DIR:-${WORK_DIR}/input}
 
 # Setup reprocessing scripts
 export PATH=$PATH:$SCRIPT_LOCATION
