@@ -1,0 +1,2 @@
+echo $PIPELINE_PROCESS
+exit 1

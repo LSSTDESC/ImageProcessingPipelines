@@ -4,7 +4,7 @@
           xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
 			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
   
-  <task name="DC2DM_NCTEST" type="LSST" version="0.22">
+  <task name="DC2DM_NCTEST" type="LSST" version="0.24">
     <notation>Task to run the DM stack on DC2 simulated images</notation>
     <variables>
       <!-- Job site and configuration-->
@@ -54,7 +54,6 @@
 	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
     </process>
 
-    
     <!-- ingest images -->
     <process name="ingestData" site="${JOBSITE}">
       <notation>Ingest the input data serially</notation>
@@ -73,6 +72,16 @@
 	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
       <depends>
         <after process="setup_ingest"/>
+      </depends>
+    </process>
+
+    <!-- check point -->
+    <process name="checkpoint" site="${JOBSITE}">
+      <notation>Check point </notation>
+      <job batchOptions="${BATCH_OPTIONS}"
+	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
+      <depends>
+        <before process="setup_processEimage"/>
       </depends>
     </process>
 
@@ -117,8 +126,10 @@
     <!--   Subtask to run processEimage -->
     <task name="processEimageFilter" type="LSST">
       <process name="runProcessEimageFilter" site="${JOBSITE}">
-	<job maxCPU="${MAXCPU}"
-	     batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS}"
+	<variables>
+	  <var name="streamID">${format(pipeline.stream, "%01d")}</var>
+	</variables>
+	<job batchOptions="${BATCH_OPTIONS}"
 	     executable="${CUR_SCRIPT}"/>
       </process>                
     </task>
