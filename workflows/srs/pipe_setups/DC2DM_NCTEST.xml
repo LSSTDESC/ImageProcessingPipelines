@@ -4,7 +4,7 @@
           xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
 			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
   
-  <task name="DC2DM_NCTEST" type="LSST" version="0.26">
+  <task name="DC2DM_NCTEST" type="LSST" version="0.28">
     <notation>Task to run the DM stack on DC2 simulated images</notation>
     <variables>
       <!-- Job site and configuration-->
@@ -84,6 +84,7 @@
       <depends>
 	<after process="ingestData"/>
 	<after process="ingestRefCat"/>
+	<after process="checkpoint_PE"/>
       </depends>
     </process>
     <!--  launch jobs -->
@@ -96,7 +97,6 @@
       </script>
       <depends>
         <after process="setup_processEimage"/>
-	<after process="checkpoint_PE"/>
       </depends>
       <createsSubtasks>
 	<subtask>processEimageFilter</subtask>
@@ -116,21 +116,12 @@
 
 
     <!-- Check points -->
-    <!-- processEimage -->
-    <process name="checkpoint_PE" site="${JOBSITE}">
-      <notation>Check point</notation>
-      <variables>
-	<var name="checkbefore">processEimage</var>
-      </variables>
-      <job batchOptions="${BATCH_OPTIONS}"
-	   executable="${SETUP_LOCATION}/checkpoint"/>
-    </process>
 
-    <!-- validateDrp -->
+    <!-- validateDrp check point (just an example)-->
     <process name="checkpoint_VD" site="${JOBSITE}">
       <notation>Check point</notation>
       <variables>
-	<var name="checkbefore">validateDrp</var>
+	<var name="checkpoint">validateDrp</var>
       </variables>
       <job batchOptions="${BATCH_OPTIONS}"
 	   executable="${SETUP_LOCATION}/checkpoint"/>
