@@ -4,7 +4,7 @@
           xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
 			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
   
-  <task name="DC2DM_NCTEST" type="LSST" version="0.28">
+  <task name="DC2DM_NCTEST" type="LSST" version="0.29">
     <notation>Task to run the DM stack on DC2 simulated images</notation>
     <variables>
       <!-- Job site and configuration-->
@@ -14,10 +14,12 @@
       <var name="MAXCPU">10000</var>
       <var name="MAXCPULONG">10000</var>
       <var name="IN2P3_BATCH_OPTIONS"> -l sps=1,os=cl7,xrootd=0 </var>
-      <var name="IN2P3_EXTRA_OPTIONS"> -q mc_huge -pe multicores 8 </var>
+      <var name="IN2P3_HUGE_OPTIONS"> -q huge </var>
+      <var name="IN2P3_MCHUGE_OPTIONS"> -q mc_huge -pe multicores 8 </var>
       <var name="NERSC_BATCH_OPTIONS"> -p MINIDRPHK | -L SCRATCH,projecta | -C haswell </var>
       <var name="BATCH_OPTIONS">${SITE=="NERSC" ? "${NERSC_BATCH_OPTIONS}" : "${IN2P3_BATCH_OPTIONS} "}</var>
-      <var name="EXTRA_OPTIONS">${SITE=="NERSC" ? " " : "${IN2P3_EXTRA_OPTIONS} "}</var>
+      <var name="EXTRA_OPTIONS_0">${SITE=="NERSC" ? " " : "${IN2P3_HUGE_OPTIONS} "}</var>
+      <var name="EXTRA_OPTIONS_1">${SITE=="NERSC" ? " " : "${IN2P3_MCHUGE_OPTIONS} "}</var>
       <!-- Base directory where script files will be placed -->
       <var name="PIPE_SUBDIR">ImageProcessingPipelines/workflows/srs</var>
       <var name="PIPE_SETUPS">${PIPE_SUBDIR}/pipe_setups</var>
@@ -58,7 +60,7 @@
     <process name="ingestData" site="${JOBSITE}">
       <notation>Ingest the input data serially</notation>
       <job maxCPU="${MAXCPU}" 
-           batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS}"
+           batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_1}"
 	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
       <depends>
         <after process="setup_ingest"/>
@@ -134,7 +136,7 @@
 	<variables>
 	  <var name="streamID">${format(pipeline.stream, "%01d")}</var>
 	</variables>
-	<job batchOptions="${BATCH_OPTIONS}"
+	<job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_0}"
 	     executable="${CUR_SCRIPT}"/>
       </process>                
     </task>
