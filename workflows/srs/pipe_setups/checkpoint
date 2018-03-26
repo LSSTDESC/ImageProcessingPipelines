@@ -1,3 +1,4 @@
-echo "Check points status taken from {$CHECKPOINTS}"
+source $LOCAL_CONFIG
+echo "Check points status taken from $CHECKPOINTS"
 echo "FAILING? Wainting for checkpoint $checkpoint to be validated"
 source $CHECKPOINTS
