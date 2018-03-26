@@ -1,2 +1,3 @@
-echo $checkbefore
-exit 1
+export CHECKPOINTS=${SETUP_LOCATION}/checkpoints.sh
+echo "FAILING? Wainting for checkpoint $checkpoint to be validated"
+source $CHECKPOINTS
