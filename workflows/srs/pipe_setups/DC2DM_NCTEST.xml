@@ -84,7 +84,6 @@
       <depends>
 	<after process="ingestData"/>
 	<after process="ingestRefCat"/>
-	<after process="checkpoint_PE"/>
       </depends>
     </process>
     <!--  launch jobs -->
