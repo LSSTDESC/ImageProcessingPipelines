@@ -4,7 +4,7 @@
           xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
 			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
   
-  <task name="DC2DM_NCTEST" type="LSST" version="0.24">
+  <task name="DC2DM_NCTEST" type="LSST" version="0.26">
     <notation>Task to run the DM stack on DC2 simulated images</notation>
     <variables>
       <!-- Job site and configuration-->
@@ -75,16 +75,6 @@
       </depends>
     </process>
 
-    <!-- check point -->
-    <process name="checkpoint" site="${JOBSITE}">
-      <notation>Check point </notation>
-      <job batchOptions="${BATCH_OPTIONS}"
-	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
-      <depends>
-        <before process="setup_processEimage"/>
-      </depends>
-    </process>
-
     <!-- processEimage -->
     <!--   setup -->
     <process name="setup_processEimage" site="${JOBSITE}">
@@ -106,6 +96,7 @@
       </script>
       <depends>
         <after process="setup_processEimage"/>
+	<after process="checkpoint_PE"/>
       </depends>
       <createsSubtasks>
 	<subtask>processEimageFilter</subtask>
@@ -119,8 +110,32 @@
 	   executable="${IN2P3_SETUP_LOCATION}/${BATCH_NAME}"/>
       <depends>
         <after process="processEimageFilter.runProcessEimageFilter"/>
+	<after process="checkpoint_VD"/>
       </depends>
     </process>
+
+
+    <!-- Check points -->
+    <!-- processEimage -->
+    <process name="checkpoint_PE" site="${JOBSITE}">
+      <notation>Check point</notation>
+      <variables>
+	<var name="checkbefore">processEimage</var>
+      </variables>
+      <job batchOptions="${BATCH_OPTIONS}"
+	   executable="${SETUP_LOCATION}/checkpoint"/>
+    </process>
+
+    <!-- validateDrp -->
+    <process name="checkpoint_VD" site="${JOBSITE}">
+      <notation>Check point</notation>
+      <variables>
+	<var name="checkbefore">validateDrp</var>
+      </variables>
+      <job batchOptions="${BATCH_OPTIONS}"
+	   executable="${SETUP_LOCATION}/checkpoint"/>
+    </process>
+
 
     <!--   Subtasks -->
     <!--   Subtask to run processEimage -->
@@ -133,6 +148,6 @@
 	     executable="${CUR_SCRIPT}"/>
       </process>                
     </task>
-    
+
   </task>
 </pipeline>

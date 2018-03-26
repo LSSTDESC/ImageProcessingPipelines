@@ -1,2 +1,2 @@
-echo $PIPELINE_PROCESS
+echo $checkbefore
 exit 1
