@@ -4,4 +4,4 @@
 # Make sure the output directory exists
 mkdir -p ${IN_DIR}
 # If the output directory does not contain a mapper file, create one
-cp ${DM_CONFIGS}/_mapper ${IN_DIR}/
+cp ${CONFIGS_LOCATION}/_mapper ${IN_DIR}/

@@ -4,7 +4,7 @@
           xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
 			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
   
-  <task name="DC2DM_NCTEST" type="LSST" version="0.32">
+  <task name="DC2DM_NCTEST" type="LSST" version="0.33">
     <notation>Task to run the DM stack on DC2 simulated images</notation>
     <variables>
       <!-- Job site and configuration-->
@@ -35,10 +35,13 @@
       <var name="ROOT_SOFTS">${SITE=="NERSC" ? NERSC_ROOT_SOFTS : IN2P3_ROOT_SOFTS}</var>
       <var name="IN2P3_SCRIPT_LOCATION">${IN2P3_ROOT_SOFTS}/${PIPE_SCRIPTS}</var>
       <var name="IN2P3_SETUP_LOCATION">${IN2P3_ROOT_SOFTS}/${PIPE_SETUPS}</var>
+      <var name="IN2P3_CONFIGS_LOCATION">${IN2P3_ROOT_SOFTS}/${DM_CONFIGS}</var>
       <var name="NERSC_SCRIPT_LOCATION">/global/homes/d/descdm/minidrp/pipe_scripts</var>
       <var name="NERSC_SETUP_LOCATION">/global/homes/d/descdm/minidrp/pipe_setups</var>
+      <var name="NERSC_CONFIGS_LOCATION">/global/homes/d/descdm/minidrp/dm_configs</var>
       <var name="SCRIPT_LOCATION">${SITE=="NERSC" ? NERSC_SCRIPT_LOCATION : IN2P3_SCRIPT_LOCATION}</var>
       <var name="SETUP_LOCATION">${SITE=="NERSC" ? NERSC_SETUP_LOCATION : IN2P3_SETUP_LOCATION}</var>
+      <var name="CONFIGS_LOCATION">${SITE=="NERSC" ? NERSC_CONFIGS_LOCATION : IN2P3_CONFIGS_LOCATION}</var>
       <!-- Log Files -->
       <var name="IN2P3_logRoot">/sps/lsst/users/descprod/Pipeline2/Logs</var>    
       <var name="NERSC_logRoot">/global/homes/d/descdm/minidrp/logs</var>    

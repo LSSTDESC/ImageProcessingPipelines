@@ -1,7 +1,7 @@
 mkdir -p ${WORK_DIR}/06-assembleCoadd
 cd ${WORK_DIR}/06-assembleCoadd
 ln -sfn ${WORK_DIR} pardir
-cp ${DM_CONFIGS}/assembleCoaddConfig.py .
+cp ${CONFIGS_LOCATION}/assembleCoaddConfig.py .
 cp pardir/05-jointcalCoadd/*.list pardir/05-jointcalCoadd/*.txt .
 run_assembleCoadd.py -c assembleCoaddConfig.py --fromslac -f ${FILTERS}
 for FILT in $(echo ${FILTERS} | tr "," "\n")
