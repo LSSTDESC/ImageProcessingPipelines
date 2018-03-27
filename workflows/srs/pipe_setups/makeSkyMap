@@ -4,7 +4,7 @@ cd ${WORK_DIR}/03-makeSkyMap
 ln -sfn ${WORK_DIR} pardir
 
 # A specific config file is needed for the rings Sky Map
-cp $DM_CONFIGS/makeSkyMapConfig.py .
+cp {$DM_CONFIGS}/makeSkyMapConfig.py .
 
 # Build the list of visits
 build_visit_lists.py -i pardir/input
