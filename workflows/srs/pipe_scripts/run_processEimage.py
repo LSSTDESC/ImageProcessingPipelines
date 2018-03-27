@@ -93,7 +93,7 @@ if __name__ == "__main__":
 
         # Loop over the visit sub lists and the raft list
         for i, visit in enumerate(visits):
-            for j, raft in rafts:
+            for j, raft in enumerate(rafts):
                 # Build the command line and other things
                 cmd = build_cmd(visit, raft, config, filt, opts.input, opts.output)
 

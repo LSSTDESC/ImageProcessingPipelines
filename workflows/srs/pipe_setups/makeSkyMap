@@ -2,7 +2,11 @@
 mkdir -p ${WORK_DIR}/03-makeSkyMap
 cd ${WORK_DIR}/03-makeSkyMap
 ln -sfn ${WORK_DIR} pardir
-cp $RTF/config/$DM_CONFIG/makeSkyMapConfig.py .
+# Config file for Rings Sky Map
+# cp $RTF/config/$DM_CONFIG/makeSkyMapConfig.py .
 
-build_visit_lists.py -i pardir/input -l pardir/02-*/log/\*/\*.log
-build_patch_lists2.py --output pardir/output -f ${FILTERS}
+build_visit_lists.py -i pardir/input
+# for a discrete sky map
+build_patch_lists.py --output pardir/output -f ${FILTERS}
+# for a rigs sky map
+# build_patch_lists2.py --output pardir/output -f ${FILTERS}
