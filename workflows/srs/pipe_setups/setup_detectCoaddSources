@@ -1,0 +1,16 @@
+mkdir -p ${WORK_DIR}/07-detectCoaddSources
+cd ${WORK_DIR}/07-detectCoaddSources
+ln -sfn ${WORK_DIR} pardir
+cp $RTF/config/$DM_CONFIG/detectCoaddConfig.py .
+cp pardir/03-makeSkyMap/patches* .
+run_detectCoaddSources.py -c detectCoaddConfig.py --fromslac -f ${FILTERS}
+
+function join { local IFS="$1"; shift; echo "$*"; }
+filts=$(join , `ls scripts/`)
+pipelineSet FILTERS ${filts}
+
+pipelineSet WORK_DIR ${WORK_DIR}
+pipelineSet DM_RELEASE ${DM_RELEASE}
+pipelineSet DM_SETUP ${DM_SETUP}
+pipelineSet DM_CONFIG ${DM_CONFIG}
+pipelineSet OUTPUT_DATA_DIR ${OUTPUT_DATA_DIR}

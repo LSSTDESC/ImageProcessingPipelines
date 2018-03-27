@@ -1,0 +1,16 @@
+mkdir -p ${WORK_DIR}/11-forcedPhotCcd
+cd ${WORK_DIR}/11-forcedPhotCcd
+ln -sfn ${WORK_DIR} pardir
+cp $RTF/config/$DM_CONFIG/forcedPhotCcdConfig.py .
+cp pardir/02-*/*.list .
+run_forcedPhotCcd.py -c forcedPhotCcdConfig.py --fromslac -f ${FILTERS}
+for FILT in $(echo ${FILTERS} | tr "," "\n")
+do
+	pipelineSet n${FILT}scripts `ls scripts/${FILT}/*.sh 2>/dev/null | wc -l`
+done
+pipelineSet WORK_DIR ${WORK_DIR}
+pipelineSet FILTERS ${FILTERS}
+pipelineSet DM_RELEASE ${DM_RELEASE}
+pipelineSet DM_SETUP ${DM_SETUP}
+pipelineSet DM_CONFIG ${DM_CONFIG}
+pipelineSet OUTPUT_DATA_DIR ${OUTPUT_DATA_DIR}
