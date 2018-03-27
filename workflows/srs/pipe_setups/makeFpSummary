@@ -1,4 +1,0 @@
-# Move to the working directory
-cd ${WORK_DIR}
-# Run the script
-
