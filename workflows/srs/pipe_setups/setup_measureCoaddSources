@@ -1,7 +1,7 @@
 mkdir -p ${WORK_DIR}/09-measureCoaddSources
 cd ${WORK_DIR}/09-measureCoaddSources
 ln -sfn ${WORK_DIR} pardir
-cp $RTF/config/$DM_CONFIG/measureCoaddSourcesConfig.py .
+cp ${DM_CONFIGS}/measureCoaddSourcesConfig.py .
 cp pardir/03-makeSkyMap/patches* .
 run_measureCoaddSources.py -c measureCoaddSourcesConfig.py --fromslac -f ${FILTERS}
 for FILT in $(echo ${FILTERS} | tr "," "\n")

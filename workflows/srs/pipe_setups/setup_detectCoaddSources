@@ -1,7 +1,7 @@
 mkdir -p ${WORK_DIR}/07-detectCoaddSources
 cd ${WORK_DIR}/07-detectCoaddSources
 ln -sfn ${WORK_DIR} pardir
-cp $RTF/config/$DM_CONFIG/detectCoaddConfig.py .
+cp ${DM_CONFIGS}/detectCoaddConfig.py .
 cp pardir/03-makeSkyMap/patches* .
 run_detectCoaddSources.py -c detectCoaddConfig.py --fromslac -f ${FILTERS}
 

@@ -1,8 +1,8 @@
 mkdir -p ${WORK_DIR}/04-jointcal
 cd ${WORK_DIR}/04-jointcal
 ln -sfn ${WORK_DIR} pardir
-cp $RTF/config/$DM_CONFIG/jointcalConfig.py .
-build_visit_lists.py -i pardir/input -l pardir/02-*/log/*/*.log
+cp ${DM_CONFIGS}/jointcalConfig.py .
+build_visit_lists.py -i pardir/input
 cp pardir/03-makeSkyMap/patches* .
 run_jointcal.py --fromslac -f ${FILTERS}
 

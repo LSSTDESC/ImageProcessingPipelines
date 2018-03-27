@@ -1,7 +1,7 @@
 mkdir -p ${WORK_DIR}/08-mergeCoaddDetections
 cd ${WORK_DIR}/08-mergeCoaddDetections
 ln -sfn ${WORK_DIR} pardir
-cp $RTF/config/$DM_CONFIG/mergeCoaddDetectionsConfig.py .
+cp ${DM_CONFIGS}/mergeCoaddDetectionsConfig.py .
 cp pardir/03-makeSkyMap/patches_all.txt .
 run_mergeCoaddDetections.py -c mergeCoaddDetectionsConfig.py --fromslac -f ${FILTERS}
 pipelineSet nscripts `ls scripts/*.sh 2>/dev/null | wc -l`
