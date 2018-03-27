@@ -23,7 +23,7 @@ def build_cmd(visit, raft, config, filt, input='pardir/input', output='pardir/ou
         os.makedirs("scripts/" + filt)
 
     # Create and save a sub list of visit
-    filename = "scripts/" + filt + "/" + visit + "_R%s" % raft.replace(',', '') + ".list"
+    filename = "scripts/" + filt + "/" + visit + "_R" + raft.replace(',', '') + ".list"
     N.savetxt(filename, ["--id visit=%s raft='%s'" % (visit, raft)], fmt="%s")
 
     # Create the command line
@@ -95,7 +95,7 @@ if __name__ == "__main__":
         for i, visit in enumerate(visits):
             for j, raft in enumerate(rafts):
                 # Build the command line and other things
-                cmd = build_cmd(visit, raft, config, filt, opts.input, opts.output)
+                cmd = build_cmd(visit[0], raft, config, filt, opts.input, opts.output)
 
                 # Only submit the job if asked
                 prefix = "visit_%03d_script" % (i + 1)
