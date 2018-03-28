@@ -98,17 +98,19 @@ if __name__ == "__main__":
         rafts = [raft for raft in rafts if raft not in ['0,0', '0,4', '4,0', '4,4']]
 
         # Loop over the visit sub lists and the raft list
+        numscript = 1
         for i, visit in enumerate(visits):
             for j, raft in enumerate(rafts):
                 # Build the command line and other things
                 cmd = build_cmd(visit[0], raft, config, filt, opts.input, opts.output)
 
                 # Only submit the job if asked
-                prefix = "visit_%03d_raft_%d_script" % ((i + 1), j)
+                prefix = "visit_%03d_script" % numscript
                 LR.submit(cmd, prefix, filt, autosubmit=opts.autosubmit,
                           ct=opts.ct, vmem=opts.vmem, queue=opts.queue,
                           system=opts.system, otheroptions=opts.otheroptions,
                           from_slac=opts.fromslac, from_nersc=opts.fromnersc)
+                numscript += 1
 
     if not opts.autosubmit:
         print("\nINFO: Use option --autosubmit to submit the jobs")
