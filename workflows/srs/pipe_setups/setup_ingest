@@ -1,7 +1,12 @@
 #!/bin/bash
 
-# Ready to ingest
-# Make sure the output directory exists
-mkdir -p ${IN_DIR}
-# If the output directory does not contain a mapper file, create one
-cp ${DM_CONFIGS}/_mapper ${IN_DIR}/
+if [[ -z "${INGESTDATA}" ]];
+then
+  # Ready to ingest
+  # Make sure the output directory exists
+  mkdir -p ${IN_DIR}
+  # If the output directory does not contain a mapper file, create one
+  cp ${DM_CONFIGS}/_mapper ${IN_DIR}/
+else
+  ln -sfn ${INGESTDATA} ${IN_DIR}
+fi

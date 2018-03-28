@@ -34,7 +34,8 @@ def makeFileName(patchList) :
     return name.replace(", ", "-")
 
 def submit(cmd, prefix, filt=None, autosubmit=False, ct=60000, vmem='4G',
-           system=None, queue=None, otheroptions=None, from_slac=False):
+           system=None, queue=None, otheroptions=None, from_slac=False,
+           from_nersc=False):
     """
     cmd: command line to run
     prefix: used for the .log and .sh file names
@@ -66,16 +67,7 @@ def submit(cmd, prefix, filt=None, autosubmit=False, ct=60000, vmem='4G',
     qsub += " <<EOF"
     scriptname = script_path + "/" + prefix + ".sh"
     script = open(scriptname, "w")
-    if not from_slac:
-        script.write(qsub + "\n")
-        script.write("#!/usr/local/bin/bash\n")
-        if "singleFrameDriver.py" in cmd:
-            script.write("export OMP_NUM_THREADS=1\n")
-        script.write(" cd " + cwd + "\n")
-        script.write(" source pardir/setup.sh\n")
-        script.write(" " + cmd + "\n")
-        script.write("EOF" + "\n")
-    else:
+    if from_slac:
         script.write("#!/usr/local/bin/bash\n")
         script.write("#$ -P P_lsst" + "\n")
         for opt in options.split(","):
@@ -91,10 +83,25 @@ def submit(cmd, prefix, filt=None, autosubmit=False, ct=60000, vmem='4G',
         script.write("source ${SETUP_LOCATION}/DMsetup.sh\n")
         script.write("cd " + cwd + "\n")
         script.write(cmd + "\n")
+    elif from_nersc:
+        script.write("#!/bin/bash\n")
+        script.write("source ${SETUP_LOCATION}/DMsetup.sh\n")
+        script.write("cd " + cwd + "\n")
+        script.write(cmd + "\n")
+    else:
+        script.write(qsub + "\n")
+        script.write("#!/usr/local/bin/bash\n")
+        if "singleFrameDriver.py" in cmd:
+            script.write("export OMP_NUM_THREADS=1\n")
+        script.write(" cd " + cwd + "\n")
+        script.write(" source pardir/setup.sh\n")
+        script.write(" " + cmd + "\n")
+        script.write("EOF" + "\n")
+
     script.close()
     os.system("chmod +x " + scriptname)
     print("SCRIPT:", cwd + "/" + scriptname)
-    if autosubmit and not from_slac:
+    if autosubmit and not from_slac and not from_nersc:
         os.system("./"+scriptname)
         time.sleep(0.2)
 
@@ -159,8 +166,14 @@ def standard_options(usage=None, description=None):
     parser.add_option("--otheroptions", type="string", help="Other options [%default]")
     parser.add_option("--multicore", action='store_true', default=False,
                       help="Multicore jobs (mostly for processCcd)")
+    parser.add_option("--doraise", action='store_true', default=False,
+                      help="doraise")
+    parser.add_option("--time", action='store_true', default=False,
+                      help="time the commands executed")
     parser.add_option("--fromslac", action='store_true', default=False,
                       help="Run job from slac workflow interface")
+    parser.add_option("--fromnersc", action='store_true', default=False,
+                      help="Run job from slac workflow interface at NERSC")
     opts, args = parser.parse_args()
 
     if opts.filters is None:

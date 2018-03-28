@@ -23,7 +23,7 @@ def build_cmd(visit, raft, config, filt, input='pardir/input', output='pardir/ou
         os.makedirs("scripts/" + filt)
 
     # Create and save a sub list of visit
-    filename = "scripts/" + filt + "/" + visit + "_R%s" % raft.replace(',', '') + ".list"
+    filename = "scripts/" + filt + "/" + visit + "_R" + raft.replace(',', '') + ".list"
     N.savetxt(filename, ["--id visit=%s raft='%s'" % (visit, raft)], fmt="%s")
 
     # Create the command line
@@ -33,7 +33,12 @@ def build_cmd(visit, raft, config, filt, input='pardir/input', output='pardir/ou
         cmd += " --configfile " + config
     if opts.multicore:
         cmd += " -j 8 --timeout 999999999"
+    if opts.doraise:
+        cmd += " --doraise"
     cmd += "\n"
+    if opts.time:
+        cmd += "time "
+        cmd = "time " + cmd
     cmd += "makeFpSummary.py %s --output %s @" % (input, output) + \
            filename
     print("\nCMD: ", cmd)
@@ -82,6 +87,7 @@ if __name__ == "__main__":
         visits = LR.organize_items(visits, njobs)
 
         # specific options for processEimage
+        # may not want to set queue long at NERSC
         opts.queue = "long"
         if opts.multicore:
             opts.queue = "mc_huge"
@@ -95,14 +101,14 @@ if __name__ == "__main__":
         for i, visit in enumerate(visits):
             for j, raft in enumerate(rafts):
                 # Build the command line and other things
-                cmd = build_cmd(visit, raft, config, filt, opts.input, opts.output)
+                cmd = build_cmd(visit[0], raft, config, filt, opts.input, opts.output)
 
                 # Only submit the job if asked
-                prefix = "visit_%03d_script" % (i + 1)
+                prefix = "visit_%03d_raft_%d_script" % ((i + 1), j)
                 LR.submit(cmd, prefix, filt, autosubmit=opts.autosubmit,
                           ct=opts.ct, vmem=opts.vmem, queue=opts.queue,
                           system=opts.system, otheroptions=opts.otheroptions,
-                          from_slac=opts.fromslac)
+                          from_slac=opts.fromslac, from_nersc=opts.fromnersc)
 
     if not opts.autosubmit:
         print("\nINFO: Use option --autosubmit to submit the jobs")

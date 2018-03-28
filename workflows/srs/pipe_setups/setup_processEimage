@@ -3,7 +3,14 @@ cd ${WORK_DIR}/02-processEimage
 ln -sfn ${WORK_DIR} pardir
 createVisitLists.py ${WORK_DIR}/input
 processEimage.py pardir/input --output pardir/output
-run_processEimage.py --fromslac -f ${FILTERS}
+
+if [[ $SITE == "LSST-IN2P3" ]]
+then
+  run_processEimage.py --fromslac -f ${FILTERS}
+else
+  run_processEimage.py --fromnersc --doraise --time -f ${FILTERS}
+fi
+
 for FILT in $(echo ${FILTERS} | tr "," "\n")
 do
 	pipelineSet n${FILT}scripts `ls scripts/${FILT}/*.sh 2>/dev/null | wc -l`
