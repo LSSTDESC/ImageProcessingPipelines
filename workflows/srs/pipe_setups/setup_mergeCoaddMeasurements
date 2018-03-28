@@ -1,7 +1,7 @@
 mkdir -p ${WORK_DIR}/10-mergeCoaddMeasurements
 cd ${WORK_DIR}/10-mergeCoaddMeasurements
 ln -sfn ${WORK_DIR} pardir
-cp ${DM_CONFIGS}/mergeCoaddMeasurementsConfig.py .
+cp ${CONFIGS_LOCATION}/mergeCoaddMeasurementsConfig.py .
 cp pardir/03-makeSkyMap/patches_all.txt .
 run_mergeCoaddMeasurements.py -c mergeCoaddMeasurementsConfig.py --fromslac -f ${FILTERS}
 pipelineSet nscripts `ls scripts/*.sh 2>/dev/null | wc -l`

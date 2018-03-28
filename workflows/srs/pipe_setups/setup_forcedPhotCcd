@@ -1,7 +1,7 @@
 mkdir -p ${WORK_DIR}/11-forcedPhotCcd
 cd ${WORK_DIR}/11-forcedPhotCcd
 ln -sfn ${WORK_DIR} pardir
-cp ${DM_CONFIGS}/forcedPhotCcdConfig.py .
+cp ${CONFIGS_LOCATION}/forcedPhotCcdConfig.py .
 cp pardir/02-*/*.list .
 run_forcedPhotCcd.py -c forcedPhotCcdConfig.py --fromslac -f ${FILTERS}
 for FILT in $(echo ${FILTERS} | tr "," "\n")
