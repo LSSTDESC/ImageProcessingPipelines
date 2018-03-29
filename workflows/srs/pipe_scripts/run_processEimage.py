@@ -118,7 +118,7 @@ if __name__ == "__main__":
                               from_slac=opts.fromslac, from_nersc=opts.fromnersc)
                     numscript += 1
             else:
-                cmd = build_cmd(visit[0], config, filt, opts.input, opts.output)
+                cmd = build_cmd(visit[0], config, filt, input=opts.input, output=opts.output)
                     
                 # Only submit the job if asked
                 prefix = "visit_%03d_script" % numscript
