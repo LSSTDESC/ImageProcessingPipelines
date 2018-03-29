@@ -31,8 +31,11 @@ def build_cmd(visit, config, filt, raft=None, input='pardir/input', output='pard
         N.savetxt(filename, ["--id visit=%s" % visit], fmt="%s")
 
     # Create the command line
-    cmd = "processEimage.py %s --output %s @" % (input, output) + \
-          filename
+    cmd = ""    
+    if opts.multicore:
+        cmd += "export OMP_NUM_THREADS=1\n"
+    cmd += "processEimage.py %s --output %s @" % (input, output) + \
+           filename
     if config is not None:
         cmd += " --configfile " + config
     if opts.multicore:
