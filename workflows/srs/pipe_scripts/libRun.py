@@ -172,6 +172,8 @@ def standard_options(usage=None, description=None):
                       help="time the commands executed")
     parser.add_option("--fromslac", action='store_true', default=False,
                       help="Run job from slac workflow interface")
+    parser.add_option("--perraft", action='store_true', default=False,
+                      help="One raft per job, instead of one entire visit")
     parser.add_option("--fromnersc", action='store_true', default=False,
                       help="Run job from slac workflow interface at NERSC")
     opts, args = parser.parse_args()

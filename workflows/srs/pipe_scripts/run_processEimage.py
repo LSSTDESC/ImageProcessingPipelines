@@ -17,14 +17,18 @@ __author__ = 'Nicolas Chotard <nchotard@in2p3.fr>'
 __version__ = '$Revision: 1.0 $'
 
 
-def build_cmd(visit, raft, config, filt, input='pardir/input', output='pardir/output'):
+def build_cmd(visit, config, filt, raft=None, input='pardir/input', output='pardir/output'):
 
     if not os.path.isdir("scripts/" + filt):
         os.makedirs("scripts/" + filt)
 
     # Create and save a sub list of visit
-    filename = "scripts/" + filt + "/" + visit + "_R" + raft.replace(',', '') + ".list"
-    N.savetxt(filename, ["--id visit=%s raft='%s'" % (visit, raft)], fmt="%s")
+    if raft is not None:    
+        filename = "scripts/" + filt + "/" + visit + "_R" + raft.replace(',', '') + ".list"
+        N.savetxt(filename, ["--id visit=%s raft='%s'" % (visit, raft)], fmt="%s")
+    else:
+        filename = "scripts/" + filt + "/" + visit + ".list"
+        N.savetxt(filename, ["--id visit=%s" % visit], fmt="%s")
 
     # Create the command line
     cmd = "processEimage.py %s --output %s @" % (input, output) + \
@@ -100,17 +104,29 @@ if __name__ == "__main__":
         # Loop over the visit sub lists and the raft list
         numscript = 1
         for i, visit in enumerate(visits):
-            for j, raft in enumerate(rafts):
-                # Build the command line and other things
-                cmd = build_cmd(visit[0], raft, config, filt, opts.input, opts.output)
-
+            if opts.perraft:
+                for j, raft in enumerate(rafts):
+                    # Build the command line and other things
+                    cmd = build_cmd(visit[0], config, filt, raft=raft, opts.input, opts.output)
+                    
+                    # Only submit the job if asked
+                    prefix = "visit_%03d_script" % numscript
+                    LR.submit(cmd, prefix, filt, autosubmit=opts.autosubmit,
+                              ct=opts.ct, vmem=opts.vmem, queue=opts.queue,
+                              system=opts.system, otheroptions=opts.otheroptions,
+                              from_slac=opts.fromslac, from_nersc=opts.fromnersc)
+                    numscript += 1
+            else:
+                cmd = build_cmd(visit[0], config, filt, opts.input, opts.output)
+                    
                 # Only submit the job if asked
                 prefix = "visit_%03d_script" % numscript
                 LR.submit(cmd, prefix, filt, autosubmit=opts.autosubmit,
                           ct=opts.ct, vmem=opts.vmem, queue=opts.queue,
                           system=opts.system, otheroptions=opts.otheroptions,
                           from_slac=opts.fromslac, from_nersc=opts.fromnersc)
-                numscript += 1
+                numscript += 1    
+                    
 
     if not opts.autosubmit:
         print("\nINFO: Use option --autosubmit to submit the jobs")

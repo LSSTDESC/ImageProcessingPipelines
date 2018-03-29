@@ -8,7 +8,7 @@ if [[ $SITE == "LSST-IN2P3" ]]
 then
   run_processEimage.py --fromslac -f ${FILTERS}
 else
-  run_processEimage.py --fromnersc --doraise --time -f ${FILTERS}
+  run_processEimage.py --fromnersc --doraise --time -f ${FILTERS} --perraft
 fi
 
 for FILT in $(echo ${FILTERS} | tr "," "\n")
