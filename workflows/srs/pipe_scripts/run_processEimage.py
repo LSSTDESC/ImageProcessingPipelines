@@ -107,7 +107,8 @@ if __name__ == "__main__":
             if opts.perraft:
                 for j, raft in enumerate(rafts):
                     # Build the command line and other things
-                    cmd = build_cmd(visit[0], config, filt, raft=raft, opts.input, opts.output)
+                    cmd = build_cmd(visit[0], config, filt, raft=raft,
+                                    input=opts.input, output=opts.output)
                     
                     # Only submit the job if asked
                     prefix = "visit_%03d_script" % numscript
