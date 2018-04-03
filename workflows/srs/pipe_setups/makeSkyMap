@@ -7,7 +7,7 @@ ln -sfn ${WORK_DIR} pardir
 cp ${CONFIGS_LOCATION}/makeSkyMapConfig.py .
 
 # Build the list of visits
-build_visit_lists.py -i pardir/input
+createVisitLists.py ${WORK_DIR}/input
 
 # Build the list of tracts/patches for the rings sky map
-build_patch_lists2.py --output pardir/output -f ${FILTERS}
+createPatchLists.py --output pardir/output -f ${FILTERS}
