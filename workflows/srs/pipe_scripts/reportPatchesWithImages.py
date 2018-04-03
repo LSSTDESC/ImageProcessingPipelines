@@ -28,10 +28,10 @@ def organize_by_visit(dataids, visits=None):
     return dataids_visit
 
 
-def get_visit_corners(butler, dataids, ccds=None, getccds=False):
+def get_visit_corners(butler, dataids, ccds=None, getccds=False, ccdkey='ccd'):
     ras, decs, accds = [], [], []
     for dataid in dataids:
-        if ccds is not None and dataid['ccd'] not in ccds:
+        if ccds is not None and dataid[ccdkey] not in ccds:
             continue
         calexp = butler.get('calexp', dataId=dataid)
         coords = [calexp.getWcs().pixelToSky(point)
@@ -60,7 +60,7 @@ def get_tps(skymap, coords, filt=None):
     return sorted(list(set(tps)))
 
 
-def reportPatchesWithImages(butler, visits=None):
+def reportPatchesWithImages(butler, visits=None, ccdkey='ccd'):
 
     # create a butler object associated to the output directory
     butler = dafPersist.Butler(butler)
@@ -80,7 +80,7 @@ def reportPatchesWithImages(butler, visits=None):
 
     # Get the ccds that will be used to compute the visit corner coordinates
     # this depend on the instrument, so cannot be hardcoded
-    ccds = get_visit_corners(butler, vdataids[list(vdataids)[0]], getccds=True)
+    ccds = get_visit_corners(butler, vdataids[list(vdataids)[0]], getccds=True, ccdkey=ccdkey)
 
     # Get the corners coordinates for all visits
     allcoords = [get_visit_corners(butler, vdataids[vdataid], ccds=ccds) for vdataid in vdataids]
@@ -113,6 +113,8 @@ if __name__ == "__main__":
     parser = OptionParser(description=description, usage=usage)
     parser.add_option("-v", "--visits", type="string",
                       help="Optional list of visits (file or coma separated list)")
+    parser.add_option("--ccdkey", type="string",
+                      help="CCD key", default='sensor')
     opts, args = parser.parse_args()
 
     # Is there a list of visit given by the use?
@@ -127,7 +129,7 @@ if __name__ == "__main__":
             opts.visits = opts.visits.split(',')
 
     # Get the full list of tract/patch in which are all visits
-    tps = reportPatchesWithImages(args[0], visits=opts.visits)
+    tps = reportPatchesWithImages(args[0], visits=opts.visits, ccdkey=opts.ccdkey)
 
     # Print the result
     for tract in tps:
