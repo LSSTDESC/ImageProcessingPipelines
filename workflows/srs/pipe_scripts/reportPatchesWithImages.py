@@ -38,7 +38,7 @@ def get_visit_corners(butler, dataids, ccds=None, getccds=False, ccdkey='ccd'):
                   for point in geom.Box2D(calexp.getBBox()).getCorners()]
         ras.extend([coord.getRa().asDegrees() for coord in coords])
         decs.extend([coord.getDec().asDegrees() for coord in coords])
-        accds.extend([dataid['ccd']] * 4)
+        accds.extend([dataid[ccdkey]] * 4)
     tocoords = lambda ra, dec: Fk5Coord(geom.Point2D(ra, dec), geom.degrees)
     if not getccds:
         return [tocoords(min(ras), min(decs)), tocoords(min(ras), max(decs)),
