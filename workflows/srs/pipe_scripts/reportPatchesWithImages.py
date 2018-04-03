@@ -83,7 +83,10 @@ def reportPatchesWithImages(butler, visits=None, ccdkey='ccd'):
     ccds = get_visit_corners(butler, vdataids[list(vdataids)[0]], getccds=True, ccdkey=ccdkey)
 
     # Get the corners coordinates for all visits
-    allcoords = [get_visit_corners(butler, vdataids[vdataid], ccds=ccds) for vdataid in vdataids]
+    allcoords = []
+    for ii, vdataid in enumerate(vdataids):
+        print("Running on visit %03d / %i" % (ii + 1, len(vdataids)))
+        allcoords.append(get_visit_corners(butler, vdataids[vdataid], ccds=ccds))
 
     # Get the tract/patch list in which the visits are
     alltps = []
