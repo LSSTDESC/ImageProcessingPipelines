@@ -28,7 +28,7 @@ def organize_by_visit(dataids, visits=None):
     return dataids_visit
 
 
-def get_visit_corners(butler, dataids, ccds=None, getccds=False, ccdkey='ccd'):
+def get_visit_corners(butler, dataids, ccds=None, getccds=False, ccdkey='sensor'):
     ras, decs, accds = [], [], []
     for dataid in dataids:
         if ccds is not None and dataid[ccdkey] not in ccds:
@@ -60,7 +60,7 @@ def get_tps(skymap, coords, filt=None):
     return sorted(list(set(tps)))
 
 
-def reportPatchesWithImages(butler, visits=None, ccdkey='ccd'):
+def reportPatchesWithImages(butler, visits=None, ccdkey='sensor'):
 
     # create a butler object associated to the output directory
     butler = dafPersist.Butler(butler)
@@ -86,7 +86,7 @@ def reportPatchesWithImages(butler, visits=None, ccdkey='ccd'):
     allcoords = []
     for ii, vdataid in enumerate(vdataids):
         print("Running on visit %03d / %i" % (ii + 1, len(vdataids)))
-        allcoords.append(get_visit_corners(butler, vdataids[vdataid], ccds=ccds))
+        allcoords.append(get_visit_corners(butler, vdataids[vdataid], ccds=ccds, ccdkey=ccdkey))
 
     # Get the tract/patch list in which the visits are
     alltps = []
