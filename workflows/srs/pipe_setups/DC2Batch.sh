@@ -35,6 +35,7 @@ export SCRIPT=${SETUP_LOCATION}/${PIPELINE_PROCESS:-$1}
 
 if [ $SITE == "NERSC" ]
 then
+  export OMP_NUM_THREADS=1
   source ${SETUP_LOCATION}/DMsetup.sh; set -xe; export SHELLOPTS; source ${SCRIPT}
 else # IN2P3
   # set -xe; export SHELLOPTS;
