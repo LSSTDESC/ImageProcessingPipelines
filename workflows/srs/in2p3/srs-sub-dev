@@ -1,0 +1,73 @@
+#!/bin/bash
+# make sure that glcp works
+#JCT not ready for xrd export PATH=~glastpro/glast/xrd-tools/bin:$PATH
+export JARS=/home/descprod/Pipeline2/bsub/jars
+
+export CLASSPATH=$JARS/org-srs-jobcontrol-2.1.0-jar-with-dependencies.jar
+
+# that is now for the new SRS job Control deamon
+#setenv CLASSPATH /glast_data/Pipeline2/bsub/jars/org-srs-jobcontrol-2.0.2-SNAPSHOT.jar
+#setenv CLASSPATH /glast_data/Pipeline2/bsub/jars/org-srs-jobcontrol-2.0.3-SNAPSHOT.jar # new S.Z. 2012-10-05
+#setenv CLASSPATH /glast_data/Pipeline2/bsub/jars/org-srs-jobcontrol-2.0.4-SNAPSHOT.jar # new S.Z. 2012-10-23
+#setenv CLASSPATH $JARS/org-srs-jobcontrol-2.1.0-SNAPSHOT.jar:$JARS/contrib/json-20090211.jar # 
+# SZ: new version fixing a number of reporting issues
+#setenv CLASSPATH $JARS/org-srs-jobcontrol-2.1.0-SNAPSHOT-fix.jar:$JARS/contrib/json-20090211.jar:$JARS/contrib/rmiio-2.0.3.jar # 
+#setenv CLASSPATH /glast_data/Pipeline2/bsub/jars/org-srs-jobcontrol-2.1.0-SNAPSHOT-fix.jar:/glast_data/Pipeline2/bsub/jars/json-20090211.jar 
+
+echo "CLASSPATH= $CLASSPATH"
+
+# Modified by SV in December 2015
+
+ulimit -S -n 10000
+#ulimit -n 10000
+
+mkdir -p /tmp/work
+/usr/bin/rmiregistry & 
+echo "GridEngine Setup"
+
+# Modified by SV on 07/16/14
+
+#source /usr/local/shared/bin/ge_env.csh
+
+source /usr/local/shared/bin/ge_env.sh
+
+echo $SGE_ROOT
+     # -Dcom.sun.management.jmxremote.port=1097 \ # needed by Brian
+     # -Dcom.sun.management.jmxremote.authenticate=false \
+     # -Dcom.sun.management.jmxremote.ssl=false \
+/usr/bin/java -verbose -Djava.util.logging.config.file=/home/descprod/Pipeline2/bsub/logging.grid.properties \
+     -Dorg.srs.jobcontrol.ge.group="P_lsst_desc" \
+     org.srs.jobcontrol.gridEngine.gridEngineJobControlService &
+
+#JCT not yet echo "DIRAC Setup"
+# experimental features SZ 2012-01-18
+# now the sendmail within the code needs to be 
+# one way: define P2_SENDMAIL here
+# alternative, do that in the taskConfig.xml for each task
+#setenv P2_SENDMAIL /glast_data/Pipeline2/dirac-pipeline/dirac-sendmail
+
+#source /afs/in2p3.fr/throng/lhcb/dirac_env.csh
+
+# Modified by SV on 07/16/14
+
+#source /opt/dirac/cshrc
+
+# Commented out by SV
+
+#JCT not yet source /dirac/bashrc 
+ 
+# this needs to be adjusted later on
+# will create a long lifetime for the proxy
+#dirac-proxy-init -UP -P glast_user --valid=1000:00
+# add the dirac-pipeline directory to the path
+# OLD - not needed anymore.
+#setenv PATH /glast_data/Pipeline2/dirac-pipeline:$PATH
+# start daemon
+# Commented out by SV
+
+#JCT not yet
+# /usr/bin/java -verbose -Djava.util.logging.config.file=/home/descprod/Pipeline2/bsub/logging.DIRAC.properties \
+#     -Dorg.srs.jobcontrol.DIRACsubmitCommand="dirac-glast-pipeline-submit" \
+#     -Dorg.srs.jobcontrol.DIRACstatusCommand="dirac-glast-pipeline-status -p user=zimmer -p xml=True"\
+#     org.srs.jobcontrol.DIRAC.DIRACJobControlService &
+# echo $PATH
