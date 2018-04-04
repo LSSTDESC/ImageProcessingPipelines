@@ -2,44 +2,17 @@
 
 from lsst.meas.algorithms import LoadIndexedReferenceObjectsTask
 
-# Select external catalogs for Astrometry
-config.astrometryRefObjLoader.retarget(LoadIndexedReferenceObjectsTask)
-config.astrometryRefObjLoader.ref_dataset_name='pan-starrs'
-config.astrometryRefObjLoader.filterMap = {
-    'u':'g',
-    'g':'g',
-    'r':'r',
-    'r2':'r',
-    'i':'i',
-    'i2': 'i',
-    'i3': 'i',
-    'z':'z',
-    'y':'y',
-}
+import os.path
+from lsst.utils import getPackageDir
 
-# Type of model to fit to astrometry
-# Allowed values:
-# 	simplePoly	One polynomial per ccd
-# 	constrainedPoly	One polynomial per ccd, and one polynomial per visit
-# 	None	Field is optional
-# 
-config.astrometryModel='simplePoly'  # for the record (default value)
+# Astrometry (copied from lsst:obs_subaru/config/processCcd.py)
+for refObjLoader in (config.charImage.refObjLoader,
+                     config.calibrate.astromRefObjLoader,
+                     config.calibrate.photoRefObjLoader):
+    refObjLoader.retarget(LoadIndexedReferenceObjectsTask)
+    refObjLoader.load(os.path.join(getPackageDir('obs_lsstSim'), 'config', 'filterMap.py'))
 
-# Select external catalogs for Photometry
-config.doPhotometry = False  # True  # comment out to run the photometric calibration
-config.photometryRefObjLoader.retarget(LoadIndexedReferenceObjectsTask)
-config.photometryRefObjLoader.ref_dataset_name='sdss'
-config.photometryRefObjLoader.filterMap = {
-    'u': 'U',
-    'g': 'G',
-    'r': 'R',
-    'r2': 'R',
-    'i': 'I',
-    'i2': 'I',
-    'i3': 'I',
-    'z': 'Z',
-    'y': 'Z',
-}
+config.doPhotometry = False   # comment out to run the photometric calibration
 
 # These are the default values
 
