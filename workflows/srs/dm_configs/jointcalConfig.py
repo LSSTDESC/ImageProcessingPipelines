@@ -6,9 +6,8 @@ import os.path
 from lsst.utils import getPackageDir
 
 # Astrometry (copied from lsst:obs_subaru/config/processCcd.py)
-for refObjLoader in (config.charImage.refObjLoader,
-                     config.calibrate.astromRefObjLoader,
-                     config.calibrate.photoRefObjLoader):
+for refObjLoader in (config.astrometryRefObjLoader,
+                     config.photometryRefObjLoader):
     refObjLoader.retarget(LoadIndexedReferenceObjectsTask)
     refObjLoader.load(os.path.join(getPackageDir('obs_lsstSim'), 'config', 'filterMap.py'))
 
