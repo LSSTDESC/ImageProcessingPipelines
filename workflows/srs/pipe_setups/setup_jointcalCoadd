@@ -2,7 +2,7 @@ mkdir -p ${WORK_DIR}/05-jointcalCoadd
 cd ${WORK_DIR}/05-jointcalCoadd
 ln -sfn ${WORK_DIR} pardir
 cp ${CONFIGS_LOCATION}/jointcalCoaddConfig.py .
-build_visit_lists.py -i pardir/input -l pardir/02-*/log/*/*.log --idopt selectId
+createVisitLists.py ${WORK_DIR}/input --idopt selectId
 cp pardir/03-makeSkyMap/patches* .
 run_jointcalCoadd.py -c jointcalCoaddConfig.py --fromslac -f ${FILTERS}
 for FILT in $(echo ${FILTERS} | tr "," "\n")
