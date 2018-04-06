@@ -43,9 +43,8 @@ if __name__ == "__main__":
     parser.add_argument('input', help="Path to the input butler folder.")
     parser.add_argument('--increment', action='store_true',
                         help="Only keep visits not yet processed.")
-    parser.add_argument("--idopt", help="id option to put in fron of the visit "
-                        "name. Could be 'selectId' or 'id' [%default]",
-                        default='id', type='string')
+    parser.add_argument("--idopt", default='id', help="id option to put in front "
+                        "of the visit name. Could be 'selectId' or 'id'")
     args = parser.parse_args()
 
     if not os.path.exists(args.input):
