@@ -9,7 +9,7 @@ import os
 
 def build_cmd(patches, config, filt, input, output):
     cmd = "jointcalCoadd.py %s --output %s " % (input, output) + patches + " @" + \
-          filt + ".list" + " --configfile " + config
+          filt + ".list" + " --configfile " + config + " --clobber-config"
     print("\nCMD:", cmd)
     return cmd
 
