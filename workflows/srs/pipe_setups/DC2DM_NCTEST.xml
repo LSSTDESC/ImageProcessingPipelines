@@ -4,7 +4,7 @@
           xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
 			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
   
-  <task name="DC2DM_NCTEST" type="LSST" version="0.35">
+  <task name="DC2DM_NCTEST" type="LSST" version="0.36">
     <notation>Task to run the DM stack on DC2 simulated images</notation>
     <variables>
       <!-- Job site and configuration-->
@@ -112,7 +112,7 @@
     <!-- validateDrp -->
     <process name="validateDrp" site="${JOBSITE}">
       <notation>Run validateDrp</notation>
-      <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
+      <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_0}"
 	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
       <depends>
         <after process="processEimageFilter.runProcessEimage"/>
@@ -394,7 +394,7 @@
 	<variables>
 	  <var name="streamID">${format(pipeline.stream, "%01d")}</var>
 	</variables>
-        <job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_0}"
+        <job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_1}"
 	     executable="${CUR_SCRIPT}"/>
       </process>                
     </task>
