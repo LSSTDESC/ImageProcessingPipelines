@@ -43,12 +43,17 @@ if __name__ == "__main__":
     parser.add_argument('input', help="Path to the input butler folder.")
     parser.add_argument('--increment', action='store_true',
                         help="Only keep visits not yet processed.")
+    parser.add_argument("--idopt", help="id option to put in fron of the visit "
+                        "name. Could be 'selectId' or 'id' [%default]",
+                        default='id', type='string')
     args = parser.parse_args()
 
     if not os.path.exists(args.input):
         raise IOError("Input directory does not exists")
     if not args.input.endswith('/'):
         args.input += '/'
+    if args.idopt not in ['selectId', 'id']:
+        raise IOError("Option idopt must be 'selectid' or 'id'")    
 
     # Load the butler for this input directory
     butler = dafPersist.Butler(args.input)
@@ -84,7 +89,7 @@ if __name__ == "__main__":
         visit_file = "%s.list" % filt
         file_to_save = open(visit_file, 'w')
         for visit in visits[filt]:
-            file_to_save.write("--id visit=%s\n" % visit)
+            file_to_save.write("--%s visit=%s\n" % (args.idopt, visit))
         file_to_save.close()
         print(" - %s: %i visits -> %s" %(filt, len(visits[filt]), visit_file))
 
