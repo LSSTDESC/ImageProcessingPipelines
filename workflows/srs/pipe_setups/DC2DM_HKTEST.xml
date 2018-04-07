@@ -4,21 +4,28 @@
           xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
 			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
   
-  <task name="HMK-DC2-ingest" type="LSST" version="0.8">
-    <notation>Test on running the DM stack on DC2 simulated images</notation>
+  <task name="MINIDRP-Run1_2p-Test" type="LSST" version="0.1">
+    <notation>Test on running the DM stack on Run1.2p images</notation>
     <variables>
       <!-- Job site and configuration-->
+      <var name="RUNID">Run1.2-test</var>
       <var name="SITE">NERSC</var>
       <var name="JOBSITE">${SITE=="NERSC" ? "CORIP" : SITE}</var>
       <var name="MAXCPU">10000</var>
       <var name="MAXCPULONG">10000</var>
       <var name="IN2P3_BATCH_OPTIONS"> -l sps=1,os=cl7,xrootd=0 </var>
-      <var name="IN2P3_EXTRA_OPTIONS"> -q mc_huge -pe multicores 8 </var>
+      <var name="IN2P3_HUGE_OPTIONS"> -q huge </var>
+      <var name="IN2P3_MLONG_OPTIONS"> -q mc_long -pe multicores 8 </var>
+      <var name="IN2P3_MCHUGE_OPTIONS"> -q mc_huge -pe multicores 8 </var>
       <var name="NERSC_BATCH_OPTIONS"> -p MINIDRPHK | -L SCRATCH,projecta | -C haswell </var>
       <var name="BATCH_OPTIONS">${SITE=="NERSC" ? "${NERSC_BATCH_OPTIONS}" : "${IN2P3_BATCH_OPTIONS} "}</var>
-      <var name="EXTRA_OPTIONS">${SITE=="NERSC" ? " " : "${IN2P3_EXTRA_OPTIONS} "}</var>
+      <var name="EXTRA_OPTIONS_0">${SITE=="NERSC" ? " " : "${IN2P3_HUGE_OPTIONS}
+ "}</var>
+      <var name="EXTRA_OPTIONS_1">${SITE=="NERSC" ? " " : "${IN2P3_MCHUGE_OPTION
+S} "}</var>
+      <var name="EXTRA_OPTIONS_2">${SITE=="NERSC" ? " " : "${IN2P3_MLONG_OPTIONS} "}</var>
 
-      <var name="TASKNAME">HMK-DC2-ingest</var>
+      <var name="TASKNAME">MINIDRP-Run1_2p-Test</var>
       <var name="NERSC_DRP_ROOT">/global/cscratch1/sd/descdm/DC2</var>
       <var name="NERSC_DRP_OUTPUT">${NERSC_DRP_ROOT}/${TASKNAME}/output</var>
 
@@ -26,7 +33,7 @@
       <var name="PIPE_SUBDIR">ImageProcessingPipelines/workflows/srs</var>
       <var name="PIPE_SETUPS">${PIPE_SUBDIR}/pipe_setups</var>
       <var name="PIPE_SCRIPTS">${PIPE_SUBDIR}/pipe_scripts</var>
-      <var name="DM_CONFIGS">${PIPE_SUBDIR}/pipe_scripts</var>
+      <var name="DM_CONFIGS">${PIPE_SUBDIR}/dm_configs</var>
       <!-- At SLAC -->
       <var name="IN2P3_SLAC_SCRIPT_LOCATION">/u/ki/boutigny/ki19/$</var>
       <var name="NERSC_SLAC_SCRIPT_LOCATION">/nfs/farm/g/lsst/u/heather/minidrp/${PIPE_SETUPS}</var>
@@ -35,15 +42,18 @@
       <var name="IN2P3_ROOT_SOFTS">/pbs/throng/lsst/software/desc/DC2/</var>
       <var name="NERSC_ROOT_SOFTS">/global/homes/d/descdm/minidrp</var> 
       <var name="ROOT_SOFTS">${SITE=="NERSC" ? NERSC_ROOT_SOFTS : IN2P3_ROOT_SOFTS}</var>
-      <var name="IN2P3_SCRIPT_LOCATION">/sps/lsst/users/lsstprod/</var>
-      <var name="NERSC_SCRIPT_LOCATION">${NERSC_ROOT_SOFTS}/${PIPE_SCRIPTS}</var>
-      <var name="SCRIPT_LOCATION">${SITE=="NERSC" ? NERSC_SCRIPT_LOCATION : IN2P3_SCRIPT_LOCATION}</var>
+       <var name="IN2P3_SCRIPT_LOCATION">${IN2P3_ROOT_SOFTS}/${PIPE_SCRIPTS}</var>
       <var name="IN2P3_SETUP_LOCATION">${IN2P3_ROOT_SOFTS}/${PIPE_SETUPS}</var>
+      <var name="IN2P3_CONFIGS_LOCATION">${IN2P3_ROOT_SOFTS}/${DM_CONFIGS}</var>
+      <var name="NERSC_SCRIPT_LOCATION">${NERSC_ROOT_SOFTS}/${PIPE_SCRIPTS}</var>
       <var name="NERSC_SETUP_LOCATION">${NERSC_ROOT_SOFTS}/${PIPE_SETUPS}</var>
+      <var name="NERSC_CONFIGS_LOCATION">${NERSC_ROOT_SOFTS}/${DM_CONFIGS}</var>
+      <var name="SCRIPT_LOCATION">${SITE=="NERSC" ? NERSC_SCRIPT_LOCATION : IN2P3_SCRIPT_LOCATION}</var>
       <var name="SETUP_LOCATION">${SITE=="NERSC" ? NERSC_SETUP_LOCATION : IN2P3_SETUP_LOCATION}</var>
+      <var name="CONFIGS_LOCATION">${SITE=="NERSC" ? NERSC_CONFIGS_LOCATION : IN2P3_CONFIGS_LOCATION}</var>
       <!-- Log Files -->
       <var name="IN2P3_logRoot">/sps/lsst/users/descprod/Pipeline2/Logs</var>    
-      <var name="NERSC_logRoot">${NERSC_DRP_ROOT}/logs</var>    
+      <var name="NERSC_logRoot">${NERSC_ROOT_SOFTS}/logs</var>    
       <var name="logRoot">${SITE=="NERSC" ? NERSC_logRoot : IN2P3_logRoot}</var>
       <!-- Script names -->
       <var name="SCRIPT_NAME">DC2Workflow.py</var>
@@ -54,21 +64,32 @@
     <process name="setup_ingest" site="${JOBSITE}">
       <notation>Ingest the input data serially</notation>
       <job maxCPU="${MAXCPU}" 
-           batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS}"
+           batchOptions="${BATCH_OPTIONS}"
        executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
     </process>
 
     <!-- ingest images -->
-    <process name="ingest" site="${JOBSITE}">
+    <process name="ingestData" site="${JOBSITE}">
       <notation>Ingest the input data serially</notation>
       <job maxCPU="${MAXCPU}" 
-           batchOptions="${BATCH_OPTIONS} | ${EXTRA_OPTIONS}"
+           batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_1}"
 	       executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
       <depends>
         <after process="setup_ingest"/>
       </depends>
     </process>
     
+    <!-- ingest reference catalog -->
+    <process name="ingestRefCat" site="${JOBSITE}">
+      <notation>Ingest the reference catalog</notation>
+      <job batchOptions="${BATCH_OPTIONS}"
+       executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
+      <depends>
+        <after process="setup_ingest"/>
+      </depends>
+    </process>
+
+
    <!-- processEimage -->
     <!--   setup -->
     <process name="setup_processEimage" site="${JOBSITE}">
@@ -76,7 +97,8 @@
       <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
        executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
     <depends>
-        <after process="ingest"/>
+        <after process="ingestData"/>
+        <after process="ingestRefCat"/>
       </depends>
     </process>
     <!--   launch jobs -->
@@ -98,14 +120,11 @@
 <!--   Subtasks -->
     <!--   Subtask to run processEimage  -->
     <task name="processEimageFilter" type="LSST">
-      <process name="runProcessEimageFilter" site="${JOBSITE}">
-<!--
+      <process name="runProcessEimage" site="${JOBSITE}">
     <variables>
       <var name="streamID">${format(pipeline.stream, "%01d")}</var>
     </variables>
--->
-    <job maxCPU="${MAXCPU}" 
-         batchOptions="${BATCH_OPTIONS} | ${EXTRA_OPTIONS}" 
+    <job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_2}" 
          executable="${CUR_SCRIPT}"/>
       </process>                
     </task>
