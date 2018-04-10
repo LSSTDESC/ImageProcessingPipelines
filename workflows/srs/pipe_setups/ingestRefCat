@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# Move to the working directory
+cd ${WORK_DIR}/input
+
+# Ingest the reference catalog
+#ingestReferenceCatalog.py ${IN_DIR} $REFCAT --configfile $REFCATCONFIG -L debug
+ln -sfn $REFCAT ref_cats
+

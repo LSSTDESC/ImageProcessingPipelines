@@ -1,0 +1,16 @@
+mkdir -p ${WORK_DIR}/12-forcedPhotCoadd
+cd ${WORK_DIR}/12-forcedPhotCoadd
+ln -sfn ${WORK_DIR} pardir
+cp ${CONFIGS_LOCATION}/forcedPhotCoaddConfig.py .
+cp pardir/03-makeSkyMap/patches* .
+run_forcedPhotCoadd.py -c forcedPhotCoaddConfig.py --fromslac -f ${FILTERS}
+for FILT in $(echo ${FILTERS} | tr "," "\n")
+do
+	pipelineSet n${FILT}scripts `ls scripts/${FILT}/*.sh 2>/dev/null | wc -l`
+done
+pipelineSet WORK_DIR ${WORK_DIR}
+pipelineSet FILTERS ${FILTERS}
+pipelineSet DM_RELEASE ${DM_RELEASE}
+pipelineSet DM_SETUP ${DM_SETUP}
+pipelineSet CONFIGS_LOCATION ${CONFIGS_LOCATION}
+pipelineSet OUTPUT_DATA_DIR ${OUTPUT_DATA_DIR}

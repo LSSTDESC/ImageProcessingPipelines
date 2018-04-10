@@ -1,0 +1,4 @@
+source $LOCAL_CONFIG
+echo "Check points status taken from $CHECKPOINTS"
+echo "FAILING? Waiting for checkpoint $checkpoint to be validated and modified"
+source $CHECKPOINTS

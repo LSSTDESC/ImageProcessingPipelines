@@ -1,0 +1,4 @@
+# Go to the working directory
+cd ${WORK_DIR}
+# Run validateDrp
+validateDrp.py output
