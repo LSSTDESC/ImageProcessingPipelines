@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 import os
-import numpy as np
+import numpy as N
 import libRun as LR
 
 
