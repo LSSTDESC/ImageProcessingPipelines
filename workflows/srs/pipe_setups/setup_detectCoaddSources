@@ -3,13 +3,16 @@ cd ${WORK_DIR}/07-detectCoaddSources
 ln -sfn ${WORK_DIR} pardir
 cp ${CONFIGS_LOCATION}/detectCoaddConfig.py .
 cp pardir/03-makeSkyMap/patches* .
+
 run_detectCoaddSources.py -c detectCoaddConfig.py --fromslac -f ${FILTERS}
 
-function join { local IFS="$1"; shift; echo "$*"; }
-filts=$(join , `ls scripts/`)
-pipelineSet FILTERS ${filts}
+for FILT in $(echo ${FILTERS} | tr "," "\n")
+do
+	pipelineSet n${FILT}scripts `ls scripts/${FILT}/*.sh 2>/dev/null | wc -l`
+done
 
 pipelineSet WORK_DIR ${WORK_DIR}
+pipelineSet FILTERS ${FILTERS}
 pipelineSet DM_RELEASE ${DM_RELEASE}
 pipelineSet DM_SETUP ${DM_SETUP}
 pipelineSet CONFIGS_LOCATION ${CONFIGS_LOCATION}

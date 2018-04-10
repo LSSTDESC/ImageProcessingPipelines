@@ -93,10 +93,14 @@ def run_detectCoaddSources():
     vars = HashMap(process.getVariables())
     workdir = vars.remove("WORK_DIR")
     filters = vars.remove("FILTERS").split(',')
-    for num, filt in enumerate(filters):
-        script = workdir + "/07-detectCoaddSources/scripts/%s/patches_%s.sh" % (filt, filt)
-        vars.put("CUR_SCRIPT", script)
-        pipeline.createSubstream("detectCoaddSourcesFilter", num, vars)
+    num = 0
+    for filt in filters:
+        nscript = vars.remove('n' + filt + 'scripts')
+        for i in range(1, int(nscript) + 1):
+            script = workdir + "/07-detectCoaddSources/scripts/%s/patches_%03d.sh" % (filt, i)
+            vars.put("CUR_SCRIPT", script)
+            pipeline.createSubstream("detectCoaddSourcesFilter", num, vars)
+            num += 1
 
 
 def run_mergeCoaddDetections():
