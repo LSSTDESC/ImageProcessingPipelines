@@ -28,6 +28,7 @@ config.measurement.slots.modelFlux = "modelfit_CModel"
 config.doApCorr=True
 
 # Name of the ingested reference dataset
+import os
 from lsst.utils import getPackageDir
 config.match.refObjLoader.load(os.path.join(getPackageDir("obs_lsstSim"),
                                             "config", "filterMap.py"))
