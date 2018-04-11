@@ -4,7 +4,7 @@
           xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
 			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
   
-  <task name="MINIDRP-Run1_2p-Test" type="LSST" version="0.1">
+  <task name="MINIDRP-Run1_2p-Test" type="LSST" version="0.5">
     <notation>Test on running the DM stack on Run1.2p images</notation>
     <variables>
       <!-- Job site and configuration-->
@@ -117,6 +117,32 @@ S} "}</var>
       </createsSubtasks>    
     </process>
 
+   <!-- makeFpSummary -->
+    <!--   setup -->
+    <process name="setup_makeFpSummary" site="${JOBSITE}">
+      <notation>Setup for makeFpSummary</notation>
+      <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
+       executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
+    <depends>
+        <after process="processEimageFilter.runProcessEimage"/>
+      </depends>
+    </process>
+    <!--   launch jobs -->
+    <process name="makeFpSummary" site="${JOBSITE}">
+      <notation>Run makeFpSummary for all filter and visits</notation>
+      <script><![CDATA[
+      execfile("%s/%s" % (SLAC_SCRIPT_LOCATION, SCRIPT_NAME))
+      run_makeFpSummary()
+      ]]>
+      </script>
+      <depends>
+        <after process="setup_makeFpSummary"/>
+      </depends>
+      <createsSubtasks>
+        <subtask>makeFpSummaryFilter</subtask>
+      </createsSubtasks>    
+    </process>
+
 <!--   Subtasks -->
     <!--   Subtask to run processEimage  -->
     <task name="processEimageFilter" type="LSST">
@@ -126,6 +152,17 @@ S} "}</var>
     </variables>
     <job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_2}" 
          executable="${CUR_SCRIPT}"/>
+      </process>                
+    </task>
+
+    <!--   Subtask to run makeFpSummary  -->
+    <task name="makeFpSummaryFilter" type="LSST">
+      <process name="runMakeFpSummary" site="${JOBSITE}">
+    <variables>
+      <var name="streamID">${format(pipeline.stream, "%01d")}</var>
+    </variables>
+    <job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_2}" 
+         executable="${MAKEFP_SCRIPT}"/>
       </process>                
     </task>
 
