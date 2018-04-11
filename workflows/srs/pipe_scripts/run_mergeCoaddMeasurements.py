@@ -38,7 +38,7 @@ if __name__ == "__main__":
     opts.output = "pardir/output"
     file_patch = "patches_all.txt"
     
-    cmd = "split -l " + str(opts.mod) + " -d " + file_patch + " " + file_patch + "_"
+    cmd = "split -a 5 -l " + str(opts.mod) + " -d " + file_patch + " " + file_patch + "_"
     os.system(cmd)
     patch_list = sorted(glob.glob(file_patch + "_*"))
     

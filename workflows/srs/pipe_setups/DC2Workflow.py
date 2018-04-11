@@ -124,7 +124,7 @@ def run_measureCoaddSources():
     for filt in filters:
         nscript = vars.remove('n' + filt + 'scripts')
         for i in range(int(nscript)):
-            script = workdir + "/09-measureCoaddSources/scripts/%s/patches_%s.txt_%02d.sh" % \
+            script = workdir + "/09-measureCoaddSources/scripts/%s/patches_%s.txt_%05d.sh" % \
                      (filt, filt, i)
             vars.put("CUR_SCRIPT", script)
             pipeline.createSubstream("measureCoaddSourcesFilter", num, vars)
@@ -137,7 +137,7 @@ def run_mergeCoaddMeasurements():
     workdir = vars.remove("WORK_DIR")
     nscript = vars.remove('nscripts')
     for num in range(int(nscript)):
-        script = workdir + "/10-mergeCoaddMeasurements/scripts/patches_all.txt_%02d.sh" % num
+        script = workdir + "/10-mergeCoaddMeasurements/scripts/patches_all.txt_%05d.sh" % num
         vars.put("CUR_SCRIPT", script)
         pipeline.createSubstream("mergeCoaddMeasurementsFilter", num, vars)
 
@@ -166,7 +166,7 @@ def run_forcedPhotCoadd():
     for filt in filters:
         nscript = vars.remove('n' + filt + 'scripts')
         for i in range(int(nscript)):
-            script = workdir + "/12-forcedPhotCoadd/scripts/%s/patches_%s.txt_%02d.sh" % \
+            script = workdir + "/12-forcedPhotCoadd/scripts/%s/patches_%s.txt_%05d.sh" % \
                      (filt, filt, i)
             vars.put("CUR_SCRIPT", script)
             pipeline.createSubstream("forcedPhotCoaddFilter", num, vars)
