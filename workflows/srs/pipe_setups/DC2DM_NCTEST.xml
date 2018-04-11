@@ -4,7 +4,7 @@
           xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
 			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
   
-  <task name="DC2DM_NCTEST" type="LSST" version="0.37">
+  <task name="DC2DM_NCTEST" type="LSST" version="0.38">
     <notation>Task to run the DM stack on DC2 simulated images</notation>
     <variables>
       <!-- Job site and configuration-->
@@ -15,13 +15,13 @@
       <var name="MAXCPULONG">10000</var>
       <var name="IN2P3_BATCH_OPTIONS"> -l sps=1,os=cl7,xrootd=0 </var>
       <var name="IN2P3_HUGE_OPTIONS"> -q huge </var>
-      <var name="IN2P3_MLONG_OPTIONS"> -q mc_long -pe multicores 8 </var>
+      <var name="IN2P3_MCLONG_OPTIONS"> -q mc_long -pe multicores 8 </var>
       <var name="IN2P3_MCHUGE_OPTIONS"> -q mc_huge -pe multicores 8 </var>
       <var name="NERSC_BATCH_OPTIONS"> -p MINIDRPHK | -L SCRATCH,projecta | -C haswell </var>
       <var name="BATCH_OPTIONS">${SITE=="NERSC" ? "${NERSC_BATCH_OPTIONS}" : "${IN2P3_BATCH_OPTIONS} "}</var>
       <var name="EXTRA_OPTIONS_0">${SITE=="NERSC" ? " " : "${IN2P3_HUGE_OPTIONS} "}</var>
       <var name="EXTRA_OPTIONS_1">${SITE=="NERSC" ? " " : "${IN2P3_MCHUGE_OPTIONS} "}</var>
-      <var name="EXTRA_OPTIONS_2">${SITE=="NERSC" ? " " : "${IN2P3_MLONG_OPTIONS} "}</var>
+      <var name="EXTRA_OPTIONS_2">${SITE=="NERSC" ? " " : "${IN2P3_MCLONG_OPTIONS} "}</var>
       <!-- Base directory where script files will be placed -->
       <var name="PIPE_SUBDIR">ImageProcessingPipelines/workflows/srs</var>
       <var name="PIPE_SETUPS">${PIPE_SUBDIR}/pipe_setups</var>
@@ -107,6 +107,32 @@
       <createsSubtasks>
 	<subtask>processEimageFilter</subtask>
       </createsSubtasks>	
+    </process>
+
+    <!-- makeFpSummary -->
+    <!--   setup -->
+    <process name="setup_makeFpSummary" site="${JOBSITE}">
+      <notation>Setup for makeFpSummary</notation>
+      <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
+       executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
+    <depends>
+        <after process="processEimageFilter.runProcessEimage"/>
+      </depends>
+    </process>
+    <!--   launch jobs -->
+    <process name="makeFpSummary" site="${JOBSITE}">
+      <notation>Run makeFpSummary for all filter and visits</notation>
+      <script><![CDATA[
+      execfile("%s/%s" % (SLAC_SCRIPT_LOCATION, SCRIPT_NAME))
+      run_makeFpSummary()
+      ]]>
+      </script>
+      <depends>
+        <after process="setup_makeFpSummary"/>
+      </depends>
+      <createsSubtasks>
+        <subtask>makeFpSummaryFilter</subtask>
+      </createsSubtasks>    
     </process>
 
     <!-- validateDrp -->
@@ -386,6 +412,16 @@
 	</variables>
 	<job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_2}"
 	     executable="${CUR_SCRIPT}"/>
+      </process>                
+    </task>
+    <!--   Subtask to run makeFpSummary  -->
+    <task name="makeFpSummaryFilter" type="LSST">
+      <process name="runMakeFpSummary" site="${JOBSITE}">
+    <variables>
+      <var name="streamID">${format(pipeline.stream, "%01d")}</var>
+    </variables>
+    <job batchOptions="${BATCH_OPTIONS}" 
+         executable="${MAKEFP_SCRIPT}"/>
       </process>                
     </task>
     <!--   Subtask to run jointcal -->

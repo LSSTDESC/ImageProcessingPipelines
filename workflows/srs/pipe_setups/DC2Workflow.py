@@ -110,7 +110,7 @@ def run_mergeCoaddDetections():
     nscript = vars.remove('nscripts')
     filters = vars.remove("FILTERS").split(',')
     for num in range(int(nscript)):
-        script = workdir + "/08-mergeCoaddDetections/scripts/patches_all.txt_%02d.sh" % num
+        script = workdir + "/08-mergeCoaddDetections/scripts/patches_all.txt_%04d.sh" % num
         vars.put("CUR_SCRIPT", script)
         pipeline.createSubstream("mergeCoaddDetectionsFilter", num, vars)
 
