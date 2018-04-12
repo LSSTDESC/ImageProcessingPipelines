@@ -38,7 +38,7 @@ if __name__ == "__main__":
     for filt in opts.filters:
         filePatch = "patches_" + filt + ".txt"
 
-        cmd = "split -l " + str(opts.mod) + " -d " + filePatch + " " + filePatch + "_"
+        cmd = "split -a 5 -l " + str(opts.mod) + " -d " + filePatch + " " + filePatch + "_"
         os.system(cmd)
 
         patchList = glob.glob(filePatch + "_*")

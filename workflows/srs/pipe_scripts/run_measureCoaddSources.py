@@ -15,7 +15,7 @@ def build_cmd(patch, configFile, filt, input, output):
     os.system(cmd)
 
     cmd = "measureCoaddSources.py %s --output %s" % (input, output) + \
-          " @scripts/" + filt + "/" + patch + " --configfile " + configFile
+          " @scripts/" + filt + "/" + patch + " --configfile " + configFile + " --clobber-version"
     return cmd
 
 
@@ -43,7 +43,7 @@ if __name__ == "__main__":
             
         filePatch = "patches_" + filt + ".txt"
 
-        cmd = "split -l " + str(opts.mod) + " -d " + filePatch + " " + filePatch + "_"
+        cmd = "split -a 5 -l " + str(opts.mod) + " -d " + filePatch + " " + filePatch + "_"
         os.system(cmd)
 
         patchList = glob.glob(filePatch + "_*")
