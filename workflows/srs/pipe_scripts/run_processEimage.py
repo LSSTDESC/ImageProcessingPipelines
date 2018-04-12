@@ -49,13 +49,9 @@ def build_cmd(visit, config, filt, raft=None, input='pardir/input', output='pard
     if opts.clobberversions:
         cmd += " --clobber-versions"
     cmd += "\n"
-#    if opts.time:
-#        cmd += "time "
-       #cmd = "time " + cmd
-#    cmd += "makeFpSummary.py %s --output %s --dstype calexp @" % (output, output) + \
-#           filename
-#    if opts.showconfig:
-#        cmd += " --show=config"
+    if opts.makefpsummary:
+        cmd += "makeFpSummary.py %s --output %s --dstype calexp @" % (output, output) + \
+               filename
     print("\nCMD: ", cmd)
 
     return cmd

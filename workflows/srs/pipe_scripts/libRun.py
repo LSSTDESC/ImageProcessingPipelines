@@ -178,6 +178,8 @@ def standard_options(usage=None, description=None):
                       help="Multicore jobs (mostly for processCcd)")
     parser.add_option("--doraise", action='store_true', default=False,
                       help="doraise")
+    parser.add_option("--makefpsummary", action='store_true', default=False,
+                      help="run makeFpSmmary as part of the processEimage task")
     parser.add_option("--time", action='store_true', default=False,
                       help="time the commands executed")
     parser.add_option("--showconfig", action='store_true', default=False,
