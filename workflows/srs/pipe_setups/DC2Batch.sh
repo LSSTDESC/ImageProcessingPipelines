@@ -43,6 +43,7 @@ then
 export OMP_NUM_THREADS=1
 /usr/bin/time -v shifter --image=${SHIFTER_IMAGE} /bin/bash <<EOF
 echo "Running shifter image ${SHIFTER_IMAGE}"
+export OMP_NUM_THREADS=1
 export PATH=$PATH:$SCRIPT_LOCATION
 source /opt/lsst/software/stack/loadLSST.bash
 setup lsst_distrib -t current 

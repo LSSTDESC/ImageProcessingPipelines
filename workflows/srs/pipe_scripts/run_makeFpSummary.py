@@ -30,6 +30,8 @@ def build_cmd(visit, config, filt, input='pardir/output', output='pardir/output'
  #       filename = "scripts/" + filt + "/" + visit + ".list"
  #       N.savetxt(filename, ["--id visit=%s" % visit], fmt="%s")
     filename = "scripts/" + filt + "/" + visit + ".list"
+    if not os.path.isfile(filename):
+        N.savetxt(filename, ["--id visit=%s" % visit], fmt="%s")
 
     # Create the command line
     cmd = ""    
