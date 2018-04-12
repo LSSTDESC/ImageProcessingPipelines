@@ -34,6 +34,8 @@ def build_cmd(visit, config, filt, raft=None, input='pardir/input', output='pard
     cmd = ""    
     if opts.multicore:
         cmd += "export OMP_NUM_THREADS=1\n"
+    if opts.time:
+        cmd += "time "
     cmd += "processEimage.py %s --output %s @" % (input, output) + \
            filename
     if config is not None:
@@ -42,12 +44,14 @@ def build_cmd(visit, config, filt, raft=None, input='pardir/input', output='pard
         cmd += " -j 8 --timeout 999999999"
     if opts.doraise:
         cmd += " --doraise"
+    if opts.showconfig:
+        cmd += " --show=config"
+    if opts.clobberversions:
+        cmd += " --clobber-versions"
     cmd += "\n"
-    if opts.time:
-        cmd += "time "
-        cmd = "time " + cmd
-    cmd += "makeFpSummary.py %s --output %s @" % (input, output) + \
-           filename
+    if opts.makefpsummary:
+        cmd += "makeFpSummary.py %s --output %s --dstype calexp @" % (output, output) + \
+               filename
     print("\nCMD: ", cmd)
 
     return cmd
@@ -90,7 +94,7 @@ if __name__ == "__main__":
         opts.mod = 1  # one job per visit to be faster
         njobs = LR.job_number(visits, opts.mod, opts.max)
 
-        # Reorganize the visit list in consequence
+        # Reorganize the visit list in sequence
         visits = LR.organize_items(visits, njobs)
 
         # specific options for processEimage
@@ -100,7 +104,7 @@ if __name__ == "__main__":
             opts.queue = "mc_huge"
             opts.otheroptions = "-pe multicores 8"
 
-        # We will pur one raft per job, tp make sure it does not get killed
+        # We will put one raft per job, to make sure it does not get killed
         rafts = ['%i,%i' %(i, j) for i in range(5) for j in range(5)]
         rafts = [raft for raft in rafts if raft not in ['0,0', '0,4', '4,0', '4,4']]
 

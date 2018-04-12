@@ -85,9 +85,19 @@ def submit(cmd, prefix, filt=None, autosubmit=False, ct=60000, vmem='4G',
         script.write(cmd + "\n")
     elif from_nersc:
         script.write("#!/bin/bash\n")
-        script.write("source ${SETUP_LOCATION}/DMsetup.sh\n")
-        script.write("cd " + cwd + "\n")
-        script.write(cmd + "\n")
+        if "SHIFTER_IMAGE" in os.environ:
+            script.write("/usr/bin/time -v shifter --image=${SHIFTER_IMAGE} /bin/bash <<EOF\n")
+            script.write("export PATH=$PATH:$SCRIPT_LOCATION\n")
+            script.write("source /opt/lsst/software/stack/loadLSST.bash\n")
+            script.write("setup lsst_distrib -t current\n")
+            script.write("setup obs_lsstSim -t dc2\n")
+            script.write("cd " + cwd + "\n")
+            script.write(cmd + "\n")
+            script.write("EOF\n")
+        else:
+            script.write("source ${SETUP_LOCATION}/DMsetup.sh\n")
+            script.write("cd " + cwd + "\n")
+            script.write(cmd + "\n")
     else:
         script.write(qsub + "\n")
         script.write("#!/usr/local/bin/bash\n")
@@ -168,8 +178,14 @@ def standard_options(usage=None, description=None):
                       help="Multicore jobs (mostly for processCcd)")
     parser.add_option("--doraise", action='store_true', default=False,
                       help="doraise")
+    parser.add_option("--makefpsummary", action='store_true', default=False,
+                      help="run makeFpSmmary as part of the processEimage task")
     parser.add_option("--time", action='store_true', default=False,
                       help="time the commands executed")
+    parser.add_option("--showconfig", action='store_true', default=False,
+                      help="show configuration")
+    parser.add_option("--clobberversions", action='store_true', default=False,
+                      help="clobbering versions is temporary due to ")
     parser.add_option("--fromslac", action='store_true', default=False,
                       help="Run job from slac workflow interface")
     parser.add_option("--perraft", action='store_true', default=False,
