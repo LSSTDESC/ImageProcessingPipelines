@@ -12,11 +12,11 @@ from __future__ import print_function
 import os
 from optparse import OptionParser
 import lsst.afw.geom as geom
-try:
+try:  
     from lsst.afw.coord import Fk5Coord
     tocoords = lambda ra, dec: Fk5Coord(geom.Point2D(ra, dec), geom.degrees)
-except:
-    tocoords = lambda ra, dec: (ra, dec)
+except:  # > w_2018_11
+    tocoords = lambda ra, dec: geom.SpherePoint(ra, dec, geom.degrees)
 import lsst.daf.persistence as dafPersist
 import numpy as np
 
