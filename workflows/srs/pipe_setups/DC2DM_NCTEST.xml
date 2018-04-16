@@ -8,7 +8,7 @@
     <notation>Task to run the DM stack on DC2 simulated images</notation>
     <variables>
       <!-- Job site and configuration-->
-      <var name="RUNID">Run1.1-test</var>
+      <var name="RUNID">Run1.1-test2</var>
       <var name="SITE">LSST-IN2P3</var>
       <var name="JOBSITE">${SITE=="NERSC" ? "CORIP" : SITE}</var>
       <var name="MAXCPU">10000</var>

@@ -12,7 +12,11 @@ from __future__ import print_function
 import os
 from optparse import OptionParser
 import lsst.afw.geom as geom
-from lsst.afw.coord import Fk5Coord
+try:
+    from lsst.afw.coord import Fk5Coord
+    tocoords = lambda ra, dec: Fk5Coord(geom.Point2D(ra, dec), geom.degrees)
+except:
+    tocoords = lambda ra, dec: (ra, dec)
 import lsst.daf.persistence as dafPersist
 import numpy as np
 
@@ -39,7 +43,6 @@ def get_visit_corners(butler, dataids, ccds=None, getccds=False, ccdkey='sensor'
         ras.extend([coord.getRa().asDegrees() for coord in coords])
         decs.extend([coord.getDec().asDegrees() for coord in coords])
         accds.extend([dataid[ccdkey]] * 4)
-    tocoords = lambda ra, dec: Fk5Coord(geom.Point2D(ra, dec), geom.degrees)
     if not getccds:
         return [tocoords(min(ras), min(decs)), tocoords(min(ras), max(decs)),
                 tocoords(max(ras), max(decs)), tocoords(max(ras), min(decs))]
