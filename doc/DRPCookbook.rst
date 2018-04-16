@@ -12,6 +12,9 @@ should be read with caution. To cite this work in progress, please use
 "Krughoff et al 2018 in preparation" and provide a link to*
 `this development branch URL <https://github.com/LSSTDESC/DC2_Repo/blob/issue/73/cookbook/Notebooks/DC2Cookbook.ipynb>`__.
 
+.. contents:: Contents
+   :depth: 2
+
 Introduction
 ------------
 
@@ -38,10 +41,9 @@ DM pipeline to look similar to the DC1 pipeline.
 This Note is organized as follows. We first provide an
 `overview <#overview>`__ of the DRP pipeline, summarizing the relevant
 section in `LDM-151 <http://ls.st/ldm-151>`__. Then, we present the recipes in
-three sections: 1. `Image Coaddition and Object Detection <#coadds>`__
-2. `Difference Image Analysis and DIASource Detection <#diasources>`__
-3. `DIAObject Generation and Light Curve Forced
-Photometry <#forcedphot>`__
+two sections, each of which maps onto a "branch" of the DESC DRP pipeline: 
+1. `Image Coaddition, and Object Detection and Measurment<#coadds>`__
+2. `Difference Image Analysis, and DIAObject Detection and Measurement<#diasources>`__
 We then provide some brief `concluding remarks <#conclusions>`__.
 
 
@@ -60,10 +62,10 @@ following Figure:
 
 Anticipating that difference image analysis (DIA) will not be required
 in the DC2 main survey area, it makes sense to preserve the DC1 grouping
-of the DRP pipelines, into static sky and dynamic sky pipelines. The
+of the DRP pipelines, into static sky and time domain pipelines. The
 static sky analysis involves image characterization, calibration and
 coaddition followed by ``Object`` generation and measurement. The
-dynamic sky analysis makes use of the calibrated images, but involves 1)
+time domain analysis makes use of the calibrated images, but involves 1)
 the construction of a ``TemplateCoadd`` image followed by image
 differencing, ``DIASource`` detection in the difference images, and then
 2) association of those ``DIASources`` into ``DIAObjects`` which then
@@ -74,7 +76,7 @@ With reference to the image coaddition and differencing diagram in
 LDM-151 (reproduced below), we can identify the static sky pipeline as
 being just steps 1, 2, 3 and 5. (Steps 2 and 3 could be skipped in an
 initial implementation: this was the approach taken in Twinkles.) The
-dynamic sky pipeline *should* just be step 4 (i.e. it should re-use the `calexp`s from step 1 in the static sky pipeline).
+time domain pipeline *should* just be step 4 (i.e. it should re-use the `calexp`s from step 1 in the static sky pipeline).
 
 .. figure:: https://github.com/lsst/LDM-151/raw/master/figures/drp_coaddition_and_diffim.png
    :name: LDM-151-Fig-9
@@ -99,14 +101,14 @@ image, and then generate new ``DIASources`` and aggregate them into new,
 photometry at their locations of all these reprocessed ``DIAObjects``,
 which will result in light curves extending over the duration of the
 whole survey to that point. As in Twinkles, in DC2 our goal for the
-dynamic sky analysis is to emulate the production of cosmology-ready
+time domain analysis is to emulate the production of cosmology-ready
 LSST supernova and lensed quasar light curves, which is why we retain
 the focus on the *data release reprocessing* of the visit images.
 
 `Back to the table of contents. <#toc>`__
 
-Image Coaddition and ``Object`` Detection
------------------------------------------
+1. The Static Sky Branch: Image Coaddition, and ``Object`` Detection and Measurement
+------------------------------------------------------------------------------------
 
 This recipe started life as the original Twinkles Cookbook recipe,
 `"Recipe: Emulating the DM Level 2
@@ -349,10 +351,10 @@ sky ``Objects`` may provide some useful comparisons, so we include it.
 
 `Back to the table of contents. <#toc>`__
 
-Difference Image Analysis and ``DIASource`` Detection
------------------------------------------------------
+2. The Time Domain Branch: Difference Image Analysis, and ``DIAObject`` Detection and Measurement
+-------------------------------------------------------------------------------------------------
 
-The dynamic sky analysis was treated in two steps in the Twinkles
+The time domain analysis was treated in two steps in the Twinkles
 pathfinder, partly because at that time ``DIAObjects`` were not yet
 readily made. The first part of the difference image analysis stopped at
 the generation of ``DIASources``, and it is this Twinkles recipe,
@@ -521,7 +523,7 @@ difference image.
 `Back to the table of contents. <#toc>`__
 
 ``DIAObject`` Generation and Light Curve Forced Photometry
-----------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Now that we have a table of ``DIASources``, from differencing all visit
 images against the same template image, we can make ``DIAObjects`` by
