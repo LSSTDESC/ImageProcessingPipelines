@@ -123,7 +123,7 @@
     <process name="makeFpSummary" site="${JOBSITE}">
       <notation>Run makeFpSummary for all filter and visits</notation>
       <script><![CDATA[
-      execfile("%s/%s" % (SLAC_SCRIPT_LOCATION, SCRIPT_NAME))
+      execfile("%s/%s" % (SLAC_SETUP_LOCATION, SCRIPT_NAME))
       run_makeFpSummary()
       ]]>
       </script>
