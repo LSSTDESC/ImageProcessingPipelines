@@ -13,7 +13,8 @@ __all__ = ['dfk',
            'makeDiscreteSkyMap',
            'makeCoaddTempExp',
            'assembleCoadd',
-           'run_coadd_task']
+           'run_coadd_task',
+           'makeFpSummary']
 
 from parsl_setup import dfk
 
@@ -128,26 +129,35 @@ def ingestSimImages(output_repo, eimage_pattern, stdout=None, stderr=None):
 
 @parsl.App('bash', dfk)
 def processEimage(output_repo, dataId, stdout=None, stderr=None):
-    command = '''processEimage.py {0}/ --output {0} --id %s --doraise --clobber-config --clobber-versions --configfile configs/processEimage.py''' % make_id_string(dataId)
+    command = '''processEimage.py {0}/ --output {0} --id %s --doraise --clobber-config --clobber-versions''' % make_id_string(dataId)
     return command
 
 @parsl.App('bash', dfk)
 def makeDiscreteSkyMap(output_repo, dataId=None, inputs=[], stdout=None,
                        stderr=None):
-    command = '''makeDiscreteSkyMap.py {0}/ --output {0} --id %s --doraise --clobber-config --clobber-versions --configfile configs/makeDiscreteSkyMap_deep.py''' % make_id_string(dataId)
+    command = '''makeDiscreteSkyMap.py {0}/ --output {0} --id %s --doraise --clobber-config --clobber-versions''' % make_id_string(dataId)
     return command
 
 @parsl.App('bash', dfk)
 def makeCoaddTempExp(output_repo, dataId, stdout=None, stderr=None):
-    command = '''makeCoaddTempExp.py {0}/ --output {0} --selectId filter=%s --id %s --doraise --clobber-config --no-versions --configfile configs/makeCoaddTempExp_deep.py''' % (dataId['filter'], make_id_string(dataId))
+    command = '''makeCoaddTempExp.py {0}/ --output {0} --selectId filter=%s --id %s --doraise --clobber-config --no-versions''' % (dataId['filter'], make_id_string(dataId))
     return command
 
 @parsl.App('bash', dfk)
 def assembleCoadd(output_repo, dataId, stdout=None, stderr=None):
-    command = '''assembleCoadd.py {0}/ --output {0} --selectId filter=%s --id %s --doraise --clobber-config --no-versions --configfile configs/assembleCoadd_deep.py''' % (dataId['filter'], make_id_string(dataId))
+    command = '''assembleCoadd.py {0}/ --output {0} --selectId filter=%s --id %s --doraise --clobber-config --no-versions''' % (dataId['filter'], make_id_string(dataId))
     return command
 
 @parsl.App('bash', dfk)
 def run_coadd_task(task_name, output_repo, dataId, stdout=None, stderr=None):
     command = '''{0}.py {1}/ --output {1} --id %s --doraise --clobber-config --no-versions''' % make_id_string(dataId)
+    return command
+
+@parsl.App('bash', dfk)
+def makeFpSummary(output_repo, inputs=[], dataId=None, dstype='calexp',
+                  stdout=None, stderr=None):
+    if inputs:
+        # Wait for inputs futures to finish.
+        [x.result() for x in inputs]
+    command = '''makeFpSummary.py {0}/ --output {0} --id %s --dstype %s --doraise --clobber-config --no-versions''' % (make_id_string(dataId), dstype)
     return command
