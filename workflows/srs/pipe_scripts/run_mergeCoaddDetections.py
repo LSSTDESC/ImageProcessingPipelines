@@ -16,7 +16,7 @@ def build_cmd(patch, input, output, configFile=None):
     os.system(cmd)
 
     cmd = "mergeCoaddDetections.py %s --output %s"  % (input, output) + \
-          " @scripts/" + patch
+          " @scripts/" + patch + " --clobber-versions"
 
     if configFile is not None:
         cmd += " --configfile " + configFile
