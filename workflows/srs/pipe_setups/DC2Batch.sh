@@ -33,14 +33,14 @@ export PATH=$PATH:$SCRIPT_LOCATION
 # Launch the setup/script
 export SCRIPT=${SETUP_LOCATION}/${PIPELINE_PROCESS:-$1}
 
+export OMP_NUM_THREADS=1
+
 # For now, scripts that use pipelineSet need to be handled outside Shifter
 if [ $SITE == "NERSC" ] && (echo $PIPELINE_PROCESS | grep "setup_");
 then
-  export OMP_NUM_THREADS=1
   source ${SETUP_LOCATION}/DMsetup.sh; set -xe; export SHELLOPTS; source ${SCRIPT}
 elif [ -v SHIFTER_IMAGE ] # Use Shifter if available
 then
-export OMP_NUM_THREADS=1
 /usr/bin/time -v shifter --image=${SHIFTER_IMAGE} /bin/bash <<EOF
 echo "Running shifter image ${SHIFTER_IMAGE}"
 export PATH=$PATH:$SCRIPT_LOCATION
@@ -51,7 +51,6 @@ set -xe; export SHELLOPTS; source ${SCRIPT}
 EOF
 elif [ $SITE == "NERSC" ] # NERSC when SHIFTER is not used
 then
-  export OMP_NUM_THREADS=1
   source ${SETUP_LOCATION}/DMsetup.sh; set -xe; export SHELLOPTS; source ${SCRIPT}
 else # IN2P3
   # set -xe; export SHELLOPTS;
