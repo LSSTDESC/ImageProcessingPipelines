@@ -30,7 +30,6 @@ if __name__ == "__main__":
 
     opts, args = LR.standard_options(usage=usage, description=description)
 
-    opts.mod = 2
     opts.input = "pardir/output"
     opts.output = "pardir/output"
 

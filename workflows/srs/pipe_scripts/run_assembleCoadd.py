@@ -27,7 +27,6 @@ if __name__ == "__main__":
     opts, args = LR.standard_options(usage=usage, description=description)
 
     # overwrite the -m option to force it to be 1
-    opts.mod = 5
     opts.input = "pardir/output"
     opts.output = "pardir/output"
 
