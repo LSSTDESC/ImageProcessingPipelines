@@ -152,7 +152,6 @@
 	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
       <depends>
         <after process="processEimageFilter.runProcessEimage"/>
-	<after process="checkpoint_SkyMap"/>
       </depends>
     </process>
 
@@ -426,18 +425,6 @@
       </createsSubtasks>	
     </process>
     
-    <!-- Check points -->
-
-    <!-- makeSkyMap -->
-    <process name="checkpoint_SkyMap" site="${JOBSITE}">
-      <notation>Check point</notation>
-      <variables>
-	<var name="checkpoint">makeSkyMap</var>
-      </variables>
-      <job batchOptions="${BATCH_OPTIONS}"
-	   executable="${SETUP_LOCATION}/checkpoint"/>
-    </process>
-
 
     <!--   Subtasks -->
     <!--   Subtask to run processEimage -->

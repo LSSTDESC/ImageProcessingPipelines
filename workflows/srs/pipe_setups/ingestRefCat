@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# checkpoint
+source ${SETUP_LOCATION}/checkpoint
+
 # Move to the working directory
 cd ${WORK_DIR}/input
 

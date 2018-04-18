@@ -1,3 +1,6 @@
+# checkpoint
+source ${SETUP_LOCATION}/checkpoint
+
 cd ${WORK_DIR}/03-makeSkyMap
 
 # Build the list of tracts/patches

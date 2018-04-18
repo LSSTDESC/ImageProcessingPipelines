@@ -1,3 +1,6 @@
+# checkpoint
+source ${SETUP_LOCATION}/checkpoint
+
 mkdir -p ${WORK_DIR}/12-forcedPhotCoadd
 cd ${WORK_DIR}/12-forcedPhotCoadd
 ln -sfn ${WORK_DIR} pardir

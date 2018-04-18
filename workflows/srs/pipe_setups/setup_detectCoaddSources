@@ -1,3 +1,6 @@
+# checkpoint
+source ${SETUP_LOCATION}/checkpoint
+
 mkdir -p ${WORK_DIR}/07-detectCoaddSources
 cd ${WORK_DIR}/07-detectCoaddSources
 ln -sfn ${WORK_DIR} pardir

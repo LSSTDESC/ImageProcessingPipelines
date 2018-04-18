@@ -1,3 +1,6 @@
+# checkpoint
+source ${SETUP_LOCATION}/checkpoint
+
 # Make sur the work directory exists
 mkdir -p ${WORK_DIR}/03-makeSkyMap
 cd ${WORK_DIR}/03-makeSkyMap

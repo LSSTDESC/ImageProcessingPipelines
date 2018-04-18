@@ -1,3 +1,6 @@
+# checkpoint
+source ${SETUP_LOCATION}/checkpoint
+
 mkdir -p ${WORK_DIR}/08-mergeCoaddDetections
 cd ${WORK_DIR}/08-mergeCoaddDetections
 ln -sfn ${WORK_DIR} pardir

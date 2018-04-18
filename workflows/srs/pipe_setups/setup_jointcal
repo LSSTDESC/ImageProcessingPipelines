@@ -1,3 +1,6 @@
+# checkpoint
+source ${SETUP_LOCATION}/checkpoint
+
 mkdir -p ${WORK_DIR}/04-jointcal
 cd ${WORK_DIR}/04-jointcal
 ln -sfn ${WORK_DIR} pardir

@@ -1,3 +1,6 @@
+# checkpoint
+source ${SETUP_LOCATION}/checkpoint
+
 #mkdir -p ${WORK_DIR}/02-processEimage
 cd ${WORK_DIR}/02-processEimage
 #ln -sfn ${WORK_DIR} pardir
