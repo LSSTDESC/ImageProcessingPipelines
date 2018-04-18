@@ -45,6 +45,21 @@ def run_makeFpSummary():
             num += 1
 
 
+def run_reportPatches():
+    process = pipeline.getProcessInstance("setup_reportPatches")
+    vars = HashMap(process.getVariables())
+    workdir = vars.remove("WORK_DIR")
+    filters = vars.remove("FILTERS").split(',')
+    num = 0
+    for filt in filters:
+        nscript = vars.remove('n' + filt + 'scripts')
+        for i in range(1, int(nscript) + 1):
+            script = workdir + "/03-makeSkyMap/scripts/%s/visit_%03d_script.sh" % (filt, i)
+            vars.put("CUR_SCRIPT", script)
+            pipeline.createSubstream("reportPatchesVisit", num, vars)
+            num += 1
+
+
 def run_singleFrameDriver():
     process = pipeline.getProcessInstance("setup_singleFrameDriver")
     vars = HashMap(process.getVariables())

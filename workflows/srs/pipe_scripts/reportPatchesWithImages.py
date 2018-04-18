@@ -81,15 +81,24 @@ def reportPatchesWithImages(butler, visits=None, ccdkey='sensor'):
     # Organize the dataids by visit
     vdataids = organize_by_visit(dataids, visits=visits)
 
-    # Get the ccds that will be used to compute the visit corner coordinates
-    # this depend on the instrument, so cannot be hardcoded
-    ccds = get_visit_corners(butler, vdataids[list(vdataids)[0]], getccds=True, ccdkey=ccdkey)
-
-    # Get the corners coordinates for all visits
-    allcoords = []
-    for ii, vdataid in enumerate(vdataids):
-        print("Running on visit %03d / %i" % (ii + 1, len(vdataids)))
-        allcoords.append(get_visit_corners(butler, vdataids[vdataid], ccds=ccds, ccdkey=ccdkey))
+    if visits is None or len(visits) != 1:
+        # Get the ccds that will be used to compute the visit corner coordinates
+        # this depend on the instrument, so cannot be hardcoded
+        ccds = get_visit_corners(butler, vdataids[list(vdataids)[0]], getccds=True, ccdkey=ccdkey)
+        
+        # Get the corners coordinates for all visits
+        allcoords = []
+        for ii, vdataid in enumerate(vdataids):
+            print("Running on visit %03d / %i" % (ii + 1, len(vdataids)))
+            allcoords.append(get_visit_corners(butler, vdataids[vdataid], ccds=ccds, ccdkey=ccdkey))
+    else:
+        # Only one visit given, so run the code on all sensor/ccd
+        # Get the corners coordinates for all visits
+        allcoords = []
+        for ii, vdataid in enumerate(vdataids):
+            print("Running on visit %03d / %i" % (ii + 1, len(vdataids)))
+            allcoords.append(get_visit_corners(butler, vdataids[vdataid], ccdkey=ccdkey))
+    
 
     # Get the tract/patch list in which the visits are
     alltps = []
@@ -141,3 +150,12 @@ if __name__ == "__main__":
     for tract in tps:
         for patch in tps[tract]:
             print("tract=%i patch=%i,%i" % (tract, patch[0], patch[1]))
+
+    if opts.visits is not None:
+        filename = "_".join(opts.visits) + "_patches.list"
+        towrite = []
+        for tract in tps:
+            for patch in tps[tract]:
+                towrite.append("tract=%i patch=%i,%i" % (tract, patch[0], patch[1]))
+        np.savetxt(filename, towrite, fmt="%s")
+        print("Tracts/patches list saved under", filename)        

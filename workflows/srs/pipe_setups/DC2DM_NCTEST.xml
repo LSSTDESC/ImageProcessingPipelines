@@ -156,6 +156,42 @@
       </depends>
     </process>
 
+    <!-- report patches -->
+    <!--   setup -->
+    <process name="setup_reportPatches" site="${JOBSITE}">
+      <notation>Setup for the report patches script</notation>
+      <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
+	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
+      <depends>
+        <after process="makeSkyMap"/>
+      </depends>
+    </process>
+    <!--   launch jobs -->
+    <process name="reportPatches" site="${JOBSITE}">
+      <notation>Run reportPatches for all visits</notation>
+      <script><![CDATA[
+      execfile("%s/%s" % (SLAC_SETUP_LOCATION, SCRIPT_NAME))
+      run_reportPatches()
+      ]]>
+      </script>
+      <depends>
+        <after process="setup_reportPatches"/>
+      </depends>
+      <createsSubtasks>
+	<subtask>reportPatchesVisit</subtask>
+      </createsSubtasks>	
+    </process>
+
+    <!-- wrapPatchesLists -->
+    <process name="wrapPatchesLists" site="${JOBSITE}">
+      <notation>Wrap the patches lists</notation>
+      <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
+	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
+      <depends>
+        <after process="reportPatchesVisit.runReportPatches"/>
+      </depends>
+    </process>
+
     <!-- jointcal -->
     <!--   setup -->
     <process name="setup_jointcal" site="${JOBSITE}">
@@ -163,7 +199,7 @@
       <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
 	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
       <depends>
-        <after process="makeSkyMap"/>
+        <after process="wrapPatchesLists"/>
       </depends>
     </process>
     <!--   launch jobs -->
@@ -422,6 +458,15 @@
     </variables>
     <job batchOptions="${BATCH_OPTIONS}" 
          executable="${MAKEFP_SCRIPT}"/>
+      </process>                
+    </task>
+    <task name="reportPatchesVisit" type="LSST">
+      <process name="runReportPatches" site="${JOBSITE}">
+	<variables>
+	  <var name="streamID">${format(pipeline.stream, "%01d")}</var>
+	</variables>
+        <job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_1}"
+	     executable="${CUR_SCRIPT}"/>
       </process>                
     </task>
     <!--   Subtask to run jointcal -->

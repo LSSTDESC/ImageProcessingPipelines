@@ -1,0 +1,4 @@
+cd ${WORK_DIR}/03-makeSkyMap
+
+# Build the list of tracts/patches
+wrapPatchesLists.py -f ${FILTERS}
