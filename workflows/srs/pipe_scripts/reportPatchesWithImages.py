@@ -154,7 +154,7 @@ if __name__ == "__main__":
             print("tract=%i patch=%i,%i" % (tract, patch[0], patch[1]))
 
     if opts.visits is not None:
-        filename = ("" if opts.filt is None else (opts.filt + "_") + "_".join(opts.visits) + "_patches.list"
+        filename = ("" if opts.filt is None else (opts.filt + "_")) + "_".join(opts.visits) + "_patches.list"
         towrite = []
         for tract in tps:
             for patch in tps[tract]:
