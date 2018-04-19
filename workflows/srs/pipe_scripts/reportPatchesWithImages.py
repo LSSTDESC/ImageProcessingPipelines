@@ -169,8 +169,8 @@ if __name__ == "__main__":
             print("tract=%i patch=%i,%i" % (tract, patch[0], patch[1]))
 
     if opts.visits is not None:
-        print("%i patches for %i tracts" % \
-              (len(tps), sum([len(tps[tract]) for tract in tps])))
+        print("%i patches from %i tracts" % \
+              (sum([len(tps[tract]) for tract in tps]), len(tps))))
         filename = ("" if opts.filt is None else (opts.filt + "_")) + \
                    "_".join(opts.visits) + "_patches.list"
         towrite = []
