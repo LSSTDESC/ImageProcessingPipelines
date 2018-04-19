@@ -102,17 +102,22 @@ def reportPatchesWithImages(butler, visits=None, ccdkey='sensor'):
         for ii, vdataid in enumerate(vdataids):
             print("Running on visit %03d / %i" % (ii + 1, len(vdataids)))
             allcoords.append(get_visit_corners(butler, vdataids[vdataid], ccds=ccds, ccdkey=ccdkey))
+
+        # Get the tract/patch list in which the visits are
+        alltps = []
+        for vdataid, vcoords in zip(vdataids, allcoords):
+            alltps.extend(get_tps(skyMap, vcoords, vdataids[vdataid][0]['filter']))
     else:
         # Only one visit given, so run the code on all sensor/ccd
         # Get the corners coordinates for all visits
         visit = int(visits[0])
         print("%i dataIds loaded for visit" % len(vdataids[visit]), visit)
-        allcoords = [get_dataid_corners(butler, vdataids[visit], ccdkey=ccdkey)]
+        allcoords = get_dataid_corners(butler, vdataids[visit], ccdkey=ccdkey)
 
-    # Get the tract/patch list in which the visits are
-    alltps = []
-    for vdataid, vcoords in zip(vdataids, allcoords):
-        alltps.extend(get_tps(skyMap, vcoords, vdataids[vdataid][0]['filter']))
+        # Get the tract/patch list in which the sensor are
+        alltps = []
+        for coords in allcoords:
+            alltps.extend(get_tps(skyMap, coords, vdataids[visit][0]['filter']))
 
     # Re-organize the tract and patch list into a dictionnary
     tps = {}
