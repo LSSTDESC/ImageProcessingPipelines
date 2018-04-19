@@ -4,7 +4,7 @@
           xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
 			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
   
-  <task name="DC2DM_NCTEST" type="LSST" version="0.41">
+  <task name="DC2DM_NCTEST" type="LSST" version="0.42">
     <notation>Task to run the DM stack on DC2 simulated images</notation>
     <variables>
       <!-- Job site and configuration-->
@@ -528,7 +528,7 @@
 	<variables>
 	  <var name="streamID">${format(pipeline.stream, "%01d")}</var>
 	</variables>
-        <job batchOptions="${BATCH_OPTIONS}" executable="${CUR_SCRIPT}"/>
+        <job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_0}" executable="${CUR_SCRIPT}"/>
       </process>                
     </task>
     <!--   Subtask to run forcedPhotCoadd -->
