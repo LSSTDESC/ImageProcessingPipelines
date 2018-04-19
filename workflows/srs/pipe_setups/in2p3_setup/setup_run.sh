@@ -15,10 +15,12 @@ mkdir $RUN
 cd $RUN
 
 # Clone and install the `ImageProcessingPipelines` and `obs_lsstSim` packages
+echo
 echo "cloning ImageProcessingPipelines into $SOFTDIR/$RUN"
 git clone https://github.com/LSSTDESC/ImageProcessingPipelines.git
 echo "cloning obs_lsstSim into $SOFTDIR/$RUN"
 git clone https://github.com/LSSTDESC/obs_lsstSim.git
+echo
 echo "Installing obs_lsstSim"
 cd obs_lsstSim
 source /sps/lsst/software/lsst_distrib/$DMVER/loadLSST.bash
@@ -26,6 +28,7 @@ setup lsst_distrib
 setup -k -r .
 scons
 
+echo
 echo "Done with software install"
 echo "Moving to output data directory setup"
 
@@ -36,6 +39,7 @@ export DATADIR=/sps/lsst/dataproducts/desc/DC2/
 cd $DATADIR
 
 # Create a subdirectory for the current run
+echo
 echo "Creating directory $DATADIR/$RUN"
 mkdir $RUN
 cd $RUN
@@ -55,11 +59,15 @@ echo "Editing stream_config.sh"
 sed -i s/DM_RELEASE=/DM_RELEASE=\"$DMVER\"/g stream_config.sh
 
 # Create the list of file to ingest
+echo
 echo "Now creating the list of file to ingest"
 export PATH=$PATH:$SOFTDIR/$RUN/ImageProcessingPipelines/workflows/srs/pipe_scripts/
 export VISITDIR=/sps/lsst/datasets/desc/DC2/$DATASET/
 createIngestFileList.py $VISITDIR --recursive
 
-echo "Setup is now done. You should have two new directories containing the"
-echo " - software : $SOFTDIR/$RUN"
-echo " - data repo : $DATADIR/$RUN/$DMVER"
+echo
+echo "Setup is now done. Here is the list of data and software directories"
+echo " - Raw data : /sps/lsst/datasets/desc/DC2/$DATASET"
+echo " - Production data dir: $DATADIR/$RUN/$DMVER"
+echo " - Dedicated Pipeline softwares: $SOFTDIR/$RUN"
+echo " - DM stack: /sps/lsst/software/lsst_distrib/$DMVER"
