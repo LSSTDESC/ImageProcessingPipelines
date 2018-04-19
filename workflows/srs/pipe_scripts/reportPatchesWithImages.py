@@ -34,7 +34,7 @@ def organize_by_visit(dataids, visits=None):
 
 def get_visit_corners(butler, dataids, ccds=None, getccds=False, ccdkey='sensor'):
     ras, decs, accds = [], [], []
-    for dataid in dataids:
+    for ii, dataid in enumerate(dataids):
         if ccds is not None and dataid[ccdkey] not in ccds:
             continue
         calexp = butler.get('calexp', dataId=dataid)
@@ -49,6 +49,16 @@ def get_visit_corners(butler, dataids, ccds=None, getccds=False, ccdkey='sensor'
     else:
         return [accds[np.argmin(ras)], accds[np.argmin(decs)],
                 accds[np.argmax(ras)], accds[np.argmax(decs)]]
+
+
+def get_dataid_corners(butler, dataids, ccdkey='sensor'):
+    coords = []
+    for ii, dataid in enumerate(dataids):
+        print("Runing on dataId %i / %i :" % (ii + 1, len(dataids)), dataid)
+        calexp = butler.get('calexp', dataId=dataid)
+        coords.append([calexp.getWcs().pixelToSky(point)
+                       for point in geom.Box2D(calexp.getBBox()).getCorners()])
+    return coords
 
 def get_tps(skymap, coords, filt=None):
     tplist = skymap.findTractPatchList(coords)
@@ -94,11 +104,9 @@ def reportPatchesWithImages(butler, visits=None, ccdkey='sensor'):
     else:
         # Only one visit given, so run the code on all sensor/ccd
         # Get the corners coordinates for all visits
-        allcoords = []
-        for ii, vdataid in enumerate(vdataids):
-            print("Running on visit %03d / %i" % (ii + 1, len(vdataids)))
-            allcoords.append(get_visit_corners(butler, vdataids[vdataid], ccdkey=ccdkey))
-    
+        visit = visits[0]
+        print("%i dataIds loaded for visit" % len(vdataids[visit]), visit)
+        allcoords = get_dataid_corners(butler, vdataids[visit], ccdkey=ccdkey)
 
     # Get the tract/patch list in which the visits are
     alltps = []
@@ -130,7 +138,7 @@ if __name__ == "__main__":
                       help="Optional list of visits (file or coma separated list)")
     parser.add_option("--ccdkey", type="string",
                       help="CCD key", default='sensor')
-    parser.add_option("--filt", type="string",
+    parser.add_option("-f", "--filt", type="string",
                       help="A filter name", default=None)
     opts, args = parser.parse_args()
 
@@ -144,6 +152,7 @@ if __name__ == "__main__":
                                                        for arr in opts.visits]][0]]
         else:
             opts.visits = opts.visits.split(',')
+        print("%s visit loaded" % len(opts.visits))
 
     # Get the full list of tract/patch in which are all visits
     tps = reportPatchesWithImages(args[0], visits=opts.visits, ccdkey=opts.ccdkey)
