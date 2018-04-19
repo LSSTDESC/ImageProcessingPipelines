@@ -176,7 +176,6 @@ if __name__ == "__main__":
         towrite = []
         for tract in tps:
             for patch in tps[tract]:
-                towrite.append("--id filter=%s tract=%i patch=%i,%i" % \
-                               (opts.filt, tract, patch[0], patch[1]))
+                towrite.append("tract=%i patch=%i,%i" % (tract, patch[0], patch[1]))
         np.savetxt(filename, towrite, fmt="%s")
         print("Tracts/patches list saved under", filename)        
