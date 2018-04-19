@@ -65,18 +65,10 @@ if __name__ == "__main__":
         print("INFO: %i visits loaded: " % len(visits), visits)
 
         # How many jobs should we be running (and how many visit in each?)?
-        opts.mod = 5
         njobs = LR.job_number(visits, opts.mod, opts.max)
 
         # Reorganize the visit list in sequence
         visits_lists = LR.organize_items(visits, njobs)
-
-        # specific options for processEimage
-        # may not want to set queue long at NERSC
-        opts.queue = "long"
-        if opts.multicore:
-            opts.queue = "mc_huge"
-            opts.otheroptions = "-pe multicores 8"
 
         # Loop over the visit sub lists
         numscript = 1
