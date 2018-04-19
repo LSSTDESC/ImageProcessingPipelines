@@ -36,12 +36,14 @@ if __name__ == "__main__":
     files = glob.glob("*_patches.list")
 
     all_tracts_patches = np.concatenate([np.loadtxt(f, dtype='bytes').astype(str) for f in files])
-    all_tracts_patches = set(np.concatenate(all_tracts_patches))
+    all_tracts_patches = [' '.join(tp) for tp in all_tracts_patches]
+    all_tracts_patches = list(set(all_tracts_patches))
     np.savetxt("patches.txt", all_tracts_patches, fmt="%s")
     for filt in opts.filters:
         files = glob.glob("%s_*_patches.list" % filt)
         all_tp = np.concatenate([np.loadtxt(f, dtype='bytes').astype(str) for f in files])
-        all_tp = set(np.concatenate(all_tp))
+        all_tp = [' '.join(tp) for tp in all_tracts_patches]
+        all_tp = list(set(all_tracts_patches))
         all_tp = [("--id filter=%s " % filt + tp) for tp in all_tp]
         np.savetxt("patches_%s.txt" % filt, all_tp, fmt="%s")
 
