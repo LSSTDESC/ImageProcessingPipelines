@@ -60,6 +60,7 @@ def get_dataid_corners(butler, dataids, ccdkey='sensor'):
                        for point in geom.Box2D(calexp.getBBox()).getCorners()])
     return coords
 
+
 def get_tps(skymap, coords, filt=None):
     tplist = skymap.findTractPatchList(coords)
     tps = []
@@ -106,7 +107,7 @@ def reportPatchesWithImages(butler, visits=None, ccdkey='sensor'):
         # Get the corners coordinates for all visits
         visit = int(visits[0])
         print("%i dataIds loaded for visit" % len(vdataids[visit]), visit)
-        allcoords = get_dataid_corners(butler, vdataids[visit], ccdkey=ccdkey)
+        allcoords = [get_dataid_corners(butler, vdataids[visit], ccdkey=ccdkey)]
 
     # Get the tract/patch list in which the visits are
     alltps = []
