@@ -2,6 +2,20 @@
 
 ## Data and software directories
 
+Define the following envirnoment variables that will be needed by the setup scripts.
+
+      export DATASET="Run1.2p"     # name of the dataset directory in /sps/lsst/datasets/desc/DC2/
+      export RUN="Run1.2p"         # name the you want to give to your run 
+      export DMVER="w_2018_15"     # version of the DM stack that you want to use
+
+Get the setup script from github
+
+      wget https://raw.githubusercontent.com/LSSTDESC/ImageProcessingPipelines/master/workflows/srs/pipe_setups/in2p3_setup/setup_run.sh
+
+Run the script
+
+      ./setup_run.sh
+
 ### Software setup
 
 - This setup has to be done when a new set of data is available under `/sps/lsst/datasets/desc/DC2/`, e.g.,
