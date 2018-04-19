@@ -104,7 +104,7 @@ def reportPatchesWithImages(butler, visits=None, ccdkey='sensor'):
     else:
         # Only one visit given, so run the code on all sensor/ccd
         # Get the corners coordinates for all visits
-        visit = visits[0]
+        visit = int(visits[0])
         print("%i dataIds loaded for visit" % len(vdataids[visit]), visit)
         allcoords = get_dataid_corners(butler, vdataids[visit], ccdkey=ccdkey)
 
