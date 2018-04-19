@@ -62,4 +62,4 @@ createIngestFileList.py $VISITDIR --recursive
 
 echo "Setup is now done. You should have two new directories containing the"
 echo " - software : $SOFTDIR/$RUN"
-echo " - data repo : $DATADIR/$RUN/DMVER"
+echo " - data repo : $DATADIR/$RUN/$DMVER"

@@ -11,9 +11,10 @@ Define the following envirnoment variables that will be needed by the setup scri
 Get the setup script from github
 
       wget https://raw.githubusercontent.com/LSSTDESC/ImageProcessingPipelines/master/workflows/srs/pipe_setups/in2p3_setup/setup_run.sh
+      chmod 755 setup_run.sh
 
 Run the script
-
+    
       ./setup_run.sh
 
 ### Software setup
