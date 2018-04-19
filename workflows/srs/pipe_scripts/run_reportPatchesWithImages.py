@@ -17,17 +17,15 @@ __author__ = 'Nicolas Chotard <nchotard@in2p3.fr>'
 __version__ = '$Revision: 1.0 $'
 
 
-def build_cmd(visit, config, filt, raft=None, input='pardir/input', output='pardir/output'):
+def build_cmd(visit, config, filt, input='pardir/input', output='pardir/output'):
 
     if not os.path.isdir("scripts/" + filt):
         os.makedirs("scripts/" + filt)
 
-    # Create and save a sub list of visit
-    filename = "scripts/" + filt + "/" + visit + ".list"
-    N.savetxt(filename, ["--id visit=%s" % visit], fmt="%s")
-
     # Create the command line
-    cmd = "reportPatchesWithImages.py %s --visits %s" % (output, filename)
+    cmd = ""
+    for vis in visit:
+        cmd += "reportPatchesWithImages.py %s --visits %s --filt %s\n" % (output, vis, filt)
     print("\nCMD: ", cmd)
 
     return cmd
@@ -67,11 +65,11 @@ if __name__ == "__main__":
         print("INFO: %i visits loaded: " % len(visits), visits)
 
         # How many jobs should we be running (and how many visit in each?)?
-        opts.mod = 1  # one job per visit to be faster
+        opts.mod = 5
         njobs = LR.job_number(visits, opts.mod, opts.max)
 
         # Reorganize the visit list in sequence
-        visits = LR.organize_items(visits, njobs)
+        visits_lists = LR.organize_items(visits, njobs)
 
         # specific options for processEimage
         # may not want to set queue long at NERSC
@@ -80,36 +78,18 @@ if __name__ == "__main__":
             opts.queue = "mc_huge"
             opts.otheroptions = "-pe multicores 8"
 
-        # We will put one raft per job, to make sure it does not get killed
-        rafts = ['%i,%i' %(i, j) for i in range(5) for j in range(5)]
-        rafts = [raft for raft in rafts if raft not in ['0,0', '0,4', '4,0', '4,4']]
-
-        # Loop over the visit sub lists and the raft list
+        # Loop over the visit sub lists
         numscript = 1
-        for i, visit in enumerate(visits):
-            if opts.perraft:
-                for j, raft in enumerate(rafts):
-                    # Build the command line and other things
-                    cmd = build_cmd(visit[0], config, filt, raft=raft,
-                                    input=opts.input, output=opts.output)
-                    
-                    # Only submit the job if asked
-                    prefix = "visit_%03d_script" % numscript
-                    LR.submit(cmd, prefix, filt, autosubmit=opts.autosubmit,
-                              ct=opts.ct, vmem=opts.vmem, queue=opts.queue,
-                              system=opts.system, otheroptions=opts.otheroptions,
-                              from_slac=opts.fromslac, from_nersc=opts.fromnersc)
-                    numscript += 1
-            else:
-                cmd = build_cmd(visit[0], config, filt, input=opts.input, output=opts.output)
-                    
-                # Only submit the job if asked
-                prefix = "visit_%03d_script" % numscript
-                LR.submit(cmd, prefix, filt, autosubmit=opts.autosubmit,
-                          ct=opts.ct, vmem=opts.vmem, queue=opts.queue,
-                          system=opts.system, otheroptions=opts.otheroptions,
-                          from_slac=opts.fromslac, from_nersc=opts.fromnersc)
-                numscript += 1    
+        for i, visits in enumerate(visits_lists):
+            cmd = build_cmd(visits, config, filt, input=opts.input, output=opts.output)
+            
+            # Only submit the job if asked
+            prefix = "visit_%03d_script" % numscript
+            LR.submit(cmd, prefix, filt, autosubmit=opts.autosubmit,
+                      ct=opts.ct, vmem=opts.vmem, queue=opts.queue,
+                      system=opts.system, otheroptions=opts.otheroptions,
+                      from_slac=opts.fromslac, from_nersc=opts.fromnersc)
+            numscript += 1    
                     
 
     if not opts.autosubmit:

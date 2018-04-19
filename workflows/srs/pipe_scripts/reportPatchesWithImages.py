@@ -130,6 +130,8 @@ if __name__ == "__main__":
                       help="Optional list of visits (file or coma separated list)")
     parser.add_option("--ccdkey", type="string",
                       help="CCD key", default='sensor')
+    parser.add_option("--filt", type="string",
+                      help="A filter name", default=None)
     opts, args = parser.parse_args()
 
     # Is there a list of visit given by the use?
@@ -152,7 +154,7 @@ if __name__ == "__main__":
             print("tract=%i patch=%i,%i" % (tract, patch[0], patch[1]))
 
     if opts.visits is not None:
-        filename = "_".join(opts.visits) + "_patches.list"
+        filename = ("" if opts.filt is None else (opts.filt + "_") + "_".join(opts.visits) + "_patches.list"
         towrite = []
         for tract in tps:
             for patch in tps[tract]:
