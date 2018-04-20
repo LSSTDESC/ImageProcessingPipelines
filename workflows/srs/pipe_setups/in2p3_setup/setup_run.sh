@@ -57,6 +57,7 @@ cp $SOFTDIR/$RUN/ImageProcessingPipelines/workflows/srs/pipe_streams/stream_conf
 # Edit the stream_config.sh file
 echo "Editing stream_config.sh"
 sed -i s/DM_RELEASE=/DM_RELEASE=\"$DMVER\"/g stream_config.sh
+sed -i s/RUN=/RUN=\"$RUN\"/g stream_config.sh
 
 # Create the list of file to ingest
 echo
