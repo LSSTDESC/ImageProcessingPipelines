@@ -23,7 +23,7 @@ def build_cmd(visit, config, filt, input='pardir/input', output='pardir/output')
         os.makedirs("scripts/" + filt)
 
     # Create the command line
-    cmd = ""
+    cmd = "export PATH=$PATH:$SCRIPT_LOCATION\n"
     for vis in visit:
         cmd += "reportPatchesWithImages.py %s --visits %s --filt %s\n" % (output, vis, filt)
     print("\nCMD: ", cmd)
