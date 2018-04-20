@@ -11,6 +11,6 @@ then
   then
     ingestDriver.py ${IN_DIR} @${VISIT_FILE} --cores 8 --mode link --batch-type none --output ${IN_DIR} -c clobber=True allowError=True register.ignore=True --no-versions
   else
-    ingestDriver.py ${IN_DIR} @${VISIT_FILE} --cores 8 -c clobber=True allowError=True register.ignore=True
+    ingestDriver.py ${IN_DIR} @${VISIT_FILE} --cores 16 -c clobber=True allowError=True register.ignore=True
   fi
 fi
