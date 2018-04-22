@@ -10,6 +10,3 @@ config.doApCorr=True
 # These do not work anymore??
 #config.measurement.plugins['base_PixelFlags'].masksFpCenter.append('BRIGHT_OBJECT')
 #config.measurement.plugins['base_PixelFlags'].masksFpAnywhere.append('BRIGHT_OBJECT')
-
-# Do not exit with a FATAL error if there is no data to process
-config.skipMissing=True
