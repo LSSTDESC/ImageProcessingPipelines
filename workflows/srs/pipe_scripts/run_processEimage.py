@@ -11,13 +11,15 @@ from __future__ import print_function
 import os
 import numpy as N
 import libRun as LR
+import lsst.daf.persistence as dafPersist
 
 
 __author__ = 'Nicolas Chotard <nchotard@in2p3.fr>'
 __version__ = '$Revision: 1.0 $'
 
 
-def build_cmd(visit, config, filt, raft=None, input='pardir/input', output='pardir/output'):
+def build_cmd(visit, config, filt, dataids=None, raft=None,
+              input='pardir/input', output='pardir/output'):
 
     if not os.path.isdir("scripts/" + filt):
         os.makedirs("scripts/" + filt)
@@ -27,8 +29,11 @@ def build_cmd(visit, config, filt, raft=None, input='pardir/input', output='pard
         filename = "scripts/" + filt + "/" + visit + "_R" + raft.replace(',', '') + ".list"
         N.savetxt(filename, ["--id visit=%s raft='%s'" % (visit, raft)], fmt="%s")
     else:
+        lds = [dataid for dataid in dataids if dataid['visit'] == int(visit)]
         filename = "scripts/" + filt + "/" + visit + ".list"
-        N.savetxt(filename, ["--id visit=%s" % visit], fmt="%s")
+        N.savetxt(filename, ["--id visit=%s raft=%s sensor=%s" % \
+                             (visit, ld['raft'], ld['sensor'])
+                             for ld in lds], fmt="%s")
 
     # Create the command line
     cmd = ""    
@@ -70,6 +75,13 @@ if __name__ == "__main__":
     """
 
     opts, args = LR.standard_options(usage=usage, description=description)
+
+    # Get all available dataids
+    dataset = 'eimage'
+    butler = dafPersist.Butler(opts.input)
+    keys = sorted(butler.getKeys(dataset).keys())
+    metadata = butler.queryMetadata(dataset, format=keys)
+    dataids = [dict(zip(keys, list(v) if not isinstance(v, list) else v)) for v in metadata]
 
     # Loop over filters
     for filt in opts.filters:
@@ -125,7 +137,8 @@ if __name__ == "__main__":
                               from_slac=opts.fromslac, from_nersc=opts.fromnersc)
                     numscript += 1
             else:
-                cmd = build_cmd(visit[0], config, filt, input=opts.input, output=opts.output)
+                cmd = build_cmd(visit[0], config, filt, dataids=dataids,
+                                input=opts.input, output=opts.output)
                     
                 # Only submit the job if asked
                 prefix = "visit_%03d_script" % numscript
