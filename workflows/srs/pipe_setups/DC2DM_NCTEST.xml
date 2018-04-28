@@ -4,7 +4,7 @@
           xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
 			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
   
-  <task name="DC2DM_NCTEST" type="LSST" version="0.44">
+  <task name="DC2DM_NCTEST" type="LSST" version="0.45">
     <notation>Task to run the DM stack on DC2 simulated images</notation>
     <variables>
       <!-- Job site and configuration-->
@@ -77,7 +77,7 @@
     <!-- ingest reference catalog -->
     <process name="ingestRefCat" site="${JOBSITE}">
       <notation>Ingest the reference catalog</notation>
-      <job batchOptions="${BATCH_OPTIONS}"
+      <job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_0}"
 	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
       <depends>
         <after process="setup_ingest"/>
