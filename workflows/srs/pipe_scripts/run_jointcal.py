@@ -32,6 +32,13 @@ if __name__ == "__main__":
 
     patches = np.loadtxt('patches.txt', dtype='str', unpack=True)
     tracts = [s.split('=')[1] for s in set(patches[0])]
+
+    # How many jobs should we be running (and how many tract in each?)?
+    njobs = LR.job_number(tracts, opts.mod, opts.max)
+    
+    # Reorganize the tract list in sequence
+    alltracts = LR.organize_items(tracts, njobs)
+    
     # Loop over filters
     for filt in opts.filters:
         # Are there visits to load
@@ -39,22 +46,23 @@ if __name__ == "__main__":
             print("WARNING: No file (no visit) for filter", filt)
             continue
         cmd = ""
-        for tract in tracts:
-            lfile = open('%s.list' % filt, 'r')
-            lines = lfile.readlines()
-            lfile.close()
-            newfile = open('%s_%s.list' % (filt, str(tract)), 'w')
-            for line in lines:
-                newfile.write(line.replace('--id ', '--id tract=%s ' % str(tract)))
+        for i, tracts in enumerate(alltracts):    
+            for tract in tracts:
+                lfile = open('%s.list' % filt, 'r')
+                lines = lfile.readlines()
+                lfile.close()
+                newfile = open('%s_%s.list' % (filt, str(tract)), 'w')
+                for line in lines:
+                    newfile.write(line.replace('--id ', '--id tract=%s ' % str(tract)))
             newfile.close()
             cmd += "jointcal.py %s --output %s @%s_%s.list --configfile %s\n" % \
                    (input, output, filt, str(tract), config)
-        # Only submit the job if asked
-        prefix = "jointcal_%s" % filt
-        LR.submit(cmd, prefix, filt, autosubmit=opts.autosubmit,
-                  ct=opts.ct, vmem=opts.vmem, queue=opts.queue,
-                  system=opts.system, otheroptions=opts.otheroptions,
-                  from_slac=opts.fromslac)
+            # Only submit the job if asked
+            prefix = "jointcal_%s_%03d" % (filt, i + 1)
+            LR.submit(cmd, prefix, filt, autosubmit=opts.autosubmit,
+                      ct=opts.ct, vmem=opts.vmem, queue=opts.queue,
+                      system=opts.system, otheroptions=opts.otheroptions,
+                      from_slac=opts.fromslac)
 
     if not opts.autosubmit:
         print("\nINFO: Use option --autosubmit to submit the jobs")

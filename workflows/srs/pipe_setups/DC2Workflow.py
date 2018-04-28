@@ -82,10 +82,12 @@ def run_jointcal():
     filters = vars.remove("FILTERS").split(',')
     num = 0
     for filt in filters:
-        script = workdir + "/04-jointcal/scripts/%s/jointcal_%s.sh" % (filt, filt)
-        vars.put("CUR_SCRIPT", script)
-        pipeline.createSubstream("jointcalFilter", num, vars)
-        num += 1
+        nscript = vars.remove('n' + filt + 'scripts')
+        for i in range(1, int(nscript) + 1):
+            script = workdir + "/04-jointcal/scripts/%s/jointcal_%s_%03d.sh" % (filt, filt, i)
+            vars.put("CUR_SCRIPT", script)
+            pipeline.createSubstream("jointcalFilter", num, vars)
+            num += 1
 
 def run_jointcalCoadd():
     process = pipeline.getProcessInstance("setup_jointcalCoadd")
