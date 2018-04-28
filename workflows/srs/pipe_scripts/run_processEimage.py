@@ -29,10 +29,10 @@ def build_cmd(visit, config, filt, dataids=None, raft=None,
         filename = "scripts/" + filt + "/" + visit + "_R" + raft.replace(',', '') + ".list"
         N.savetxt(filename, ["--id visit=%s raft='%s'" % (visit, raft)], fmt="%s")
     else:
-        lds = [dataid for dataid in dataids if dataid['visit'] == int(visit)]
+        lds = [dataid for dataid in dataids if dataid['visit'] in [int(v) for v in visit]]
         filename = "scripts/" + filt + "/" + visit + ".list"
         N.savetxt(filename, ["--id visit=%s raft=%s sensor=%s" % \
-                             (visit, ld['raft'], ld['sensor'])
+                             (ld['visit'], ld['raft'], ld['sensor'])
                              for ld in lds], fmt="%s")
 
     # Create the command line
@@ -103,7 +103,6 @@ if __name__ == "__main__":
         print("INFO: %i visits loaded: " % len(visits), visits)
 
         # How many jobs should we be running (and how many visit in each?)?
-        opts.mod = 1  # one job per visit to be faster
         njobs = LR.job_number(visits, opts.mod, opts.max)
 
         # Reorganize the visit list in sequence
@@ -137,7 +136,7 @@ if __name__ == "__main__":
                               from_slac=opts.fromslac, from_nersc=opts.fromnersc)
                     numscript += 1
             else:
-                cmd = build_cmd(visit[0], config, filt, dataids=dataids,
+                cmd = build_cmd(visit, config, filt, dataids=dataids,
                                 input=opts.input, output=opts.output)
                     
                 # Only submit the job if asked
