@@ -29,8 +29,10 @@ def build_cmd(visit, config, filt, dataids=None, raft=None,
         filename = "scripts/" + filt + "/" + visit + "_R" + raft.replace(',', '') + ".list"
         N.savetxt(filename, ["--id visit=%s raft='%s'" % (visit, raft)], fmt="%s")
     else:
+        if isinstance(visit, str):
+            visit = [visit]
         lds = [dataid for dataid in dataids if dataid['visit'] in [int(v) for v in visit]]
-        filename = "scripts/" + filt + "/" + visit + ".list"
+        filename = "scripts/" + filt + "/" + "_".join(visit) + ".list"
         N.savetxt(filename, ["--id visit=%s raft=%s sensor=%s" % \
                              (ld['visit'], ld['raft'], ld['sensor'])
                              for ld in lds], fmt="%s")
