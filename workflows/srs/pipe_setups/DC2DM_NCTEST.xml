@@ -4,7 +4,7 @@
           xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
 			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
   
-  <task name="DC2DM_NCTEST" type="LSST" version="0.45">
+  <task name="DC2DM_NCTEST" type="LSST" version="0.46">
     <notation>Task to run the DM stack on DC2 simulated images</notation>
     <variables>
       <!-- Job site and configuration-->
@@ -17,13 +17,11 @@
       <var name="IN2P3_HUGE_OPTIONS"> -q huge </var>
       <var name="IN2P3_MCLONG_OPTIONS"> -q mc_long -pe multicores 8 </var>
       <var name="IN2P3_MCHUGE_OPTIONS"> -q mc_huge -pe multicores 8 </var>
-      <var name="IN2P3_MCHUGE16_OPTIONS"> -q mc_huge -pe multicores 16 </var>
       <var name="NERSC_BATCH_OPTIONS"> -p MINIDRPHK | -L SCRATCH,projecta | -C haswell </var>
       <var name="BATCH_OPTIONS">${SITE=="NERSC" ? "${NERSC_BATCH_OPTIONS}" : "${IN2P3_BATCH_OPTIONS} "}</var>
       <var name="EXTRA_OPTIONS_0">${SITE=="NERSC" ? " " : "${IN2P3_HUGE_OPTIONS} "}</var>
       <var name="EXTRA_OPTIONS_1">${SITE=="NERSC" ? " " : "${IN2P3_MCHUGE_OPTIONS} "}</var>
       <var name="EXTRA_OPTIONS_2">${SITE=="NERSC" ? " " : "${IN2P3_MCLONG_OPTIONS} "}</var>
-      <var name="EXTRA_OPTIONS_3">${SITE=="NERSC" ? " " : "${IN2P3_MCHUGE16_OPTIONS} "}</var>
       <!-- Base directory where script files will be placed -->
       <var name="PIPE_SUBDIR">ImageProcessingPipelines/workflows/srs</var>
       <var name="PIPE_SETUPS">${PIPE_SUBDIR}/pipe_setups</var>
@@ -67,7 +65,7 @@
     <process name="ingestData" site="${JOBSITE}">
       <notation>Ingest the input data serially</notation>
       <job maxCPU="${MAXCPU}" 
-           batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_3}"
+           batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_1}"
 	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
       <depends>
         <after process="setup_ingest"/>
