@@ -20,6 +20,7 @@ __version__ = '$Revision: 1.0 $'
 
 def build_cmd(filename, input='pardir/output', output='pardir/output'):
 
+    cmd = ""
     # Create the command line
     if opts.time:
         cmd += "time "
