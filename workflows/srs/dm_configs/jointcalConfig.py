@@ -23,4 +23,5 @@ config.doPhotometry = False   # comment out to run the photometric calibration
 # (in the flux specified by sourceFluxType); <= 0 for no limit
 config.sourceSelector['astrometry'].minSnr = 40.0  # default is 10
 
-
+# use the constrained model for astrometric fit
+config.astrometryModel="constrained"
