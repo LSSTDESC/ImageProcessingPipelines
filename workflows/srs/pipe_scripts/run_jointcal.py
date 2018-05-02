@@ -55,7 +55,7 @@ if __name__ == "__main__":
                 for line in lines:
                     newfile.write(line.replace('--id ', '--id tract=%s ' % str(tract)))
                 newfile.close()
-                cmd += "jointcal.py %s --output %s @%s_%s.list --configfile %s\n" % \
+                cmd += "jointcal.py %s --output %s @%s_%s.list --configfile %s --clobber-versions\n" % \
                        (input, output, filt, str(tract), config)
 
             # Only submit the job if asked
