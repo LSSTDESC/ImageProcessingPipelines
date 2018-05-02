@@ -54,7 +54,7 @@ if __name__ == "__main__":
         config = LR.select_config(opts.configs, filt)
 
         # Are there visit files on which to run
-        files = glob.glob("scripts/" + filt + "/*.list"
+        files = glob.glob("scripts/" + filt + "/*.list")
         if not len(files):
             print("WARNING: No file (no visit) for filter", filt)
             continue
