@@ -35,18 +35,18 @@ if __name__ == "__main__":
 
     # How many jobs should we be running (and how many tract in each?)?
     njobs = LR.job_number(tracts, opts.mod, opts.max)
-    
+
     # Reorganize the tract list in sequence
     alltracts = LR.organize_items(tracts, njobs)
-    
+
     # Loop over filters
     for filt in opts.filters:
         # Are there visits to load
         if not os.path.exists('%s.list' % filt):
             print("WARNING: No file (no visit) for filter", filt)
             continue
-        cmd = ""
-        for i, tracts in enumerate(alltracts):    
+        for i, tracts in enumerate(alltracts):
+            cmd = ""
             for tract in tracts:
                 lfile = open('%s.list' % filt, 'r')
                 lines = lfile.readlines()
@@ -54,9 +54,10 @@ if __name__ == "__main__":
                 newfile = open('%s_%s.list' % (filt, str(tract)), 'w')
                 for line in lines:
                     newfile.write(line.replace('--id ', '--id tract=%s ' % str(tract)))
-            newfile.close()
-            cmd += "jointcal.py %s --output %s @%s_%s.list --configfile %s\n" % \
-                   (input, output, filt, str(tract), config)
+                newfile.close()
+                cmd += "jointcal.py %s --output %s @%s_%s.list --configfile %s\n" % \
+                       (input, output, filt, str(tract), config)
+
             # Only submit the job if asked
             prefix = "jointcal_%s_%03d" % (filt, i + 1)
             LR.submit(cmd, prefix, filt, autosubmit=opts.autosubmit,
