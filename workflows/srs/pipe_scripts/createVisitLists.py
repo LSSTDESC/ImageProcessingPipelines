@@ -59,7 +59,7 @@ if __name__ == "__main__":
     butler = dafPersist.Butler(args.input)
 
     if args.increment:
-        print("INFO: Checking for dataIds that has not been processed yet.")
+        print("INFO: Checking for dataIds that haven't been processed yet.")
         # Only keep visit that haven't been processed yet (no calexp data)
         dataids = compare_dataIds(get_dataIds('eimage'), get_dataIds('calexp'))
     else:
