@@ -159,8 +159,8 @@ def standard_options(usage=None, description=None):
                       " '_f' in the name of the file. e.g.: processConfig.py,processConfig_u.py if you"
                       " want the 'u' filter to use a different configuration file. The default config"
                       " must be the first one.")
-    parser.add_option("-i", "--input", type="string", default="pardir/input", help="Input directory")
-    parser.add_option("-o", "--output", type="string", default="pardir/output",
+    parser.add_option("-i", "--input", type="string", default="datadir/input", help="Input directory")
+    parser.add_option("-o", "--output", type="string", default="datadir/output",
                       help="output directory")
     parser.add_option("-m", "--mod", type="int", default=4,
                       help="Nbr. of visits per job [%default]")

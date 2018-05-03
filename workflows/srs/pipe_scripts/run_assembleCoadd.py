@@ -27,8 +27,8 @@ if __name__ == "__main__":
     opts, args = LR.standard_options(usage=usage, description=description)
 
     # overwrite the -m option to force it to be 1
-    opts.input = "pardir/output"
-    opts.output = "pardir/output"
+    opts.input = "datadir/output"
+    opts.output = "datadir/output"
 
     # Loop over filters
     for filt in opts.filters:

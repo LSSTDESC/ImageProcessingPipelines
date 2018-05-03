@@ -24,7 +24,7 @@ stream=$(echo $PIPELINE_STREAMPATH | cut -f1 -d.)
 export WORK_DIR=${OUTPUT_DATA_DIR}/work/${stream}
 
 # Only set IN_DIR and OUT_DIR if not already set
-export PAR_DIR=${OUT_DIR:-${OUTPUT_DATA_DIR}/data}
+export DATA_DIR=${OUT_DIR:-${OUTPUT_DATA_DIR}/data}
 export OUT_DIR=${OUT_DIR:-${OUTPUT_DATA_DIR}/data/output}
 export IN_DIR=${IN_DIR:-${OUTPUT_DATA_DIR}/data/input}
 

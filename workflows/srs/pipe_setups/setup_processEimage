@@ -4,7 +4,8 @@ source ${SETUP_LOCATION}/checkpoint
 mkdir -p ${WORK_DIR}/02-processEimage
 cd ${WORK_DIR}/02-processEimage
 ln -sfn ${WORK_DIR} pardir
-processEimage.py ${IN_DIR} --output ${OUTDIR}
+ln -sfn ${DATA_DIR} datadir
+processEimage.py ${IN_DIR} --output ${OUT_DIR}
 createVisitLists.py --increment ${OUT_DIR}
 
 if [[ $SITE == "LSST-IN2P3" ]]

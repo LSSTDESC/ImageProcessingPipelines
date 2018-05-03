@@ -19,7 +19,7 @@ __version__ = '$Revision: 1.0 $'
 
 
 def build_cmd(visit, config, filt, dataids=None, raft=None,
-              input='pardir/input', output='pardir/output'):
+              input='datadir/input', output='datadir/output'):
 
     if not os.path.isdir("scripts/" + filt):
         os.makedirs("scripts/" + filt)
