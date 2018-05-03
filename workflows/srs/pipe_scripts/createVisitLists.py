@@ -17,9 +17,10 @@ def get_dataIds(catalog):
     keys = butler.getKeys(catalog)
     # Construct and return the dataIds dictionnary for all available data
     metadata = butler.queryMetadata(catalog, format=sorted(keys.keys()))
-    return [dict(zip(sorted(keys.keys()), list(v)
-                     if not isinstance(v, list) else v))
-            for v in metadata]
+    dataids = [dict(zip(sorted(keys.keys()), list(v)
+                        if not isinstance(v, list) else v))
+               for v in metadata]
+    return [dataid for dataid in dataids if butler.datasetExists(catalog, dataid)]
 
 
 def compare_dataIds(dataIds_1, dataIds_2):
