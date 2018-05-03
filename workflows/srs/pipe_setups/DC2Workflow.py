@@ -104,6 +104,21 @@ def run_jointcalCoadd():
             num += 1
 
 
+def run_makeCoaddTempExp():
+    process = pipeline.getProcessInstance("setup_makeCoaddTempExp")
+    vars = HashMap(process.getVariables())
+    workdir = vars.remove("WORK_DIR")
+    filters = vars.remove("FILTERS").split(',')
+    num = 0
+    for filt in filters:
+        nscript = vars.remove('n' + filt + 'scripts')
+        for i in range(1, int(nscript) + 1):
+            script = workdir + "/05-makeCoaddTempExp/scripts/%s/patches_%03d.sh" % (filt, i)
+            vars.put("CUR_SCRIPT", script)
+            pipeline.createSubstream("makeCoaddTempExpFilter", num, vars)
+            num += 1
+
+
 def run_assembleCoadd():
     process = pipeline.getProcessInstance("setup_assembleCoadd")
     vars = HashMap(process.getVariables())

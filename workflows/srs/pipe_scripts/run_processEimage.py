@@ -31,11 +31,9 @@ def build_cmd(visit, config, filt, dataids=None, raft=None,
     else:
         if isinstance(visit, str):
             visit = [visit]
-        lds = [dataid for dataid in dataids if dataid['visit'] in [int(v) for v in visit]]
+        lds = [dataid for dataid in dataids if any([v in dataid for v in visit]]
         filename = "scripts/" + filt + "/" + "_".join(visit) + ".list"
-        N.savetxt(filename, ["--id visit=%s raft=%s sensor=%s" % \
-                             (ld['visit'], ld['raft'], ld['sensor'])
-                             for ld in lds], fmt="%s")
+        N.savetxt(filename, lds, fmt="%s")
 
     # Create the command line
     cmd = ""    
@@ -78,13 +76,6 @@ if __name__ == "__main__":
 
     opts, args = LR.standard_options(usage=usage, description=description)
 
-    # Get all available dataids
-    dataset = 'eimage'
-    butler = dafPersist.Butler(opts.input)
-    keys = sorted(butler.getKeys(dataset).keys())
-    metadata = butler.queryMetadata(dataset, format=keys)
-    dataids = [dict(zip(keys, list(v) if not isinstance(v, list) else v)) for v in metadata]
-
     # Loop over filters
     for filt in opts.filters:
 
@@ -96,12 +87,12 @@ if __name__ == "__main__":
             continue
 
         # Get the list of visits
-        allvisits = N.loadtxt(filt+".list", dtype='str', unpack=True)
-        if isinstance(allvisits[1], str):
-            allvisits = [allvisits[1]]
+        dataids = N.loadtxt(filt+".list", dtype='str', unpack=True)
+        if isinstance(dataids[1], str):
+            dataids = [dataids[1]]
         else:
-            allvisits = allvisits[1]
-        visits = [visit.split('=')[1].strip("'") for visit in allvisits]
+            dataids = dataids[1]
+        visits = list(set([visit.split()[1].split('=')[1] for visit in dataids]))
         print("INFO: %i visits loaded: " % len(visits), visits)
 
         # How many jobs should we be running (and how many visit in each?)?

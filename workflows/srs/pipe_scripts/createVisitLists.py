@@ -27,22 +27,20 @@ def compare_dataIds(dataIds_1, dataIds_2):
 
     Return a list of dataIds present in 'raw' (1) but not in 'calexp' (2).
     """
-    visits_1 = [dataid['visit'] for dataid in dataIds_1]
-    visits_2 = [dataid['visit'] for dataid in dataIds_2]
-    visits_to_keep = [visit for visit in visits_1 if visit not in visits_2]
-    return [dataid for dataid in dataIds_1 if dataid['visit'] in visits_to_keep]
+    dataIds_1 = [{k: v for k, v in d.items() if k != 'snap'} for d in dataIds_1]
+    return [dataid for dataid in dataIds_1 if dataid not in dataIds_2]
 
 
 if __name__ == "__main__":
 
     usage = """%s [options] input""" % __file__
-    description = """Build the list of visits for all filters."""
+    description = """Build the list of data ids for all filters."""
 
     parser = ArgumentParser(usage=usage, description=description,
                             formatter_class=ArgumentDefaultsHelpFormatter)
     parser.add_argument('input', help="Path to the input butler folder.")
     parser.add_argument('--increment', action='store_true',
-                        help="Only keep visits not yet processed.")
+                        help="Only keep data ids not yet processed.")
     parser.add_argument("--idopt", default='id', help="id option to put in front "
                         "of the visit name. Could be 'selectId' or 'id'")
     args = parser.parse_args()
@@ -68,27 +66,28 @@ if __name__ == "__main__":
     filters = set([dataid['filter'] for dataid in dataids])
 
     # Dictionnary of visits per filter
-    visits = {filt: list(set([dataid['visit'] for dataid in dataids if dataid['filter'] == filt]))
-              for filt in filters}
+    fdataids = {filt: [dataid for dataid in dataids if dataid['filter'] == filt]
+                for filt in filters}
 
     # Do we have (new) visits to process? 
-    if len(visits) == 0:
+    if not any([len(fdataids[filt]) for filt in filters]):
         print("No (new) visits to process. Exit.")
         sys.exit(0)
 
-    # We do have visit tp process
-    print("The total number of visits is", sum([len(visits[filt]) for filt in visits]))
-    print("The number of visits per filter are:")
-    for filt in sorted(visits):
-        print(" - %s: %i" % (filt, len(visits[filt])))
+    # We do have visit to process
+    print("The total number of dataids is", sum([len(fdataids[filt]) for filt in fdataids]))
+    print("The number of data Ids per filter are:")
+    for filt in sorted(fdataids):
+        print(" - %s: %i" % (filt, len(fdataids[filt])))
 
     # Write and save the lists
     print("Wrinting visit list in separated files for each filter")
-    for filt in visits:
+    for filt in fdataids:
         visit_file = "%s.list" % filt
         file_to_save = open(visit_file, 'w')
-        for visit in visits[filt]:
-            file_to_save.write("--%s visit=%s\n" % (args.idopt, visit))
+        for dataid in fdataids[filt]:
+            file_to_save.write("--%s visit=%i raft=%s sensor=%s\n" % \
+                               (args.idopt, dataid['visit'], dataid['raft'], dataid['sensor']))
         file_to_save.close()
-        print(" - %s: %i visits -> %s" %(filt, len(visits[filt]), visit_file))
+        print(" - %s: %i dataids -> %s" %(filt, len(fdataids[filt]), visit_file))
 
