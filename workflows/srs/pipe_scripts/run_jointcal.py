@@ -64,7 +64,7 @@ if __name__ == "__main__":
                 for visit in tracts_visits[tract][filt]:
                     newfile.write('--id tract=%s visit=%s' % (str(tract), str(visit)))
                 newfile.close()
-                cmd += "jointcal.py %s --output %s @%s_%s.list --configfile %s --clobber-versions\n" % \
+                cmd += "jointcal.py %s --output %s @%s_%s.list --configfile %s --clobber-versions -L DEBUG\n" % \
                        (input, output, filt, str(tract), config)
 
             # Only submit the job if asked
