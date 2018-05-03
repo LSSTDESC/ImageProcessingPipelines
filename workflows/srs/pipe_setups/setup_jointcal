@@ -5,7 +5,7 @@ mkdir -p ${WORK_DIR}/04-jointcal
 cd ${WORK_DIR}/04-jointcal
 ln -sfn ${WORK_DIR} pardir
 cp ${CONFIGS_LOCATION}/jointcalConfig.py .
-createVisitLists.py ${WORK_DIR}/input
+createVisitLists.py ${IN_DIR}
 cp pardir/03-makeSkyMap/patches* .
 cp pardir/03-makeSkyMap/*_*_patches.list .
 run_jointcal.py --fromslac -f ${FILTERS}

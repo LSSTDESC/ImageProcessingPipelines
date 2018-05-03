@@ -22,11 +22,4 @@ then
 else
     eups declare -r $ROOT_SOFTS/obs_lsstSim obs_lsstSim localver
     setup obs_lsstSim localver
-#    if [[ $PIPELINE_PROCESS == "runDetectCoaddSources" ]]
-#    then
-#	eups declare -r $ROOT_SOFTS/pipe_tasks pipe_tasks localver
-#	setup pipe_tasks localver
-#	eups declare -r $ROOT_SOFTS/meas_algorithms meas_algorithms localver
-#	setup meas_algorithms localver
-#    fi
 fi

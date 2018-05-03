@@ -4,7 +4,7 @@
 source ${SETUP_LOCATION}/checkpoint
 
 # Move to the working directory
-cd ${WORK_DIR}/input
+cd ${IN_DIR}
 
 # Ingest the reference catalog
 #ingestReferenceCatalog.py ${IN_DIR} $REFCAT --configfile $REFCATCONFIG -L debug
