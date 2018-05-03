@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 
-"""Build the list of visits for all filters"""
+"""Build the list of dataIds for all filters"""
 
 
 from __future__ import print_function
@@ -12,7 +12,7 @@ import lsst.daf.persistence as dafPersist
 
 
 def get_dataIds(catalog):
-    """Get the list of existing dataids for the 'raw' and 'calexp' catalogs."""
+    """Get the list of existing dataids for the 'eimage' and 'calexp' catalogs."""
     # Get all available keys for the given datasetType
     keys = butler.getKeys(catalog)
     # Construct and return the dataIds dictionnary for all available data
@@ -25,8 +25,10 @@ def get_dataIds(catalog):
 def compare_dataIds(dataIds_1, dataIds_2):
     """Compare two list of dataids.
 
-    Return a list of dataIds present in 'raw' (1) but not in 'calexp' (2).
+    Return a list of dataIds present in 'eimage' (1) but not in 'calexp' (2).
     """
+    print("INFO %i eimage dataIds found" % len(dataIds_1))
+    print("INFO %i calexp dataIds found" % len(dataIds_2))
     dataIds_1 = [{k: v for k, v in d.items() if k != 'snap'} for d in dataIds_1]
     return [dataid for dataid in dataIds_1 if dataid not in dataIds_2]
 
@@ -56,22 +58,25 @@ if __name__ == "__main__":
     butler = dafPersist.Butler(args.input)
 
     if args.increment:
+        print("INFO: Checking for dataIds that has not been processed yet.")
         # Only keep visit that haven't been processed yet (no calexp data)
-        dataids = compare_dataIds(get_dataIds('raw'), get_dataIds('calexp'))
+        dataids = compare_dataIds(get_dataIds('eimage'), get_dataIds('calexp'))
     else:
         # Process all visit found in the input directories
-        dataids = get_dataIds('raw')
+        dataids = get_dataIds('eimage')
+    print("INFO %i (new) dataIds to process found" % len(dataids))
 
     # Get the list of available filters
     filters = set([dataid['filter'] for dataid in dataids])
+    print("INFO: Working on %i filters:" % len(filters), filters)
 
-    # Dictionnary of visits per filter
+    # Dictionnary of dataIds per filter
     fdataids = {filt: [dataid for dataid in dataids if dataid['filter'] == filt]
                 for filt in filters}
 
-    # Do we have (new) visits to process? 
+    # Do we have (new) dataIds to process? 
     if not any([len(fdataids[filt]) for filt in filters]):
-        print("No (new) visits to process. Exit.")
+        print("No (new) dataIds to process. Exit.")
         sys.exit(0)
 
     # We do have visit to process

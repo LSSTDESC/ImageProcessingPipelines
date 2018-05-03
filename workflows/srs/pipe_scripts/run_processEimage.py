@@ -31,7 +31,8 @@ def build_cmd(visit, config, filt, dataids=None, raft=None,
     else:
         if isinstance(visit, str):
             visit = [visit]
-        lds = [dataid for dataid in dataids if any([v in dataid for v in visit]]
+        dataids = [" ".join(d) for d in dataids]
+        lds = [dataid for dataid in dataids if any([v in dataid for v in visit])]
         filename = "scripts/" + filt + "/" + "_".join(visit) + ".list"
         N.savetxt(filename, lds, fmt="%s")
 
@@ -87,13 +88,10 @@ if __name__ == "__main__":
             continue
 
         # Get the list of visits
-        dataids = N.loadtxt(filt+".list", dtype='str', unpack=True)
-        if isinstance(dataids[1], str):
-            dataids = [dataids[1]]
-        else:
-            dataids = dataids[1]
-        visits = list(set([visit.split()[1].split('=')[1] for visit in dataids]))
+        dataids = N.loadtxt(filt+".list", dtype='str')
+        visits = list(set([dataid[1].split('=')[1] for dataid in dataids]))
         print("INFO: %i visits loaded: " % len(visits), visits)
+        print(visits)
 
         # How many jobs should we be running (and how many visit in each?)?
         njobs = LR.job_number(visits, opts.mod, opts.max)
