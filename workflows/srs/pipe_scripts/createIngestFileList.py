@@ -25,6 +25,8 @@ if __name__ == "__main__":
                         help="Recursively look for files to ingest.")
     parser.add_argument("--filename", default='filesToIngest.txt',
                         help="Name of the output (.txt) file.")
+    parser.add_argument("--maxfiles", default=500000,
+                        help="Maximum number of files per output.")
     args = parser.parse_args()
 
     # Make sure that the given extension starts with a '.'
@@ -35,7 +37,7 @@ if __name__ == "__main__":
     if args.recursive:
         args.inputdir += '/**'
 
-    # Add the file extension to the input directory path
+   # Add the file extension to the input directory path
     args.inputdir += '/*' + args.ext
 
     # Get the list of files
@@ -43,8 +45,20 @@ if __name__ == "__main__":
     print("%i files found in" % len(files),
           args.inputdir, 'with extension', args.ext)
 
-    # Save the list of files
-    if not args.filename.endswith('.txt'):
-        args.filename += '.txt'
-    print("Saving the list of files in ", args.filename)
-    np.savetxt(args.filename, files, fmt="%s")
+    # Do we have more than the maximum number of file?
+    if not len(files) > args.maxfiles:
+        # Save the list of files
+        if not args.filename.endswith('.txt'):
+            args.filename += '.txt'
+        print("Saving the list of files in ", args.filename)
+        np.savetxt(args.filename, files, fmt="%s")
+    else:
+        # Save the list of files
+        if not args.filename.endswith('.txt'):
+            args.filename += '.txt'
+        file_lists = [files[i: i + args.maxfiles]
+                      for i in range(0, len(files), args.maxfiles)]
+        for i, files in file_lists:
+            filename = args.filename.replace(".txt", "_%i.txt" % i)
+            print("Saving the list of files in ", filename)
+            np.savetxt(filename, files, fmt="%s")
