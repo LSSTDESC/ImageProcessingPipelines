@@ -58,7 +58,7 @@ if __name__ == "__main__":
             args.filename += '.txt'
         file_lists = [files[i: i + args.maxfiles]
                       for i in range(0, len(files), args.maxfiles)]
-        for i, files in file_lists:
+        for i, files in enumerate(file_lists):
             filename = args.filename.replace(".txt", "_%i.txt" % i)
             print("Saving the list of files in ", filename)
             np.savetxt(filename, files, fmt="%s")
