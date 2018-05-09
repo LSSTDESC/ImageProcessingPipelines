@@ -10,7 +10,7 @@ createVisitLists.py --increment ${OUT_DIR}
 
 if [[ $SITE == "LSST-IN2P3" ]]
 then
-  run_processEimage.py --fromslac -f ${FILTERS} --multicore -m 3
+  run_processEimage.py --fromslac -f ${FILTERS} --multicore -m 3 -i ${IN_DIR} -o ${OUT_DIR}
 else
   run_processEimage.py --fromnersc --doraise --time -f ${FILTERS} --multicore --clobberversions -m 1
 #  run_processEimage.py --fromnersc --doraise --time -f ${FILTERS} --perraft
