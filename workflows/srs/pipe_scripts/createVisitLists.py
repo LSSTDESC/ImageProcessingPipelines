@@ -7,6 +7,7 @@
 from __future__ import print_function
 import os
 import sys
+from random import shuffle
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import lsst.daf.persistence as dafPersist
 
@@ -89,6 +90,7 @@ if __name__ == "__main__":
     # Write and save the lists
     print("Wrinting visit list in separated files for each filter")
     for filt in fdataids:
+        shuffle(fdataids[filt])  # in case we have to re-run things, the order will not always be the same
         visit_file = "%s.list" % filt
         file_to_save = open(visit_file, 'w')
         for dataid in fdataids[filt]:
