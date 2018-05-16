@@ -1,9 +1,12 @@
+# checkpoint
+source ${SETUP_LOCATION}/checkpoint
+
 mkdir -p ${WORK_DIR}/09-measureCoaddSources
 cd ${WORK_DIR}/09-measureCoaddSources
 ln -sfn ${WORK_DIR} pardir
 cp ${CONFIGS_LOCATION}/measureCoaddSourcesConfig.py .
 cp pardir/03-makeSkyMap/patches* .
-run_measureCoaddSources.py -c measureCoaddSourcesConfig.py --fromslac -f ${FILTERS}
+run_measureCoaddSources.py -c measureCoaddSourcesConfig.py --fromslac -f ${FILTERS} -m 10
 for FILT in $(echo ${FILTERS} | tr "," "\n")
 do
 	pipelineSet n${FILT}scripts `ls scripts/${FILT}/*.sh 2>/dev/null | wc -l`

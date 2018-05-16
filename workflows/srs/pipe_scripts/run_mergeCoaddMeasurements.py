@@ -7,7 +7,7 @@ import glob
 import libRun as LR
 
 
-def build_cmd(patch, configFile, input, output) :
+def build_cmd(patch, input, output, configFile=None):
 
     if not os.path.isdir("scripts"):
         os.makedirs("scripts")
@@ -16,7 +16,10 @@ def build_cmd(patch, configFile, input, output) :
     os.system(cmd)
 
     cmd = "mergeCoaddMeasurements.py %s --output %s"  % (input, output) + \
-          " @scripts/" + patch + " --configfile " + configFile
+          " @scripts/" + patch
+
+    if configFile is not None:
+        cmd += " --configfile " + configFile
 
     return cmd
 
@@ -44,6 +47,6 @@ if __name__ == "__main__":
     
     for patch in sorted(patch_list):
         print("\n", patch)
-        cmd = build_cmd(patch, opts.configs, opts.input, opts.output)
+        cmd = build_cmd(patch, opts.input, opts.output, configFile=opts.configs)
         LR.submit(cmd, patch, autosubmit=opts.autosubmit, ct=60000, vmem='4G',
                   from_slac=opts.fromslac)

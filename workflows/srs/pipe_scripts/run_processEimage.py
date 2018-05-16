@@ -11,13 +11,15 @@ from __future__ import print_function
 import os
 import numpy as N
 import libRun as LR
+import lsst.daf.persistence as dafPersist
 
 
 __author__ = 'Nicolas Chotard <nchotard@in2p3.fr>'
 __version__ = '$Revision: 1.0 $'
 
 
-def build_cmd(visit, config, filt, raft=None, input='pardir/input', output='pardir/output'):
+def build_cmd(visit, config, filt, dataids=None, raft=None,
+              input='datadir/input', output='datadir/output'):
 
     if not os.path.isdir("scripts/" + filt):
         os.makedirs("scripts/" + filt)
@@ -27,8 +29,12 @@ def build_cmd(visit, config, filt, raft=None, input='pardir/input', output='pard
         filename = "scripts/" + filt + "/" + visit + "_R" + raft.replace(',', '') + ".list"
         N.savetxt(filename, ["--id visit=%s raft='%s'" % (visit, raft)], fmt="%s")
     else:
-        filename = "scripts/" + filt + "/" + visit + ".list"
-        N.savetxt(filename, ["--id visit=%s" % visit], fmt="%s")
+        if isinstance(visit, str):
+            visit = [visit]
+        dataids = [" ".join(d) for d in dataids]
+        lds = [dataid for dataid in dataids if any([v in dataid for v in visit])]
+        filename = "scripts/" + filt + "/" + "_".join(visit) + ".list"
+        N.savetxt(filename, lds, fmt="%s")
 
     # Create the command line
     cmd = ""    
@@ -82,16 +88,12 @@ if __name__ == "__main__":
             continue
 
         # Get the list of visits
-        allvisits = N.loadtxt(filt+".list", dtype='str', unpack=True)
-        if isinstance(allvisits[1], str):
-            allvisits = [allvisits[1]]
-        else:
-            allvisits = allvisits[1]
-        visits = [visit.split('=')[1].strip("'") for visit in allvisits]
+        dataids = N.loadtxt(filt+".list", dtype='str')
+        visits = list(set([dataid[1].split('=')[1] for dataid in dataids]))
         print("INFO: %i visits loaded: " % len(visits), visits)
+        print(visits)
 
         # How many jobs should we be running (and how many visit in each?)?
-        opts.mod = 1  # one job per visit to be faster
         njobs = LR.job_number(visits, opts.mod, opts.max)
 
         # Reorganize the visit list in sequence
@@ -125,7 +127,8 @@ if __name__ == "__main__":
                               from_slac=opts.fromslac, from_nersc=opts.fromnersc)
                     numscript += 1
             else:
-                cmd = build_cmd(visit[0], config, filt, input=opts.input, output=opts.output)
+                cmd = build_cmd(visit, config, filt, dataids=dataids,
+                                input=opts.input, output=opts.output)
                     
                 # Only submit the job if asked
                 prefix = "visit_%03d_script" % numscript

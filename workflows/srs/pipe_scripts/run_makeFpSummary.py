@@ -9,6 +9,7 @@ Run makeFpSummary.py for a list of visits
 
 from __future__ import print_function
 import os
+import glob
 import numpy as N
 import libRun as LR
 
@@ -17,26 +18,17 @@ __author__ = 'Nicolas Chotard <nchotard@in2p3.fr>'
 __version__ = '$Revision: 1.0 $'
 
 
-def build_cmd(visit, config, filt, input='pardir/output', output='pardir/output'):
+def build_cmd(filename, input='pardir/output', output='pardir/output'):
+## HMK parameters have changed here, and filename is now provided rather than determined
+##    if not os.path.isdir("scripts/" + filt):
+##        os.makedirs("scripts/" + filt)
+##
+##    filename = "scripts/" + filt + "/" + visit + ".list"
+##    if not os.path.isfile(filename):
+##        N.savetxt(filename, ["--id visit=%s" % visit], fmt="%s")
 
-    if not os.path.isdir("scripts/" + filt):
-        os.makedirs("scripts/" + filt)
-
-    # Create and save a sub list of visit
- #   if raft is not None:    
- #       filename = "scripts/" + filt + "/" + visit + "_R" + raft.replace(',', '') + ".list"
-#        N.savetxt(filename, ["--id visit=%s raft='%s'" % (visit, raft)], fmt="%s")
-#    else:
- #       filename = "scripts/" + filt + "/" + visit + ".list"
- #       N.savetxt(filename, ["--id visit=%s" % visit], fmt="%s")
-    filename = "scripts/" + filt + "/" + visit + ".list"
-    if not os.path.isfile(filename):
-        N.savetxt(filename, ["--id visit=%s" % visit], fmt="%s")
-
+    cmd = ""
     # Create the command line
-    cmd = ""    
-    if opts.multicore:
-        cmd += "export OMP_NUM_THREADS=1\n"
     if opts.time:
         cmd += "time "
     cmd += "makeFpSummary.py %s --output %s --dstype calexp @" % (output, output) + \
@@ -69,39 +61,16 @@ if __name__ == "__main__":
 
         config = LR.select_config(opts.configs, filt)
 
-        # Are there visits to load
-        if not os.path.exists(filt+".list"):
+        # Are there visit files on which to run
+        files = glob.glob("scripts/" + filt + "/*.list")
+        if not len(files):
             print("WARNING: No file (no visit) for filter", filt)
             continue
 
-        # Get the list of visits
-        allvisits = N.loadtxt(filt+".list", dtype='str', unpack=True)
-        if isinstance(allvisits[1], str):
-            allvisits = [allvisits[1]]
-        else:
-            allvisits = allvisits[1]
-        visits = [visit.split('=')[1].strip("'") for visit in allvisits]
-        print("INFO: %i visits loaded: " % len(visits), visits)
-
-        # How many jobs should we be running (and how many visit in each?)?
-        opts.mod = 1  # one job per visit to be faster
-        njobs = LR.job_number(visits, opts.mod, opts.max)
-
-        # Reorganize the visit list in sequence
-        visits = LR.organize_items(visits, njobs)
-
-        # specific options for processEimage
-        # may not want to set queue long at NERSC
-        opts.queue = "long"
-        if opts.multicore:
-            opts.queue = "mc_huge"
-            opts.otheroptions = "-pe multicores 8"
-
-
-        # Loop over the visit sub lists and the raft list
+        # Loop over the visit file
         numscript = 1
-        for i, visit in enumerate(visits):
-            cmd = build_cmd(visit[0], config, filt, input=opts.output, output=opts.output)
+        for i, filename in enumerate(files):
+            cmd = build_cmd(filename, input=opts.output, output=opts.output)
                     
             # Only submit the job if asked
             prefix = "visit_makeFpSummary_%03d_script" % numscript

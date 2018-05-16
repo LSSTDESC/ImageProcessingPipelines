@@ -1,15 +1,20 @@
+# checkpoint
+source ${SETUP_LOCATION}/checkpoint
+
 mkdir -p ${WORK_DIR}/02-processEimage
 cd ${WORK_DIR}/02-processEimage
 ln -sfn ${WORK_DIR} pardir
-createVisitLists.py ${WORK_DIR}/input
-processEimage.py pardir/input --output pardir/output
+ln -sfn ${DATA_DIR} datadir
+processEimage.py ${IN_DIR} --output ${OUT_DIR}
+createVisitLists.py --increment ${OUT_DIR}
 
 if [[ $SITE == "LSST-IN2P3" ]]
 then
-  run_processEimage.py --fromslac -f ${FILTERS} --multicore
+  run_processEimage.py --fromslac -f ${FILTERS} --multicore -m 3 -i ${IN_DIR} -o ${OUT_DIR}
 else
   run_processEimage.py --fromnersc --doraise --time -f ${FILTERS} --multicore --clobberversions --perraft
-#  run_processEimage.py --fromnersc --doraise --time -f ${FILTERS} --perraft
+# need to check on -m 1
+#  run_processEimage.py --fromnersc --doraise --time -f ${FILTERS} --multicore --clobberversions -m 1
 fi
 
 for FILT in $(echo ${FILTERS} | tr "," "\n")

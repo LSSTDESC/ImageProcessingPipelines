@@ -1,25 +1,19 @@
 # checkpoint
 source ${SETUP_LOCATION}/checkpoint
 
-mkdir -p ${WORK_DIR}/04-jointcal
-cd ${WORK_DIR}/04-jointcal
+mkdir -p ${WORK_DIR}/05-makeCoaddTempExp
+cd ${WORK_DIR}/05-makeCoaddTempExp
 ln -sfn ${WORK_DIR} pardir
-cp ${CONFIGS_LOCATION}/jointcalConfig.py .
-createVisitLists.py ${IN_DIR}
+cp ${CONFIGS_LOCATION}/makeCoaddTempExpConfig.py .
+createVisitLists.py ${IN_DIR} --idopt selectId
 cp pardir/03-makeSkyMap/patches* .
-cp pardir/03-makeSkyMap/*_*_patches.list .
-run_jointcal.py --fromslac -f ${FILTERS}
-
-function join { local IFS="$1"; shift; echo "$*"; }
-filts=$(join , `ls scripts/`)
-pipelineSet FILTERS ${filts}
-
+run_makeCoaddTempExp.py -c makeCoaddTempExpConfig.py --fromslac -f ${FILTERS}
 for FILT in $(echo ${FILTERS} | tr "," "\n")
 do
 	pipelineSet n${FILT}scripts `ls scripts/${FILT}/*.sh 2>/dev/null | wc -l`
 done
-
 pipelineSet WORK_DIR ${WORK_DIR}
+pipelineSet FILTERS ${FILTERS}
 pipelineSet DM_RELEASE ${DM_RELEASE}
 pipelineSet DM_SETUP ${DM_SETUP}
 pipelineSet CONFIGS_LOCATION ${CONFIGS_LOCATION}

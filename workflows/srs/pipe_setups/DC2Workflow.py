@@ -45,6 +45,21 @@ def run_makeFpSummary():
             num += 1
 
 
+def run_reportPatches():
+    process = pipeline.getProcessInstance("setup_reportPatches")
+    vars = HashMap(process.getVariables())
+    workdir = vars.remove("WORK_DIR")
+    filters = vars.remove("FILTERS").split(',')
+    num = 0
+    for filt in filters:
+        nscript = vars.remove('n' + filt + 'scripts')
+        for i in range(1, int(nscript) + 1):
+            script = workdir + "/03-makeSkyMap/scripts/%s/visit_%03d_script.sh" % (filt, i)
+            vars.put("CUR_SCRIPT", script)
+            pipeline.createSubstream("reportPatchesVisit", num, vars)
+            num += 1
+
+
 def run_singleFrameDriver():
     process = pipeline.getProcessInstance("setup_singleFrameDriver")
     vars = HashMap(process.getVariables())
@@ -67,10 +82,12 @@ def run_jointcal():
     filters = vars.remove("FILTERS").split(',')
     num = 0
     for filt in filters:
-        script = workdir + "/04-jointcal/scripts/%s/jointcal_%s.sh" % (filt, filt)
-        vars.put("CUR_SCRIPT", script)
-        pipeline.createSubstream("jointcalFilter", num, vars)
-        num += 1
+        nscript = vars.remove('n' + filt + 'scripts')
+        for i in range(1, int(nscript) + 1):
+            script = workdir + "/04-jointcal/scripts/%s/jointcal_%s_%03d.sh" % (filt, filt, i)
+            vars.put("CUR_SCRIPT", script)
+            pipeline.createSubstream("jointcalFilter", num, vars)
+            num += 1
 
 def run_jointcalCoadd():
     process = pipeline.getProcessInstance("setup_jointcalCoadd")
@@ -84,6 +101,21 @@ def run_jointcalCoadd():
             script = workdir + "/05-jointcalCoadd/scripts/%s/patches_%03d.sh" % (filt, i)
             vars.put("CUR_SCRIPT", script)
             pipeline.createSubstream("jointcalCoaddFilter", num, vars)
+            num += 1
+
+
+def run_makeCoaddTempExp():
+    process = pipeline.getProcessInstance("setup_makeCoaddTempExp")
+    vars = HashMap(process.getVariables())
+    workdir = vars.remove("WORK_DIR")
+    filters = vars.remove("FILTERS").split(',')
+    num = 0
+    for filt in filters:
+        nscript = vars.remove('n' + filt + 'scripts')
+        for i in range(1, int(nscript) + 1):
+            script = workdir + "/05-makeCoaddTempExp/scripts/%s/patches_%03d.sh" % (filt, i)
+            vars.put("CUR_SCRIPT", script)
+            pipeline.createSubstream("makeCoaddTempExpFilter", num, vars)
             num += 1
 
 

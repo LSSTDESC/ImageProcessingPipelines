@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# checkpoint
+source ${SETUP_LOCATION}/checkpoint
+
 if [[ -z "${INGESTDATA}" ]];
 then
   # Ready to ingest

@@ -1,19 +1,15 @@
 # checkpoint
 source ${SETUP_LOCATION}/checkpoint
 
-cd ${WORK_DIR}/02-processEimage
+cd ${WORK_DIR}/03-makeSkyMap
 
-if [[ $SITE == "LSST-IN2P3" ]]
-then
-  run_makeFpSummary.py --fromslac -f ${FILTERS} --multicore
-else
-  run_makeFpSummary.py --fromnersc --doraise --time -f ${FILTERS}
-fi
+run_reportPatchesWithImages.py --fromslac -f ${FILTERS} -m 20
 
 for FILT in $(echo ${FILTERS} | tr "," "\n")
 do
-	pipelineSet n${FILT}scripts `ls scripts/${FILT}/*_makeFpSummary*.sh 2>/dev/null | wc -l`
+	pipelineSet n${FILT}scripts `ls scripts/${FILT}/*.sh 2>/dev/null | wc -l`
 done
+
 pipelineSet WORK_DIR ${WORK_DIR}
 pipelineSet FILTERS ${FILTERS}
 pipelineSet DM_RELEASE ${DM_RELEASE}

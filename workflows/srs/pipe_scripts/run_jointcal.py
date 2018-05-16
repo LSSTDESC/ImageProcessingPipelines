@@ -12,6 +12,7 @@ from __future__ import print_function
 import libRun as LR
 import numpy as np
 import os
+import glob
 
 
 __author__ = 'Nicolas Chotard <nchotard@in2p3.fr>'
@@ -32,29 +33,43 @@ if __name__ == "__main__":
 
     patches = np.loadtxt('patches.txt', dtype='str', unpack=True)
     tracts = [s.split('=')[1] for s in set(patches[0])]
+
+    # How many jobs should we be running (and how many tract in each?)?
+    njobs = LR.job_number(tracts, opts.mod, opts.max)
+
+    tracts_visits = {}
+    for tract in tracts:
+        tracts_visits[tract] = {}
+        for filt in opts.filters:
+            tracts_visits[tract][filt] = []
+            flist = glob.glob(filt + '_*_patches.list')
+            for clist in flist:
+                ctracts = [tr.split('=')[1]
+                           for tr in np.loadtxt(clist, dtype='bytes').astype(str)[:, 0]]
+                if tract in list(set(ctracts)):
+                    tracts_visits[tract][filt].append(clist.split('_')[1])
+
+    # Reorganize the tract list in sequence
+    alltracts = LR.organize_items(tracts, njobs)
+
     # Loop over filters
     for filt in opts.filters:
-        # Are there visits to load
-        if not os.path.exists('%s.list' % filt):
-            print("WARNING: No file (no visit) for filter", filt)
-            continue
-        cmd = ""
-        for tract in tracts:
-            lfile = open('%s.list' % filt, 'r')
-            lines = lfile.readlines()
-            lfile.close()
-            newfile = open('%s_%s.list' % (filt, str(tract)), 'w')
-            for line in lines:
-                newfile.write(line.replace('--id ', '--id tract=%s ' % str(tract)))
-            newfile.close()
-            cmd += "jointcal.py %s --output %s @%s_%s.list --configfile %s\n" % \
-                   (input, output, filt, str(tract), config)
-        # Only submit the job if asked
-        prefix = "jointcal_%s" % filt
-        LR.submit(cmd, prefix, filt, autosubmit=opts.autosubmit,
-                  ct=opts.ct, vmem=opts.vmem, queue=opts.queue,
-                  system=opts.system, otheroptions=opts.otheroptions,
-                  from_slac=opts.fromslac)
+        for i, tracts in enumerate(alltracts):
+            cmd = ""
+            for tract in tracts:
+                newfile = open('%s_%s.list' % (filt, str(tract)), 'w')
+                for visit in tracts_visits[tract][filt]:
+                    newfile.write('--id tract=%s visit=%s\n' % (str(tract), str(visit)))
+                newfile.close()
+                cmd += "jointcal.py %s --output %s @%s_%s.list --configfile %s --clobber-versions -L DEBUG\n" % \
+                       (input, output, filt, str(tract), config)
+
+            # Only submit the job if asked
+            prefix = "jointcal_%s_%03d" % (filt, i + 1)
+            LR.submit(cmd, prefix, filt, autosubmit=opts.autosubmit,
+                      ct=opts.ct, vmem=opts.vmem, queue=opts.queue,
+                      system=opts.system, otheroptions=opts.otheroptions,
+                      from_slac=opts.fromslac)
 
     if not opts.autosubmit:
         print("\nINFO: Use option --autosubmit to submit the jobs")

@@ -12,7 +12,11 @@ from __future__ import print_function
 import os
 from optparse import OptionParser
 import lsst.afw.geom as geom
-from lsst.afw.coord import Fk5Coord
+try:  
+    from lsst.afw.coord import Fk5Coord
+    tocoords = lambda ra, dec: Fk5Coord(geom.Point2D(ra, dec), geom.degrees)
+except:  # > w_2018_11
+    tocoords = lambda ra, dec: geom.SpherePoint(ra, dec, geom.degrees)
 import lsst.daf.persistence as dafPersist
 import numpy as np
 
@@ -30,7 +34,7 @@ def organize_by_visit(dataids, visits=None):
 
 def get_visit_corners(butler, dataids, ccds=None, getccds=False, ccdkey='sensor'):
     ras, decs, accds = [], [], []
-    for dataid in dataids:
+    for ii, dataid in enumerate(dataids):
         if ccds is not None and dataid[ccdkey] not in ccds:
             continue
         calexp = butler.get('calexp', dataId=dataid)
@@ -39,13 +43,23 @@ def get_visit_corners(butler, dataids, ccds=None, getccds=False, ccdkey='sensor'
         ras.extend([coord.getRa().asDegrees() for coord in coords])
         decs.extend([coord.getDec().asDegrees() for coord in coords])
         accds.extend([dataid[ccdkey]] * 4)
-    tocoords = lambda ra, dec: Fk5Coord(geom.Point2D(ra, dec), geom.degrees)
     if not getccds:
         return [tocoords(min(ras), min(decs)), tocoords(min(ras), max(decs)),
                 tocoords(max(ras), max(decs)), tocoords(max(ras), min(decs))]
     else:
         return [accds[np.argmin(ras)], accds[np.argmin(decs)],
                 accds[np.argmax(ras)], accds[np.argmax(decs)]]
+
+
+def get_dataid_corners(butler, dataids, ccdkey='sensor'):
+    coords = []
+    for ii, dataid in enumerate(dataids):
+        print("Runing on dataId %i / %i :" % (ii + 1, len(dataids)), dataid)
+        calexp = butler.get('calexp', dataId=dataid)
+        coords.append([calexp.getWcs().pixelToSky(point)
+                       for point in geom.Box2D(calexp.getBBox()).getCorners()])
+    return coords
+
 
 def get_tps(skymap, coords, filt=None):
     tplist = skymap.findTractPatchList(coords)
@@ -78,20 +92,32 @@ def reportPatchesWithImages(butler, visits=None, ccdkey='sensor'):
     # Organize the dataids by visit
     vdataids = organize_by_visit(dataids, visits=visits)
 
-    # Get the ccds that will be used to compute the visit corner coordinates
-    # this depend on the instrument, so cannot be hardcoded
-    ccds = get_visit_corners(butler, vdataids[list(vdataids)[0]], getccds=True, ccdkey=ccdkey)
+    if visits is None or len(visits) != 1:
+        # Get the ccds that will be used to compute the visit corner coordinates
+        # this depend on the instrument, so cannot be hardcoded
+        ccds = get_visit_corners(butler, vdataids[list(vdataids)[0]], getccds=True, ccdkey=ccdkey)
+        
+        # Get the corners coordinates for all visits
+        allcoords = []
+        for ii, vdataid in enumerate(vdataids):
+            print("Running on visit %03d / %i" % (ii + 1, len(vdataids)))
+            allcoords.append(get_visit_corners(butler, vdataids[vdataid], ccds=ccds, ccdkey=ccdkey))
 
-    # Get the corners coordinates for all visits
-    allcoords = []
-    for ii, vdataid in enumerate(vdataids):
-        print("Running on visit %03d / %i" % (ii + 1, len(vdataids)))
-        allcoords.append(get_visit_corners(butler, vdataids[vdataid], ccds=ccds, ccdkey=ccdkey))
+        # Get the tract/patch list in which the visits are
+        alltps = []
+        for vdataid, vcoords in zip(vdataids, allcoords):
+            alltps.extend(get_tps(skyMap, vcoords, vdataids[vdataid][0]['filter']))
+    else:
+        # Only one visit given, so run the code on all sensor/ccd
+        # Get the corners coordinates for all visits
+        visit = int(visits[0])
+        print("%i dataIds loaded for visit" % len(vdataids[visit]), visit)
+        allcoords = get_dataid_corners(butler, vdataids[visit], ccdkey=ccdkey)
 
-    # Get the tract/patch list in which the visits are
-    alltps = []
-    for vdataid, vcoords in zip(vdataids, allcoords):
-        alltps.extend(get_tps(skyMap, vcoords, vdataids[vdataid][0]['filter']))
+        # Get the tract/patch list in which the sensor are
+        alltps = []
+        for coords in allcoords:
+            alltps.extend(get_tps(skyMap, coords, vdataids[visit][0]['filter']))
 
     # Re-organize the tract and patch list into a dictionnary
     tps = {}
@@ -118,6 +144,8 @@ if __name__ == "__main__":
                       help="Optional list of visits (file or coma separated list)")
     parser.add_option("--ccdkey", type="string",
                       help="CCD key", default='sensor')
+    parser.add_option("-f", "--filt", type="string",
+                      help="A filter name", default=None)
     opts, args = parser.parse_args()
 
     # Is there a list of visit given by the use?
@@ -130,6 +158,7 @@ if __name__ == "__main__":
                                                        for arr in opts.visits]][0]]
         else:
             opts.visits = opts.visits.split(',')
+        print("%s visit loaded" % len(opts.visits))
 
     # Get the full list of tract/patch in which are all visits
     tps = reportPatchesWithImages(args[0], visits=opts.visits, ccdkey=opts.ccdkey)
@@ -138,3 +167,15 @@ if __name__ == "__main__":
     for tract in tps:
         for patch in tps[tract]:
             print("tract=%i patch=%i,%i" % (tract, patch[0], patch[1]))
+
+    if opts.visits is not None:
+        print("%i patches from %i tracts" % \
+              (sum([len(tps[tract]) for tract in tps]), len(tps)))
+        filename = ("" if opts.filt is None else (opts.filt + "_")) + \
+                   "_".join(opts.visits) + "_patches.list"
+        towrite = []
+        for tract in tps:
+            for patch in tps[tract]:
+                towrite.append("tract=%i patch=%i,%i" % (tract, patch[0], patch[1]))
+        np.savetxt(filename, towrite, fmt="%s")
+        print("Tracts/patches list saved under", filename)        
