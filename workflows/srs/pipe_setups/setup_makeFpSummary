@@ -1,7 +1,12 @@
 # checkpoint
 source ${SETUP_LOCATION}/checkpoint
 
-cd ${WORK_DIR}/02-processEimage
+mkdir -p ${WORK_DIR}/02p5-makeFpSummary
+cd ${WORK_DIR}/02p5-makeFpSummary
+ln -sfn ${WORK_DIR} pardir
+ln -sfn ${DATA_DIR} datadir
+
+createVisitLists.py ${OUT_DIR}
 
 if [[ $SITE == "LSST-IN2P3" ]]
 then
