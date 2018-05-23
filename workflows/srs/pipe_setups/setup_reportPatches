@@ -3,7 +3,7 @@ source ${SETUP_LOCATION}/checkpoint
 
 cd ${WORK_DIR}/03-makeSkyMap
 
-run_reportPatchesWithImages.py --fromslac -f ${FILTERS} -m 20 -i ${IN_DIR} -o ${OUT_DIR}
+run_reportPatchesWithImages.py --fromslac -f ${FILTERS} -m 20 -i ${OUT_DIR} -o ${OUT_DIR}
 
 for FILT in $(echo ${FILTERS} | tr "," "\n")
 do

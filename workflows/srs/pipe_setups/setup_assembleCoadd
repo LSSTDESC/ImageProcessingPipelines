@@ -6,7 +6,7 @@ cd ${WORK_DIR}/06-assembleCoadd
 ln -sfn ${WORK_DIR} pardir
 cp ${CONFIGS_LOCATION}/assembleCoaddConfig.py .
 cp pardir/05-jointcalCoadd/*.list pardir/05-jointcalCoadd/*.txt .
-run_assembleCoadd.py -c assembleCoaddConfig.py --fromslac -f ${FILTERS} -m 10 -i ${IN_DIR} -o ${OUT_DIR}
+run_assembleCoadd.py -c assembleCoaddConfig.py --fromslac -f ${FILTERS} -m 10 -i ${OUT_DIR} -o ${OUT_DIR}
 for FILT in $(echo ${FILTERS} | tr "," "\n")
 do
 	pipelineSet n${FILT}scripts `ls scripts/${FILT}/*.sh 2>/dev/null | wc -l`

@@ -13,4 +13,4 @@ cp ${CONFIGS_LOCATION}/makeSkyMapConfig.py .
 createVisitLists.py ${IN_DIR}
 
 # Build the list of tracts/patches for the rings sky map
-runMakeSkyMap.py -i ${IN_DIR} -o ${OUT_DIR} -f ${FILTERS}
+runMakeSkyMap.py -i ${OUT_DIR} -o ${OUT_DIR} -f ${FILTERS}
