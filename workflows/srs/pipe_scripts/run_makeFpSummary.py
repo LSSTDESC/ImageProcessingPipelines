@@ -23,7 +23,7 @@ def build_cmd(visit, filt, num, input='pardir/output', output='pardir/output'):
     if not os.path.isdir("scripts/" + filt):
         os.makedirs("scripts/" + filt)
 
-    filename = "scripts/" + filt + "/visits_" + num + ".list"
+    filename = "scripts/" + filt + "/visits_" + str(num) + ".list"
     N.savetxt(filename, visit, fmt="%s")
     
     cmd = ""
