@@ -18,14 +18,15 @@ __author__ = 'Nicolas Chotard <nchotard@in2p3.fr>'
 __version__ = '$Revision: 1.0 $'
 
 
-def build_cmd(visit, filt, num, input='pardir/output', output='pardir/output'):
+def build_cmd(visits, filt, num, input='pardir/output', output='pardir/output'):
 
     if not os.path.isdir("scripts/" + filt):
         os.makedirs("scripts/" + filt)
 
     filename = "scripts/" + filt + "/visits_" + str(num) + ".list"
-    N.savetxt(filename, visit, fmt="%s")
-    
+    visits = ["--id visit=%s" % str(v) for v in visits]
+    N.savetxt(filename, visits, fmt="%s")
+
     cmd = ""
     # Create the command line
     if opts.time:
