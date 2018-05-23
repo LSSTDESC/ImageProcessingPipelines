@@ -4,10 +4,11 @@ source ${SETUP_LOCATION}/checkpoint
 mkdir -p ${WORK_DIR}/05-makeCoaddTempExp
 cd ${WORK_DIR}/05-makeCoaddTempExp
 ln -sfn ${WORK_DIR} pardir
+ln -sfn ${DATA_DIR} datadir
 cp ${CONFIGS_LOCATION}/makeCoaddTempExpConfig.py .
 createVisitLists.py ${IN_DIR} --idopt selectId
 cp pardir/03-makeSkyMap/patches* .
-run_makeCoaddTempExp.py -c makeCoaddTempExpConfig.py --fromslac -f ${FILTERS}
+run_makeCoaddTempExp.py -c makeCoaddTempExpConfig.py --fromslac -f ${FILTERS} -i ${IN_DIR} -o ${OUT_DIR}
 for FILT in $(echo ${FILTERS} | tr "," "\n")
 do
 	pipelineSet n${FILT}scripts `ls scripts/${FILT}/*.sh 2>/dev/null | wc -l`

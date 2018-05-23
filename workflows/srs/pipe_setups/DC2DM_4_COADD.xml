@@ -129,7 +129,7 @@
       <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
 	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
       <depends>
-        <after process="makeCoaddTempExpFilter.runMakeCoaddTemp"/>
+        <after process="makeCoaddTempExpFilter.runMakeCoaddTempExp"/>
       </depends>
     </process>
     <!--   launch jobs -->

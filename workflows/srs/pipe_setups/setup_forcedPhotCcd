@@ -6,7 +6,7 @@ cd ${WORK_DIR}/11-forcedPhotCcd
 ln -sfn ${WORK_DIR} pardir
 cp ${CONFIGS_LOCATION}/forcedPhotCcdConfig.py .
 cp pardir/02-*/*.list .
-run_forcedPhotCcd.py -c forcedPhotCcdConfig.py --fromslac -f ${FILTERS}
+run_forcedPhotCcd.py -c forcedPhotCcdConfig.py --fromslac -f ${FILTERS} -i ${IN_DIR} -o ${OUT_DIR}
 for FILT in $(echo ${FILTERS} | tr "," "\n")
 do
 	pipelineSet n${FILT}scripts `ls scripts/${FILT}/*.sh 2>/dev/null | wc -l`

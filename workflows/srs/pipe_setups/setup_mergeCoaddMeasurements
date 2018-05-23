@@ -5,7 +5,7 @@ mkdir -p ${WORK_DIR}/10-mergeCoaddMeasurements
 cd ${WORK_DIR}/10-mergeCoaddMeasurements
 ln -sfn ${WORK_DIR} pardir
 cp pardir/03-makeSkyMap/patches_all.txt .
-run_mergeCoaddMeasurements.py --fromslac -f ${FILTERS}
+run_mergeCoaddMeasurements.py --fromslac -f ${FILTERS} -i ${IN_DIR} -o ${OUT_DIR}
 pipelineSet nscripts `ls scripts/*.sh 2>/dev/null | wc -l`
 pipelineSet WORK_DIR ${WORK_DIR}
 pipelineSet FILTERS ${FILTERS}

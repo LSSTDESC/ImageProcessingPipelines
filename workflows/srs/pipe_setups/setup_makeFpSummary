@@ -10,7 +10,7 @@ createVisitLists.py ${OUT_DIR}
 
 if [[ $SITE == "LSST-IN2P3" ]]
 then
-  run_makeFpSummary.py --fromslac -f ${FILTERS} --multicore
+  run_makeFpSummary.py --fromslac -f ${FILTERS} --multicore -i ${IN_DIR} -o ${OUT_DIR}
 else
   run_makeFpSummary.py --fromnersc --doraise --time -f ${FILTERS}
 fi
