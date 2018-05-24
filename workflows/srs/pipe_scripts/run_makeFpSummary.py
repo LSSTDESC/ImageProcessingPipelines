@@ -18,7 +18,7 @@ __author__ = 'Nicolas Chotard <nchotard@in2p3.fr>'
 __version__ = '$Revision: 1.0 $'
 
 
-def build_cmd(filename, input='pardir/output', output='pardir/output'):
+def build_cmd(visits, filt, num, input='pardir/output', output='pardir/output'):
 ## HMK parameters have changed here, and filename is now provided rather than determined
 ##    if not os.path.isdir("scripts/" + filt):
 ##        os.makedirs("scripts/" + filt)
@@ -26,6 +26,13 @@ def build_cmd(filename, input='pardir/output', output='pardir/output'):
 ##    filename = "scripts/" + filt + "/" + visit + ".list"
 ##    if not os.path.isfile(filename):
 ##        N.savetxt(filename, ["--id visit=%s" % visit], fmt="%s")
+
+    if not os.path.isdir("scripts/" + filt):
+        os.makedirs("scripts/" + filt)
+
+    filename = "scripts/" + filt + "/visits_" + str(num) + ".list"
+    visits = ["--id visit=%s" % str(v) for v in visits]
+    N.savetxt(filename, visits, fmt="%s")
 
     cmd = ""
     # Create the command line
@@ -61,17 +68,27 @@ if __name__ == "__main__":
 
         config = LR.select_config(opts.configs, filt)
 
-        # Are there visit files on which to run
-        files = glob.glob("scripts/" + filt + "/*.list")
-        if not len(files):
+        # Are there visits to load
+        if not os.path.exists(filt+".list"):
             print("WARNING: No file (no visit) for filter", filt)
             continue
 
+        # Get the list of visits
+        dataids = N.loadtxt(filt+".list", dtype='str')
+        visits = list(set([dataid[1].split('=')[1] for dataid in dataids]))
+        print("INFO: %i visits loaded: " % len(visits), visits)
+
+        # How many jobs should we be running (and how many visit in each?)?
+        njobs = LR.job_number(visits, opts.mod, opts.max)
+
+        # Reorganize the visit list in sequence
+        visits = LR.organize_items(visits, njobs)
+
         # Loop over the visit file
         numscript = 1
-        for i, filename in enumerate(files):
-            cmd = build_cmd(filename, input=opts.output, output=opts.output)
-                    
+        for i, visit in enumerate(visits):
+            cmd = build_cmd(visit, filt, i, input=opts.output, output=opts.output)
+
             # Only submit the job if asked
             prefix = "visit_makeFpSummary_%03d_script" % numscript
             LR.submit(cmd, prefix, filt, autosubmit=opts.autosubmit,
@@ -79,7 +96,6 @@ if __name__ == "__main__":
                       system=opts.system, otheroptions=opts.otheroptions,
                       from_slac=opts.fromslac, from_nersc=opts.fromnersc)
             numscript += 1    
-                    
 
     if not opts.autosubmit:
         print("\nINFO: Use option --autosubmit to submit the jobs")

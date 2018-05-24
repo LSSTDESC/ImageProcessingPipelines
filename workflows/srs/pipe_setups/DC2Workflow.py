@@ -39,7 +39,7 @@ def run_makeFpSummary():
     for filt in filters:
         nscript = vars.remove('n' + filt + 'scripts')
         for i in range(1, int(nscript) + 1):
-            script = workdir + "/02-processEimage/scripts/%s/visit_makeFpSummary_%03d_script.sh" % (filt, i)
+            script = workdir + "/02p5-makeFpSummary/scripts/%s/visit_makeFpSummary_%03d_script.sh" % (filt, i)
             vars.put("MAKEFP_SCRIPT", script)
             pipeline.createSubstream("makeFpSummaryFilter", num, vars)
             num += 1

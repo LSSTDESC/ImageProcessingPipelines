@@ -28,9 +28,9 @@ if __name__ == "__main__":
                       help="Filter(s) [%default]. Can also be a ist of filter ('ugriz')")
     parser.add_option("-c", "--config", type="string", default="makeSkyMapConfig.py",
                       help="If not given or present in the local dir, a standard one will be created.")
-    parser.add_option("--input", type="string", default='pardir/output',
+    parser.add_option("-i", "--input", type="string", default='pardir/output',
                       help='input directory [%default]')
-    parser.add_option("--output", type="string", default='pardir/output',
+    parser.add_option("-o", "--output", type="string", default='pardir/output',
                       help='output directory [%default]')
     opts, args = parser.parse_args()
 
