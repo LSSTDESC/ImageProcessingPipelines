@@ -12,9 +12,8 @@ if [[ $SITE == "LSST-IN2P3" ]]
 then
   run_processEimage.py --fromslac -f ${FILTERS} --multicore -m 3 -i ${IN_DIR} -o ${OUT_DIR}
 else
-  run_processEimage.py --fromnersc --doraise --time -f ${FILTERS} --multicore --clobberversions --perraft
-# need to check on -m 1
-#  run_processEimage.py --fromnersc --doraise --time -f ${FILTERS} --multicore --clobberversions -m 1
+  run_processEimage.py --fromnersc --time -f ${FILTERS} --multicore --perraft
+#  run_processEimage.py --fromnersc --time -f ${FILTERS} --multicore --clobberversions --perraft  -m 1  (check on -m 1)
 fi
 
 for FILT in $(echo ${FILTERS} | tr "," "\n")
