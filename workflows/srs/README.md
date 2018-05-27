@@ -60,8 +60,37 @@ done. To do so, 5 separated tasks are being used:
 - `DC2DM_4_COADD`, to run the coadd steps;
 - `DC2DM_5_FORCEDPHOT`, to run the forced photometry (on CCDs and coadds).
 
-All these tasks can be found on on the [SRS Pipeline2 web
+All these tasks can be found on the [SRS Pipeline2 web
 inerface](http://srs.slac.stanford.edu/Pipeline-II/exp/LSST-DESC/index.jsp?versionGroup=latestVersions&submit=Filter&d-4021922-s=1&d-4021922-o=2&taskFilter=DC2DM_&include=last30).
+
+### Outputs
+
+For a iven production campaing, i.e., for a given data set (RUN) and
+version of the stack (DMVER), all the outputs of the incremental
+processing can be found at the following location at CC-IN2P3
+
+    /sps/lsst/dataproducts/desc/DC2/RUN/DMVER/data
+
+For instance, the output data for the `Run1.2p` can be found at
+
+    /sps/lsst/dataproducts/desc/DC2/Run1.2p/w_2018_18/data
+
+The `/sps/lsst/dataproducts/desc/DC2/RUN/DMVER/` directory will
+contain the following files and directories
+
+- the `filesToIngest_*.txt` files: contain the list of fits files to
+ ingest, all created by the `createIngestFileList.py` script (see
+ below)
+- the list of `stream_config_*.sh` files, given as an option when
+  creating a stream (`LOCAL_CONFIG=/path/to/this/file.sh`
+- the `checkpoints.sh` file, used to stop the pipeline if needed (by
+ uncommenting the right process name)
+- the `work` directory, containing the scripts and files created
+ in the different streams by the setup processes
+- the `data` directory, containing the output of the DM stack
+procesing for all the streams (the actual data and catalogs).
+
+### How to increment
 
 To increment on the data ingestion, a new list of file can be created using
 the following command line:
@@ -88,27 +117,6 @@ tasks. To run the coadd, we might want to wait for a full filter to be
 ready (all data available), and we can run one stream per filter. To
 run the forced photometry, we will have to wait for all previous steps
 to be finished for all filters.
-
-### Outputs
-
-The outputs of the incremental processing for a given run (RUN) and
-version of the stack (DMVER) can be found at the following location
-
-    /sps/lsst/dataproducts/desc/DC2/RUN/DMVER/data
-
-For the `Run1.2p` data, for instance, you can find them at
-
-    /sps/lsst/dataproducts/desc/DC2/Run1.2p/w_2018_18/data
-
-The `/sps/lsst/dataproducts/desc/DC2/RUN/DMVER/` directory will
-contain the files containg the list of fits file to ingest, the list
-of `stream_config.sh` files, the `checkpoints.sh` file, used to stop
-the pipeline if needed (by uncommenting the right process name), and
-the `work` and `data` directories, respectively containing the scripts
-and files created in the different streams by the setup processes, and
-the output of the DM stack procesing for all the streams (he actual
-data and catalogs).
-
 
 
 
