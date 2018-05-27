@@ -78,8 +78,8 @@ For instance, the output data for the `Run1.2p` can be found at
 The `/sps/lsst/dataproducts/desc/DC2/RUN/DMVER/` directory will
 contain the following files and directories
 
-- the `filesToIngest_*.txt` files: contain the list of fits files to
- ingest, all created by the `createIngestFileList.py` script (see
+- the `filesToIngest_*.txt` files, containing the list of fits files
+ to ingest, all created by the `createIngestFileList.py` script (see
  below)
 - the list of `stream_config_*.sh` files, given as an option when
   creating a stream (`LOCAL_CONFIG=/path/to/this/file.sh`
@@ -103,20 +103,27 @@ of files to ingest, this script, that can be foud in the
 (pipe_scripts)[pipe_scripts] directory, will create several lists with
 a maximum number of 500.000 files to ingest in each. One stream will
 have to be created for each of them, one after the other, using
-separated `LoCAL_CONFIG` (`stream_config.sh`) file.
+separated `LOCAL_CONFIG` (`stream_config.sh`) file.
 
 When the ingestion is done, the `processEimage` step can be launch
 (create a new stream for task `DC2DM_2_PROCESS`, with the same
 `LOCAL_CONFIG` file as for the first ingest). This step is set up to
 automatically detect new files to process. It makes a direct
 comparison between the `eimage` available and the `calexp` already
-produced.
+produced. When the `calexp` are created, you can created a new stream
+for the `DC2DM_3_FPSUM` task to run `makeFpSummary` is needed.
 
 The co-addition and the forced-photometry steps are done in two other
 tasks. To run the coadd, we might want to wait for a full filter to be
 ready (all data available), and we can run one stream per filter. To
 run the forced photometry, we will have to wait for all previous steps
 to be finished for all filters.
+
+### Setup the pipeline
+
+A description on how to setup the pipeline files and directories has
+been written
+[there](https://github.com/LSSTDESC/ImageProcessingPipelines/tree/master/workflows/srs/pipe_setups/in2p3_setup).
 
 
 
