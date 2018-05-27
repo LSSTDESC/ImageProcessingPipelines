@@ -121,8 +121,8 @@ to be finished for all filters.
 
 ### Setup the pipeline
 
-A description on how to setup the pipeline files and directories has
-been written
+A description on how to setup the pipeline files and directories
+(@CC-IN2P3) has been written
 [there](https://github.com/LSSTDESC/ImageProcessingPipelines/tree/master/workflows/srs/pipe_setups/in2p3_setup).
 
 
