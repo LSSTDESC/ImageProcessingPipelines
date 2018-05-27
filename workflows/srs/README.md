@@ -48,8 +48,7 @@ validation, each step is incrementaly added to the pipeline.
 
 ## Incremental data processing
 
-The outputs can be found here :
-`/sps/lsst/dataproducts/desc/DC2/Run1.2p/w_2018_18/data`.
+### Procedure
 
 We are now running in a incremental mode, which means that when more
 data will become available to process (the remaining data of Run1.2p for instance),
@@ -89,7 +88,26 @@ tasks. To run the coadd, we might want to wait for a full filter to be
 ready (all data available), and we can run one stream per filter. To
 run the forced photometry, we will have to wait for all previous steps
 to be finished for all filters.
-  
+
+### Outputs
+
+The outputs of the incremental processing for a given run (RUN) and
+version of the stack (DMVER) can be found at the following location
+
+    `/sps/lsst/dataproducts/desc/DC2/RUN/DMVER/data`.
+
+For the `Run1.2p` data, for instance, you can find them at
+
+    `/sps/lsst/dataproducts/desc/DC2/Run1.2p/w_2018_18/data`.
+
+The `/sps/lsst/dataproducts/desc/DC2/RUN/DMVER/` directory will
+contain the files containg the list of fits file to ingest, the list
+of `stream_config.sh` files, the `checkpoints.sh` file, used to stop
+the pipeline if needed (by uncommenting the right process name), and
+the `work` and `data` directories, respectively containing the scripts
+and files created in the different streams by the setup processes, and
+the output of the DM stack procesing for all the streams (he actual
+data and catalogs).
 
 
 
