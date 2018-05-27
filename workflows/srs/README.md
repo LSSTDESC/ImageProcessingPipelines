@@ -42,17 +42,17 @@ Here is the structure and content of this directory:
 
 ## Pipeline
 
-The step by step instruction to run the pipeline are for now kept
+The step by step instructions to run the pipeline are described
 [here](https://github.com/LSSTDESC/ImageProcessingPipelines/wiki/Step-by-step-instructions-for-initial-cross-check-of-DM-DC2). After
-validation, each step is incrementaly added to the pipeline.
+validation, each step has been incrementaly added to the pipeline to
+build the tasks mentioned below.
 
-## Incremental data processing
-
-### Procedure
+### Incremental data processing
 
 We are now running in a incremental mode, which means that when more
-data will become available to process (the remaining data of Run1.2p for instance),
-we will be able to increment on what has been already done. To do so, 5 separated tasks are being used:
+data will become available to process (the remaining data of Run1.2p
+for instance), we will be able to increment on what has been already
+done. To do so, 5 separated tasks are being used:
 
 - `DC2DM_1_INGEST`, for data ingestion;
 - `DC2DM_2_PROCESS`, to run `processEimage`; 
@@ -94,11 +94,11 @@ to be finished for all filters.
 The outputs of the incremental processing for a given run (RUN) and
 version of the stack (DMVER) can be found at the following location
 
-    `/sps/lsst/dataproducts/desc/DC2/RUN/DMVER/data`.
+    /sps/lsst/dataproducts/desc/DC2/RUN/DMVER/data
 
 For the `Run1.2p` data, for instance, you can find them at
 
-    `/sps/lsst/dataproducts/desc/DC2/Run1.2p/w_2018_18/data`.
+    /sps/lsst/dataproducts/desc/DC2/Run1.2p/w_2018_18/data
 
 The `/sps/lsst/dataproducts/desc/DC2/RUN/DMVER/` directory will
 contain the files containg the list of fits file to ingest, the list
