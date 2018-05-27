@@ -46,34 +46,49 @@ The step by step instruction to run the pipeline are for now kept
 [here](https://github.com/LSSTDESC/ImageProcessingPipelines/wiki/Step-by-step-instructions-for-initial-cross-check-of-DM-DC2). After
 validation, each step is incrementaly added to the pipeline.
 
-## Status for the mini-DRP pipeline
+## Incremental data processing
 
-- [ ] Data transfer from NERSC to CC-IN2P3
-  - [ ] Creation of a stable directory structure at NERSC
-  - [x] Semi-automatic copy of its content to CC-IN2P3
-  - [x] Identify datasets to exercise mini DRP pipeline
-- [x] Creation of a list of data to ingest (`pipe_scripts/createIngestFileList.py`)
-- [x] Data ingestion using `ingestDriver.py`
-- [ ] Build a reference catalog with stars and galaxies
-  - [ ] What software do we need for that?
-  - [ ] What configuration?
-  - [ ] Some documentation from Dominique [here](https://github.com/LSSTDESC/ImageProcessingPipelines/wiki/How-to-create-the-protoDC2-reference-catalog)
-  - Dominique has created these catalogs, that can be found here
+The outputs can be found here :
+`/sps/lsst/dataproducts/desc/DC2/Run1.2p/w_2018_18/data`.
 
-    	      /sps/lsst/users/lsstprod/desc/DC2-test/input/ref_cats
+We are now running in a incremental mode, which means that when more
+data will become available to process (the remaining data of Run1.2p for instance),
+we will be able to increment on what has been already done. To do so, 5 separated tasks are being used:
 
-- [x] Creation of a list of visits to process (incremental mode available)
-- [ ] Run `processEimage.py`
-  - [ ] Config file?
+- `DC2DM_1_INGEST`, for data ingestion;
+- `DC2DM_2_PROCESS`, to run `processEimage`; 
+- `DC2DM_3_FPSUM`, to run `makeFpSummary`;
+- `DC2DM_4_COADD`, to run the coadd steps;
+- `DC2DM_5_FORCEDPHOT`, to run the forced photometry (on CCDs and coadds).
 
-      	       in `/sps/lsst/users/lsstprod/desc/DC2-test/processEimage.py`
-	       or `/sps/lsst/users/nchotard/dc2/obs_lsstSim/config/processEimage.py`
+All these tasks can be found on on the [SRS Pipeline2 web
+inerface](http://srs.slac.stanford.edu/Pipeline-II/exp/LSST-DESC/index.jsp?versionGroup=latestVersions&submit=Filter&d-4021922-s=1&d-4021922-o=2&taskFilter=DC2DM_&include=last30).
 
-  - [ ] Version or branch of `obs_lsstSim` to use? We want master.
-- [ ] Run `makeFpSummary` to produce control plots for eyeballers
-  - For now, available in `u/krughoff/fp_overview` branch of `obs_lsstSim`
-  - See details [there](https://github.com/LSSTDESC/ImageProcessingPipelines/wiki/Step-by-step-instructions-for-initial-cross-check-of-DM-DC2#run-makefpsummarypy)
-- [ ] Run `validate_drp`?
+To increment on the data ingestion, a new list of file can be created using
+the following command line:
+
+    createIngestFileList.py VISITDIR --recursive --increment
+
+that needs to be run in the directory where it has been run before (it
+will look for the lists previously created). Depending on the number
+of files to ingest, this script, that can be foud in the
+(pipe_scripts)[pipe_scripts] directory, will create several lists with
+a maximum number of 500.000 files to ingest in each. One stream will
+have to be created for each of them, one after the other, using
+separated `LoCAL_CONFIG` (`stream_config.sh`) file.
+
+When the ingestion is done, the `processEimage` step can be launch
+(create a new stream for task `DC2DM_2_PROCESS`, with the same
+`LOCAL_CONFIG` file as for the first ingest). This step is set up to
+automatically detect new files to process. It makes a direct
+comparison between the `eimage` available and the `calexp` already
+produced.
+
+The co-addition and the forced-photometry steps are done in two other
+tasks. To run the coadd, we might want to wait for a full filter to be
+ready (all data available), and we can run one stream per filter. To
+run the forced photometry, we will have to wait for all previous steps
+to be finished for all filters.
   
 
 
