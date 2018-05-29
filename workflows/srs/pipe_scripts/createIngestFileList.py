@@ -50,7 +50,7 @@ if __name__ == "__main__":
 
     if args.increment:
         existing_ftis = glob("filesToIngest*.txt")
-        existing_files = np.concatenate([np.loadtxt(f, dtype='string', unpack=True)
+        existing_files = np.concatenate([np.loadtxt(f, dtype=np.str, unpack=True)
                                          for f in existing_ftis])
         print("%i paths to files found" % len(existing_files))
         files = [f for f in files if f not in existing_files]
