@@ -1,7 +1,7 @@
 # Default location from which to setup DM 
 export DM_RELEASE=
 export RUN=
-export DM_SETUP="/sps/lsst/software/lsst_distrib/${DM_RELEASE}/loadLSST.bash"
+export DM_SETUP="/cvmfs/sw.lsst.eu/linux-x86_64/lsst_distrib/${DM_RELEASE}/loadLSST.bash"
 export REFCAT="/sps/lsst/users/nchotard/dc2/test/input/ref_cats"
 export REFCATCONFIG="/sps/lsst/users/lsstprod/desc/DC2-test/IngestIndexedReferenceTask_DC2-proto.py"
 
