@@ -23,7 +23,7 @@ git clone https://github.com/LSSTDESC/obs_lsstSim.git
 echo
 echo "Installing obs_lsstSim"
 cd obs_lsstSim
-source /sps/lsst/software/lsst_distrib/$DMVER/loadLSST.bash
+source /cvmfs/sw.lsst.eu/linux-x86_64/lsst_distrib/$DMVER/loadLSST.bash
 setup lsst_distrib
 setup -k -r .
 scons
@@ -71,4 +71,4 @@ echo "Setup is now done. Here is the list of data and software directories"
 echo " - Raw data : /sps/lsst/datasets/desc/DC2/$DATASET"
 echo " - Production data dir: $DATADIR/$RUN/$DMVER"
 echo " - Dedicated Pipeline softwares: $SOFTDIR/$RUN"
-echo " - DM stack: /sps/lsst/software/lsst_distrib/$DMVER"
+echo " - DM stack: /cvmfs/sw.lsst.eu/linux-x86_64/lsst_distrib/$DMVER"

@@ -9,7 +9,7 @@ Here is an attempt to organise the data and softwares at CC-IN2P3:
 - Raw data : `/sps/lsst/datasets/desc/DC2/Run?.?`
 - Production data set: `/sps/lsst/dataproducts/desc/DC2/Run?.?`
 - Dedicated Pipeline software: `/pbs/throng/lsst/software/desc/DC2/Run?.?`
-- DM stack: `/sps/lsst/software/lsst_distrib/w_2018_??`
+- DM stack: `/cvmfs/sw.lsst.eu/linux-x86_64/lsst_distrib/w_2018_??`
 
 In each `DC2` folders will be found several sub-folders corresponding
 to the different runs carried out during the test and production
