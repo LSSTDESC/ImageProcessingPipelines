@@ -156,8 +156,5 @@ def run_coadd_task(task_name, output_repo, dataId, stdout=None, stderr=None):
 @parsl.App('bash', dfk)
 def makeFpSummary(output_repo, inputs=[], dataId=None, dstype='calexp',
                   stdout=None, stderr=None):
-    if inputs:
-        # Wait for inputs futures to finish.
-        [x.result() for x in inputs]
     command = '''makeFpSummary.py {0}/ --output {0} --id %s --dstype %s --doraise --clobber-config --no-versions''' % (make_id_string(dataId), dstype)
     return command
