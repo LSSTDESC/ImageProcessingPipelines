@@ -37,8 +37,8 @@ if __name__ == "__main__":
     opts, args = LR.standard_options(usage=usage, description=description)
 
     opts.mod = 10
-    opts.input = "pardir/output"
-    opts.output = "pardir/output"
+    #opts.input = "pardir/output"
+    #opts.output = "pardir/output"
     file_patch = "patches_all.txt"
     
     cmd = "split -a 5 -l " + str(opts.mod) + " -d " + file_patch + " " + file_patch + "_"

@@ -30,8 +30,8 @@ if __name__ == "__main__":
 
     opts, args = LR.standard_options(usage=usage, description=description)
 
-    opts.input = "pardir/output"
-    opts.output = "pardir/output"
+    #opts.input = "pardir/output"
+    #opts.output = "pardir/output"
 
     for filt in opts.filters:
 

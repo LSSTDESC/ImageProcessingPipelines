@@ -38,8 +38,8 @@ if __name__ == "__main__":
 
     # overwrite some options
     opts.mod = 2
-    opts.input = "pardir/output"
-    opts.output = "pardir/output"
+    #opts.input = "pardir/output"
+    #opts.output = "pardir/output"
     file_patch = "patches_all.txt"
 
     cmd = "split -a 4 -l " + str(opts.mod) + " -d " + file_patch + " " + file_patch + "_"

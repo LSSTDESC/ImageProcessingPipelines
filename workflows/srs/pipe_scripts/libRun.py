@@ -59,7 +59,7 @@ def submit(cmd, prefix, filt=None, autosubmit=False, ct=60000, vmem='4G',
     if system is not None:
         options += ",os=" + system
 
-    qsub = "qsub -P P_lsst -l %s -j y -o " % options + log
+    qsub = "qsub -P P_lsst_desc -l %s -j y -o " % options + log
     if queue is not None:
         qsub += " -q " + queue
     if otheroptions is not None:
@@ -69,7 +69,7 @@ def submit(cmd, prefix, filt=None, autosubmit=False, ct=60000, vmem='4G',
     script = open(scriptname, "w")
     if from_slac:
         script.write("#!/usr/local/bin/bash\n")
-        script.write("#$ -P P_lsst" + "\n")
+        script.write("#$ -P P_lsst_desc" + "\n")
         for opt in options.split(","):
             script.write("#$ -l %s\n" % opt)
         if queue is not None:
