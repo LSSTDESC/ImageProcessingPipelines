@@ -4,6 +4,7 @@
 source ${SETUP_LOCATION}/checkpoint
 
 #clean input file and copy to TMPDIR
+
 grep "fits.gz" ${VISIT_FILE} > ${TMPDIR}/`basename ${VISIT_FILE}`
 
 #split the resulting files into chunks of limited number of images
@@ -12,7 +13,12 @@ split -d -l 500000 ${TMPDIR}/`basename ${VISIT_FILE}` "${TMPDIR}/to_be_ingested_
 echo 'TEST'
 ls ${TMPDIR}/to_be_ingested_*
 
-if [[ -z "${INGESTDATA}" ]];
+grep "fits.gz" ${VISIT_FILE} > ${TMPDIR}/${VISIT_FILE}
+
+#split the resulting files into chunks of limited number of images
+split -d -l 500000 ${TMPDIR}/${filename} "${TMPDIR}/to_be_ingested_"
+
+
 then
   # Ready to ingest
   export OMP_NUM_THREADS=1
@@ -27,4 +33,5 @@ then
       ingestDriver.py ${IN_DIR} @"$f" --cores 16 -c clobber=True allowError=True register.ignore=True
     fi
   done
-fi
+done
+
