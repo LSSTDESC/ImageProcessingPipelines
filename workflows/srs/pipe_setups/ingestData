@@ -3,35 +3,42 @@
 # checkpoint
 source ${SETUP_LOCATION}/checkpoint
 
-#clean input file and copy to TMPDIR
+#source /sps/lsst/dataproducts/desc/DC2/Run1.2p/w_2018_18/validation-uddf/stream_config.sh uDDF-i-0to9.txt
+#WORK_DIR="."
+#echo $VISIT_FILE
 
-grep "fits.gz" ${VISIT_FILE} > ${TMPDIR}/`basename ${VISIT_FILE}`
-
-#split the resulting files into chunks of limited number of images
-split -d -l 500000 ${TMPDIR}/`basename ${VISIT_FILE}` "${TMPDIR}/to_be_ingested_"
-
-echo 'TEST'
-ls ${TMPDIR}/to_be_ingested_*
-
-grep "fits.gz" ${VISIT_FILE} > ${TMPDIR}/${VISIT_FILE}
-
-#split the resulting files into chunks of limited number of images
-split -d -l 500000 ${TMPDIR}/${filename} "${TMPDIR}/to_be_ingested_"
+mkdir -p ${WORK_DIR}/01-ingest
 
 
+
+build_ingest_script () {
+    cat> $1.sh<<EOF
+#!/bin/bash
+DM_SETUP=${DM_SETUP}
+source ${SETUP_LOCATION}/DMsetup.sh
+export OMP_NUM_THREADS=1
+if [[ $SITE == "NERSC" ]]
 then
-  # Ready to ingest
-  export OMP_NUM_THREADS=1
+  ingestDriver.py ${IN_DIR} @$1 --cores 8 --mode link --batch-type none --output ${IN_DIR} -c clobber=True allowError=True register.ignore=True --no-versions
+else
+  ingestDriver.py ${IN_DIR} @$1 --cores 16 --rerun ${RERUN} -c clobber=True allowError=True register.ignore=True
+fi
+EOF
+}
 
-  #loop sequentially over the split files
-  for f in ${TMPDIR}/to_be_ingested_??;
-  do
-    if [[ $SITE == "NERSC" ]]
-    then
-      ingestDriver.py ${IN_DIR} @"$f" --cores 8 --mode link --batch-type none --output ${IN_DIR} -c clobber=True allowError=True register.ignore=True --no-versions
-    else
-      ingestDriver.py ${IN_DIR} @"$f" --cores 16 -c clobber=True allowError=True register.ignore=True
-    fi
-  done
+VISITBASE=`basename ${VISIT_FILE} -s`
+split -d -l 500000 ${VISIT_FILE} ${WORK_DIR}/01-ingest/${VISITBASE}_chunk
+
+rm ${WORK_DIR}/01-ingest/${VISITBASE}_chunk*.sh
+
+
+CHUNKFILES="${WORK_DIR}/01-ingest/${VISITBASE}_chunk*"
+
+for f in ${CHUNKFILES}
+do
+    build_ingest_script $f
+    chmod a+x ${f}.sh
+    pipelineSet CUR_SCRIPT ${f}.sh
+    echo pipelineCreateStream task_ingestData -1 CUR_SCRIPT=${f}.sh
+    pipelineCreateStream task_ingestData -1 CUR_SCRIPT=${f}.sh
 done
-
