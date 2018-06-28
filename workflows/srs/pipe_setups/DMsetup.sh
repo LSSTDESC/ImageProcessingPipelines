@@ -21,5 +21,7 @@ then
     setup obs_lsstSim w.2018.04-35-g11f44ee -t w_2018_09
 else
     eups declare -r $ROOT_SOFTS/obs_lsstSim obs_lsstSim localver
+    eups declare -r $ROOT_SOFTS/obs_lsstCam obs_lsstCam localver
     setup obs_lsstSim localver
+    setup obs_lsstCam localver
 fi
