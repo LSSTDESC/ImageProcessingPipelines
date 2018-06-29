@@ -37,9 +37,10 @@ def get_visit_corners(butler, dataids, ccds=None, getccds=False, ccdkey='sensor'
     for ii, dataid in enumerate(dataids):
         if ccds is not None and dataid[ccdkey] not in ccds:
             continue
-        calexp = butler.get('calexp', dataId=dataid)
-        coords = [calexp.getWcs().pixelToSky(point)
-                  for point in geom.Box2D(calexp.getBBox()).getCorners()]
+        calexp_bbox = butler.get('calexp_bbox', dataId=dataid)
+        calexp_wcs = butler.get('calexp_wcs', dataId=dataid)
+        coords = [calexp_wcs.pixelToSky(point)
+                  for point in geom.Box2D(calexp_bbox).getCorners()]
         ras.extend([coord.getRa().asDegrees() for coord in coords])
         decs.extend([coord.getDec().asDegrees() for coord in coords])
         accds.extend([dataid[ccdkey]] * 4)
@@ -55,9 +56,10 @@ def get_dataid_corners(butler, dataids, ccdkey='sensor'):
     coords = []
     for ii, dataid in enumerate(dataids):
         print("Runing on dataId %i / %i :" % (ii + 1, len(dataids)), dataid)
-        calexp = butler.get('calexp', dataId=dataid)
-        coords.append([calexp.getWcs().pixelToSky(point)
-                       for point in geom.Box2D(calexp.getBBox()).getCorners()])
+        calexp_bbox = butler.get('calexp_bbox', dataId=dataid)
+        calexp_wcs = butler.get('calexp_wcs', dataId=dataid)
+        coords.append([calexp_wcs.pixelToSky(point)
+                       for point in geom.Box2D(calexp_bbox).getCorners()])        
     return coords
 
 
