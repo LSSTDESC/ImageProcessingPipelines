@@ -3,14 +3,42 @@
 # checkpoint
 source ${SETUP_LOCATION}/checkpoint
 
-if [[ -z "${INGESTDATA}" ]];
+#source /sps/lsst/dataproducts/desc/DC2/Run1.2p/w_2018_18/validation-uddf/stream_config.sh uDDF-i-0to9.txt
+#WORK_DIR="."
+#echo $VISIT_FILE
+
+mkdir -p ${WORK_DIR}/01-ingest
+
+
+
+build_ingest_script () {
+    cat> $1.sh<<EOF
+#!/bin/bash
+DM_SETUP=${DM_SETUP}
+source ${SETUP_LOCATION}/DMsetup.sh
+export OMP_NUM_THREADS=1
+if [[ $SITE == "NERSC" ]]
 then
-  # Ready to ingest
-  export OMP_NUM_THREADS=1
-  if [[ $SITE == "NERSC" ]]
-  then
-    ingestDriver.py ${IN_DIR} @${VISIT_FILE} --cores 8 --mode link --batch-type none --output ${IN_DIR} -c clobber=True allowError=True register.ignore=True --no-versions
-  else
-    ingestDriver.py ${IN_DIR} @${VISIT_FILE} --cores 16 -c clobber=True allowError=True register.ignore=True
-  fi
+  ingestDriver.py ${IN_DIR} @$1 --cores 8 --mode link --batch-type none --output ${IN_DIR} -c clobber=True allowError=True register.ignore=True --no-versions
+else
+  ingestDriver.py ${IN_DIR} @$1 --cores 16 --rerun ${RERUN} -c clobber=True allowError=True register.ignore=True
 fi
+EOF
+}
+
+VISITBASE=`basename ${VISIT_FILE} -s`
+split -d -l 500000 ${VISIT_FILE} ${WORK_DIR}/01-ingest/${VISITBASE}_chunk
+
+rm ${WORK_DIR}/01-ingest/${VISITBASE}_chunk*.sh
+
+
+CHUNKFILES="${WORK_DIR}/01-ingest/${VISITBASE}_chunk*"
+
+for f in ${CHUNKFILES}
+do
+    build_ingest_script $f
+    chmod a+x ${f}.sh
+    pipelineSet CUR_SCRIPT ${f}.sh
+    echo pipelineCreateStream task_ingestData -1 CUR_SCRIPT=${f}.sh
+    pipelineCreateStream task_ingestData -1 CUR_SCRIPT=${f}.sh
+done

@@ -3,13 +3,21 @@
 # checkpoint
 source ${SETUP_LOCATION}/checkpoint
 
-if [[ -z "${INGESTDATA}" ]];
+# Ready to ingest
+# Make sure the output directory exists
+mkdir -p ${IN_DIR}
+cd ${IN_DIR}
+
+# If the output directory does not contain a mapper file, create one
+cp ${CONFIGS_LOCATION}/_mapper ${IN_DIR}/
+
+
+#if reference cat ingestion is about to be bypassed
+#then create the soft link to an existing 
+var=`grep ingestRefCat ${CHECKPOINTS}`
+if [ "${var%${var#?}}"x != '#x' ]
 then
-  # Ready to ingest
-  # Make sure the output directory exists
-  mkdir -p ${IN_DIR}
-  # If the output directory does not contain a mapper file, create one
-  cp ${CONFIGS_LOCATION}/_mapper ${IN_DIR}/
-else
-  ln -sfn ${INGESTDATA} ${IN_DIR}
+    echo "locally linking ${REFCAT}"
+    ln -sfn $REFCAT ${IN_DIR}/ref_cats
 fi
+
