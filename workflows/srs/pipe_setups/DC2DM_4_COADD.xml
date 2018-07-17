@@ -53,13 +53,6 @@
       <var name="BATCH_NAME">DC2Batch.sh</var>
     </variables>
 
-    <!-- makeSkyMap -->
-    <process name="makeSkyMap" site="${JOBSITE}">
-      <notation>Make the sky map</notation>
-      <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
-	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
-    </process>
-
     <!-- report patches -->
     <!--   setup -->
     <process name="setup_reportPatches" site="${JOBSITE}">
