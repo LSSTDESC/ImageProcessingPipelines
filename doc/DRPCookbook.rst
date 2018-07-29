@@ -42,9 +42,9 @@ This Note is organized as follows. We first provide an
 `overview <#overview>`__ of the DRP pipeline, summarizing the relevant
 section in `LDM-151 <http://ls.st/ldm-151>`__. Then, we present the recipes in
 two sections, each of which maps onto a "branch" of the DESC DRP pipeline: 
-1. `Image Coaddition, and Object Detection and Measurment<#coadds>`__
-2. `Difference Image Analysis, and DIAObject Detection and Measurement<#diasources>`__
-We then provide some brief `concluding remarks <#conclusions>`__.
+1. `The Static Sky Branch: Image Coaddition, and Object Detection and Measurment`_
+2. `The Time Domain Branch: Difference Image Analysis, and DIAObject Detection and Measurement`_
+We then provide some brief `concluding remarks`_.
 
 
 Data Release Processing Overview
