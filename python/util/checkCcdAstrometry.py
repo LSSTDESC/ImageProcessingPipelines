@@ -89,7 +89,7 @@ class CheckCcdAstrometryTask(pipeBase.CmdLineTask):
     def _makeArgumentParser(cls):
         """Create an argument parser"""
 
-        parser = pipeBase.ArgumentParser(name=cls._DefaultName)
+        parser = pipeBase.InputOnlyArgumentParser(name=cls._DefaultName)
         parser.add_id_argument("--id", "calexp", help="Data ID, e.g. --id visit=6789 (optional)")
 
         return parser
