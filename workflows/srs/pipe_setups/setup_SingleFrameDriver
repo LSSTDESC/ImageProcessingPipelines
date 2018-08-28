@@ -3,13 +3,9 @@
 # checkpoint
 source ${SETUP_LOCATION}/checkpoint
 
-mkdir -p ${WORK_DIR}/02-processEimage
-#cd ${WORK_DIR}/02-processEimage
-#ln -sfn ${WORK_DIR} pardir
-#ln -sfn ${DATA_DIR} datadir
-#processEimage.py ${IN_DIR} --output ${OUT_DIR}
+mkdir -p ${WORK_DIR}/02-process
 
-createVisitLists.py --increment --output ${WORK_DIR}/02-processEimage ${IN_DIR} 
+#createVisitLists.py --output ${WORK_DIR}/02-process ${IN_DIR} 
 
 # pipelineSet WORK_DIR ${WORK_DIR}
 # pipelineSet FILTERS ${FILTERS}
@@ -26,7 +22,7 @@ build_singleframe_script () {
 DM_SETUP=${DM_SETUP}
 source ${SETUP_LOCATION}/DMsetup.sh
 export OMP_NUM_THREADS=1
-singleFrameDriver.py ${IN_DIR} --rerun ${RERUN} $2 --cores 8 --timeout 999999999 --configfile ${CONFIGS_LOCATION}/singleFrameDriverConfig_basicnocalib.py
+singleFrameDriver.py ${IN_DIR} --rerun ${RERUN} $2 --cores \${NSLOTS} --timeout 999999999
 EOF
 }
 
@@ -50,17 +46,18 @@ for FILT in $(echo ${FILTERS} | tr "," "\n"); do
     if [[ $SITE == "LSST-IN2P3" ]]
     then
       #build script with one visit per processing
-      script="${WORK_DIR}/02-processEimage/script_${FILT}_$counter.sh"
+      script="${WORK_DIR}/02-process/script_${FILT}_$counter.sh"
       build_singleframe_script "${script}" "${id}"
       chmod a+x "${script}"
       # pipelineSet CUR_SCRIPT ${script} 
+      echo pipelineCreateStream task_SingleFrameDriver -1 CUR_SCRIPT="${script}"
       pipelineCreateStream task_SingleFrameDriver -1 CUR_SCRIPT="${script}"
     else
       for i in {0..4}; do
         for j in {0..4}; do
 	  if [ "($i,$j)" != "(0,0)" -a "($i,$j)" != "(4,0)" -a "($i,$j)" != "(4,4)" -a "($i,$j)" != "(0,4)" ]; then
-            script="${WORK_DIR}/02-processEimage/script_${FILT}_R${i}${j}_$counter.sh"
-	    build_singleframe_script "${script}" "${id} raft=R${i}${j}"
+            script="${WORK_DIR}/02-process/script_${FILT}_R${i}${j}_$counter.sh"
+	    build_singleframe_script "${script}" "${id} raftName=R${i}${j}"
 	    chmod a+x "${script}"
 	    # pipelineSet CUR_SCRIPT ${script} 
 	    pipelineCreateStream task_SingleFrameDriver -1 CUR_SCRIPT="${script}"
@@ -69,5 +66,5 @@ for FILT in $(echo ${FILTERS} | tr "," "\n"); do
       done
     fi
     #one full complete visit at nersc or cc : run makeFpSummary
-  done <"${WORK_DIR}/02-processEimage/${FILT}"_visit.list  
+  done <"${OUTPUT_DATA_DIR}/${FILT}"_visit.list  
 done
