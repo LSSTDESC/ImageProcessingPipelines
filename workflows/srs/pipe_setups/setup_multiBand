@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# checkpoint
+source ${SETUP_LOCATION}/checkpoint
+
+cd ${WORK_DIR}/03-coadd
+
+# Build the list of tracts/patches
+#JCT wrapPatchesLists.py -f ${FILTERS}
+
+
+#get visit properly formatted for coaddDriver
+#createVisitLists.py ${IN_DIR} --idopt selectId
+#run_makeCoaddTempExp.py -c makeCoaddTempExpConfig.py --fromslac -f ${FILTERS} -i ${OUT_DIR} -o ${OUT_DIR}
+
+
+build_multiband_script () {
+ cat> $1.sh<<EOF
+#!/bin/bash
+DM_SETUP=${DM_SETUP}
+source ${SETUP_LOCATION}/DMsetup.sh
+export OMP_NUM_THREADS=1
+multiBandDriver.py $IN_DIR --rerun $RERUN @$1.list  --clobber-versions --cores=16
+EOF
+}
+
+mkdir -p "scripts/all"
+split --suffix-length=3 --additional-suffix=.list  --numeric-suffixes  -l 5 patches_all.txt scripts/all/patches_
+for patch in ${WORK_DIR}/03-coadd/scripts/all/patches_*.list
+  do
+    prefix=${patch%.list}
+    build_multiband_script ${prefix}
+    chmod a+x ${prefix}.sh
+    pipelineCreateStream task_multiBandDriver -1 CUR_SCRIPT=${prefix}.sh
+  done
+
