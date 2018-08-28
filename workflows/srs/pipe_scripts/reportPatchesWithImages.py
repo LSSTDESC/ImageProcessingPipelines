@@ -166,9 +166,11 @@ if __name__ == "__main__":
     # Get the full list of tract/patch in which are all visits
     tps = reportPatchesWithImages(args[0], visits=opts.visits, ccdkey=opts.ccdkey, filt=opts.filt)
 
+    tract_list = []
     for filt in tps:
         os.system('mkdir -p scripts/%s'%filt)
         tract_dict = tps[filt]
+        tract_list.extend(tract_dict.key())
         for tract in tract_dict:
             filename = 'scripts/%s/tract_%i.sh'%(filt,tract)
             filename2 = '%s/03-coadd/scripts/%s/%i_visits.list'%(os.environ['WORK_DIR'],filt,tract)
@@ -180,3 +182,4 @@ if __name__ == "__main__":
             to_write.extend(['coaddDriver.py  %s --rerun %s --id tract=%i filter=%s @%s --cores ${NSLOTS} --doraise'%(os.environ['IN_DIR'],os.environ['RERUN'],tract, filt, filename2)])
             np.savetxt(filename, to_write, fmt="%s")
             os.system("chmod a+x %s"%filename)
+    np.savetxt('scripts/tracts.list',tract_list, fmt="%s")
