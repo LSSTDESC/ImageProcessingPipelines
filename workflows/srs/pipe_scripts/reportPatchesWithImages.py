@@ -161,21 +161,22 @@ if __name__ == "__main__":
         print("%s visit loaded" % len(opts.visits))
 
     # Get the full list of tract/patch in which are all visits
-    tps = reportPatchesWithImages(args[0], visits=opts.visits, ccdkey=opts.ccdkey)
+    tps = reportPatchesWithImages(args[0], visits=opts.visits, ccdkey=opts.ccdkey, filt=opts.filt)
 
-    # Print the result
-    for tract in tps:
-        for patch in tps[tract]:
-            print("tract=%i patch=%i,%i" % (tract, patch[0], patch[1]))
+    tract_list = []
+    for filt in tps:
+        os.system('mkdir -p scripts/%s'%filt)
+        tract_dict = tps[filt]
+        tract_list.extend(tract_dict.keys())
+        for tract in tract_dict:
+            filename = 'scripts/%s/tract_%i.sh'%(filt,tract)
+            filename2 = '%s/03-coadd/scripts/%s/%i_visits.list'%(os.environ['WORK_DIR'],filt,tract)
 
-    if opts.visits is not None:
-        print("%i patches from %i tracts" % \
-              (sum([len(tps[tract]) for tract in tps]), len(tps)))
-        filename = ("" if opts.filt is None else (opts.filt + "_")) + \
-                   "_".join(opts.visits) + "_patches.list"
-        towrite = []
-        for tract in tps:
-            for patch in tps[tract]:
-                towrite.append("tract=%i patch=%i,%i" % (tract, patch[0], patch[1]))
-        np.savetxt(filename, towrite, fmt="%s")
-        print("Tracts/patches list saved under", filename)        
+            visit_list = tract_dict[tract]
+            np.savetxt(filename2, ['--selectId visit=%s'%v for v in visit_list], fmt="%s")
+
+            to_write = ["#!/bin/bash\nDM_SETUP=%s\nsource ${SETUP_LOCATION}/DMsetup.sh\nexport OMP_NUM_THREADS=1"%(os.environ['DM_SETUP'])]
+            to_write.extend(['coaddDriver.py  %s --rerun %s --id tract=%i filter=%s @%s --cores ${NSLOTS} --doraise'%(os.environ['IN_DIR'],os.environ['RERUN'],tract, filt, filename2)])
+            np.savetxt(filename, to_write, fmt="%s")
+            os.system("chmod a+x %s"%filename)
+    np.savetxt('scripts/tracts.list',tract_list, fmt="%s")

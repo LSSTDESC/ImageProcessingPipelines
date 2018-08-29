@@ -9,17 +9,6 @@ mkdir -p ${WORK_DIR}/02-processEimage
 #ln -sfn ${DATA_DIR} datadir
 #processEimage.py ${IN_DIR} --output ${OUT_DIR}
 
-createVisitLists.py --increment --output ${WORK_DIR}/02-processEimage ${IN_DIR} 
-
-# pipelineSet WORK_DIR ${WORK_DIR}
-# pipelineSet FILTERS ${FILTERS}
-# pipelineSet DM_RELEASE ${DM_RELEASE}
-# pipelineSet DM_SETUP ${DM_SETUP}
-# pipelineSet CONFIGS_LOCATION ${CONFIGS_LOCATION}
-# pipelineSet OUTPUT_DATA_DIR ${OUTPUT_DATA_DIR}
-
-
-
 build_singleframe_script () {
  cat> $1<<EOF
 #!/bin/bash
@@ -29,17 +18,6 @@ export OMP_NUM_THREADS=1
 singleFrameDriver.py ${IN_DIR} --rerun ${RERUN} $2 --cores 8 --timeout 999999999 --configfile ${CONFIGS_LOCATION}/singleFrameDriverConfig_basicnocalib.py
 EOF
 }
-
-
-# for FILT in $(echo ${FILTERS} | tr "," "\n"); do
-#   #pipelineSet n${FILT}scripts `ls scripts/${FILT}/*.sh 2>/dev/null | wc -l`
-#   SCRIPT_LIST="${WORK_DIR}/02-processEimage/scripts/${FILT}/*.sh"
-#   for script in $SCRIPT_LIST
-#   do
-# 	# pipelineSet CUR_SCRIPT ${script}
-#         echo pipelineCreateStream task_SingleFrameDriver -1 CUR_SCRIPT=${script} 
-#   done
-# done
 
 
 for FILT in $(echo ${FILTERS} | tr "," "\n"); do 
