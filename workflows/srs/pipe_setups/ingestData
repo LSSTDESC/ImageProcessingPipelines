@@ -17,11 +17,11 @@ build_ingest_script () {
 DM_SETUP=${DM_SETUP}
 source ${SETUP_LOCATION}/DMsetup.sh
 export OMP_NUM_THREADS=1
-if [[ \${SITE} == "NERSC" ]]
+if [[ $SITE == "NERSC" ]]
 then
   ingestDriver.py ${IN_DIR} @$1 --cores 8 --mode link --batch-type none --output ${IN_DIR} -c clobber=True allowError=True register.ignore=True --no-versions
 else
-  ingestDriver.py ${IN_DIR} @$1 --cores \${NSLOTS} --output ${IN_DIR} -c clobber=True allowError=True register.ignore=True
+  ingestDriver.py ${IN_DIR} @$1 --cores 16 --rerun ${RERUN} -c clobber=True allowError=True register.ignore=True
 fi
 EOF
 }
