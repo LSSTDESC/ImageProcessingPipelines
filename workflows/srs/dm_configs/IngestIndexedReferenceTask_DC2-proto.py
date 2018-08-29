@@ -9,7 +9,7 @@ config.dataset_config.indexer['HTM'].depth=7
 
 config.dataset_config.indexer.name='HTM'
 # Number of lines to skip when reading the text reference file.
-config.file_reader.header_lines=0
+config.file_reader.header_lines=10
 
 # An ordered list of column names to use in ingesting the catalog. With an empty list, column names will be discovered from the first line after the skipped header lines.
 config.file_reader.colnames=[]

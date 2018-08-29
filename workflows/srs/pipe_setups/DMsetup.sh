@@ -11,17 +11,17 @@ else
 fi
 
 # Setup for the stack
-echo "source ${DM_SETUP}"
 source ${DM_SETUP}
 setup lsst_distrib
 
 
-# A specific version of obs_lsstCam is needed for now
+# A specific version of obs_lsstSim is needed for now
 if [[ $SITE == "NERSC" ]]
 then
     setup obs_lsstSim w.2018.04-35-g11f44ee -t w_2018_09
 else
-    eups undeclare obs_lsstCam localver
-    eups declare --force -r $ROOT_SOFTS/obs_lsstCam obs_lsstCam localver
+    eups declare -r $ROOT_SOFTS/obs_lsstSim obs_lsstSim localver
+    eups declare -r $ROOT_SOFTS/obs_lsstCam obs_lsstCam localver
+    setup obs_lsstSim localver
     setup obs_lsstCam localver
 fi

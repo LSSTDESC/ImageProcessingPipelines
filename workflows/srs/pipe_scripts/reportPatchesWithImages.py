@@ -21,14 +21,7 @@ import lsst.daf.persistence as dafPersist
 import numpy as np
 
 
-def organize_by_visit(metadata, keys, visits=None):
-    if visits is None:
-        # Turn the list of tuples into a dictionary
-        dataids = [dict(zip(keys, list(v) if not isinstance(v, list) else v)) for v in metadata]
-    else:
-        dataids = [dict(zip(keys, list(v) if not isinstance(v, list) else v)) for v in metadata if str(v[4]) in visits]
-
-
+def organize_by_visit(dataids, visits=None):
     dataids_visit = {}
     for dataid in dataids:
         if visits is not None and str(dataid['visit']) not in visits:
@@ -44,10 +37,9 @@ def get_visit_corners(butler, dataids, ccds=None, getccds=False, ccdkey='sensor'
     for ii, dataid in enumerate(dataids):
         if ccds is not None and dataid[ccdkey] not in ccds:
             continue
-        calexp_bbox = butler.get('calexp_bbox', dataId=dataid)
-        calexp_wcs = butler.get('calexp_wcs', dataId=dataid)
-        coords = [calexp_wcs.pixelToSky(point)
-                  for point in geom.Box2D(calexp_bbox).getCorners()]
+        calexp = butler.get('calexp', dataId=dataid)
+        coords = [calexp.getWcs().pixelToSky(point)
+                  for point in geom.Box2D(calexp.getBBox()).getCorners()]
         ras.extend([coord.getRa().asDegrees() for coord in coords])
         decs.extend([coord.getDec().asDegrees() for coord in coords])
         accds.extend([dataid[ccdkey]] * 4)
@@ -63,10 +55,9 @@ def get_dataid_corners(butler, dataids, ccdkey='sensor'):
     coords = []
     for ii, dataid in enumerate(dataids):
         print("Runing on dataId %i / %i :" % (ii + 1, len(dataids)), dataid)
-        calexp_bbox = butler.get('calexp_bbox', dataId=dataid)
-        calexp_wcs = butler.get('calexp_wcs', dataId=dataid)
-        coords.append([calexp_wcs.pixelToSky(point)
-                       for point in geom.Box2D(calexp_bbox).getCorners()])        
+        calexp = butler.get('calexp', dataId=dataid)
+        coords.append([calexp.getWcs().pixelToSky(point)
+                       for point in geom.Box2D(calexp.getBBox()).getCorners()])
     return coords
 
 
@@ -83,7 +74,7 @@ def get_tps(skymap, coords, filt=None):
     return sorted(list(set(tps)))
 
 
-def reportPatchesWithImages(butler, visits=None, ccdkey='sensor', filt=None):
+def reportPatchesWithImages(butler, visits=None, ccdkey='sensor'):
 
     # create a butler object associated to the output directory
     butler = dafPersist.Butler(butler)
@@ -93,45 +84,51 @@ def reportPatchesWithImages(butler, visits=None, ccdkey='sensor', filt=None):
 
     # Get the calexp metadata
     keys = sorted(butler.getKeys("calexp").keys())
-    if filt is None:
-        metadata = butler.queryMetadata("calexp", format=keys)
-    else:
-        metadata = butler.queryMetadata("calexp", format=keys, dataId={'filter':filt})
+    metadata = butler.queryMetadata("calexp", format=keys)
+
+    # Create a list of available dataids
+    dataids = [dict(zip(keys, list(v) if not isinstance(v, list) else v)) for v in metadata]
 
     # Organize the dataids by visit
-    vdataids = organize_by_visit(metadata, keys, visits=visits)
+    vdataids = organize_by_visit(dataids, visits=visits)
 
+    if visits is None or len(visits) != 1:
+        # Get the ccds that will be used to compute the visit corner coordinates
+        # this depend on the instrument, so cannot be hardcoded
+        ccds = get_visit_corners(butler, vdataids[list(vdataids)[0]], getccds=True, ccdkey=ccdkey)
+        
+        # Get the corners coordinates for all visits
+        allcoords = []
+        for ii, vdataid in enumerate(vdataids):
+            print("Running on visit %03d / %i" % (ii + 1, len(vdataids)))
+            allcoords.append(get_visit_corners(butler, vdataids[vdataid], ccds=ccds, ccdkey=ccdkey))
+
+        # Get the tract/patch list in which the visits are
+        alltps = []
+        for vdataid, vcoords in zip(vdataids, allcoords):
+            alltps.extend(get_tps(skyMap, vcoords, vdataids[vdataid][0]['filter']))
+    else:
+        # Only one visit given, so run the code on all sensor/ccd
+        # Get the corners coordinates for all visits
+        visit = int(visits[0])
+        print("%i dataIds loaded for visit" % len(vdataids[visit]), visit)
+        allcoords = get_dataid_corners(butler, vdataids[visit], ccdkey=ccdkey)
+
+        # Get the tract/patch list in which the sensor are
+        alltps = []
+        for coords in allcoords:
+            alltps.extend(get_tps(skyMap, coords, vdataids[visit][0]['filter']))
+
+    # Re-organize the tract and patch list into a dictionnary
     tps = {}
+    for tp in alltps:
+        if tp[0] not in tps:
+            tps[tp[0]] = []
+        if tp[1] not in tps[tp[0]]:
+            tps[tp[0]].append(tp[1])
 
-    # Get the ccds that will be used to compute the visit corner coordinates
-    # this depend on the instrument, so cannot be hardcoded
-    #in the case of lsst this just returns ['S20', 'S22', 'S02', 'S02']
-    ccds = ['S20', 'S22', 'S00', 'S02']
-
-    # Get the corners coordinates for all visits
-    # This is very inefficient in theory as we know which sensors are at the focla plane's boundary.
-    # In practice unfortunately for Run1.2p we are not guaranteed that all these boundary sensors are simulated
-    # so we are forced to loop over all the visit's sensors, which is a major drag.
-    allcoords = []
-    for ii, vdataid in enumerate(vdataids):
-        print("Running on visit %i (%03d / %i)" % (vdataid,ii + 1, len(vdataids)))
-        allcoords.append(get_visit_corners(butler, vdataids[vdataid], ccds=ccds, ccdkey=ccdkey))
-
-    # Get the tract/patch list in which the visits are
-    for vdataid, vcoords in zip(vdataids, allcoords):
-        visit = vdataid
-        filt = vdataids[vdataid][0]['filter']
-        filter_tracts = tps.get(filt,{})
-        alltps = get_tps(skyMap, vcoords)
-        for tinfo in alltps:
-            tract = tinfo[0] #discard patches as they are not useful for coaddDriver execution
-            if tract in filter_tracts:
-                if visit not in filter_tracts[tract]:
-                    filter_tracts[tract].append(visit)
-            else:
-                filter_tracts[tract] = [visit]
-        tps[filt] = filter_tracts
     return tps
+
 
 __author__ = 'Nicolas Chotard <nchotard@in2p3.fr>'
 __version__ = '$Revision: 1.0 $'
@@ -161,7 +158,7 @@ if __name__ == "__main__":
                                                        for arr in opts.visits]][0]]
         else:
             opts.visits = opts.visits.split(',')
-        print("%s visit requested" % len(opts.visits))
+        print("%s visit loaded" % len(opts.visits))
 
     # Get the full list of tract/patch in which are all visits
     tps = reportPatchesWithImages(args[0], visits=opts.visits, ccdkey=opts.ccdkey, filt=opts.filt)
