@@ -25,7 +25,7 @@ def build_cmd(visit, config, filt, input='pardir/input', output='pardir/output')
     # Create the command line
     cmd = "export PATH=$PATH:$SCRIPT_LOCATION\n"
     for vis in visit:
-        cmd += "reportPatchesWithImages.py %s --visits %s --filt %s\n" % (output, vis, filt)
+        cmd += "reportPatchesWithImages.py %s --visits %s --filt %s\n" % (input, vis, filt)
     print("\nCMD: ", cmd)
 
     return cmd
@@ -51,12 +51,12 @@ if __name__ == "__main__":
         config = LR.select_config(opts.configs, filt)
 
         # Are there visits to load
-        if not os.path.exists(filt+".list"):
+        if not os.path.exists(filt+"_visit.list"):
             print("WARNING: No file (no visit) for filter", filt)
             continue
 
         # Get the list of visits
-        allvisits = N.loadtxt(filt+".list", dtype='str', unpack=True)
+        allvisits = N.loadtxt(filt+"_visit.list", dtype='str', unpack=True)
         if isinstance(allvisits[1], str):
             allvisits = [allvisits[1]]
         else:
