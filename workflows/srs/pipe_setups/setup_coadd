@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# checkpoint
+source ${SETUP_LOCATION}/checkpoint
+
+if [[ $RERUN = *":"* ]]; then
+    IFS=":" read RERUN1 RERUN2 <<< $RERUN
+else
+    RERUN2 = $RERUN
+fi
+
+if [ ! -d "$IN_DIR/rerun/$RERUN2/deepCoadd" ]; then
+    makeSkyMap.py ${IN_DIR} --rerun ${RERUN} --configfile ${CONFIGS_LOCATION}/makeSkyMapConfig.py
+fi
+
+mkdir -p ${WORK_DIR}/03-coadd
+cd ${WORK_DIR}/03-coadd
+
+for FILT in $(echo ${FILTERS} | tr "," "\n")
+do
+  reportPatchesWithImages.py --filt $FILT --ccdkey 'detectorName' ${OUT_DIR}/rerun/$RERUN2
+  for script in ${WORK_DIR}/03-coadd/scripts/$FILT/tract_*.sh
+  do
+    #pipelineSet does not seem to do the job here.... but leaving for now
+    pipelineSet DM_SETUP ${DM_SETUP} 
+    pipelineSet WORK_DIR ${WORK_DIR} 
+    pipelineCreateStream task_coaddDriver -1 CUR_SCRIPT=${script}
+  done
+done
