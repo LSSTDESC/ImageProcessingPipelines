@@ -170,7 +170,7 @@ if __name__ == "__main__":
     for filt in tps:
         os.system('mkdir -p scripts/%s'%filt)
         tract_dict = tps[filt]
-        tract_list.extend(tract_dict.key())
+        tract_list.extend(tract_dict.keys())
         for tract in tract_dict:
             filename = 'scripts/%s/tract_%i.sh'%(filt,tract)
             filename2 = '%s/03-coadd/scripts/%s/%i_visits.list'%(os.environ['WORK_DIR'],filt,tract)
