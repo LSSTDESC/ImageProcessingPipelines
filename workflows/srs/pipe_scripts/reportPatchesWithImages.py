@@ -105,6 +105,7 @@ def reportPatchesWithImages(butler, visits=None, ccdkey='sensor', filt=None):
     for ii, vdataid in enumerate(vdataids):
         print("Running on visit %i (%03d / %i)" % (vdataid,ii + 1, len(vdataids)))
         allcoords.append(get_visit_corners(butler, vdataids[vdataid], ccds=ccds, ccdkey=ccdkey))
+    tps = {}
     # Get the tract/patch list in which the visits are
     for vdataid, vcoords in zip(vdataids, allcoords):
         visit = vdataid
