@@ -62,10 +62,7 @@ if __name__ == "__main__":
         raise IOError("Option idopt must be 'selectid' or 'id'")    
 
     # Load the butler for this input directory
-    if os.path.exists(os.path.join(args.input,'rerun')):
-        datadir=os.path.join(args.input,'rerun',os.environ['RERUN'])
-    else:
-        datadir=args.input
+    datadir=args.input
     print("butler call on dir %s"%datadir)
     butler = dafPersist.Butler(datadir)
     
@@ -119,11 +116,15 @@ if __name__ == "__main__":
         file_to_save = open(all_file, 'w')
         for dataid in fdataids[filt]:
             try:
-                sensor_name='sensor'
+                sensor_name='detector'
                 sensor=dataid[sensor_name]
             except:
-                sensor_name='ccd' 
-                sensor=dataid[sensor_name]
+                try:
+                    sensor_name='sensor'
+                    sensor=dataid[sensor_name]
+                except:
+                    sensor_name='ccd' 
+                    sensor=dataid[sensor_name]
             file_to_save.write("--%s visit=%i raft=%s %s=%s\n" % \
                                (args.idopt, dataid['visit'], dataid['raft'], sensor_name, sensor))
         file_to_save.close()
