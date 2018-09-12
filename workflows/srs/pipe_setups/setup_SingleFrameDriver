@@ -36,7 +36,7 @@ while read id; do
     build_singleframe_script "${script}" "${visit_cmd}" "${visit}"
     chmod a+x "${script}"
     # pipelineSet CUR_SCRIPT ${script} 
-    echo pipelineCreateStream task_SingleFrameDriver -1 CUR_SCRIPT="${script}"
+    pipelineCreateStream task_SingleFrameDriver -1 CUR_SCRIPT="${script}"
   else
     raft_list=`sqlite3 ${OUTPUT_DATA_DIR}/registry.sqlite3 'select distinct raftName from raw where visit=174549'`
     for raftName in $raft_list; do
@@ -44,7 +44,7 @@ while read id; do
   	build_singleframe_script "${script}" "${id} raftName=${raftName}"
   	chmod a+x "${script}"
   	# pipelineSet CUR_SCRIPT ${script} 
-  	echo pipelineCreateStream task_SingleFrameDriver -1 CUR_SCRIPT="${script}"
+  	pipelineCreateStream task_SingleFrameDriver -1 CUR_SCRIPT="${script}"
     done
   fi
   #one full complete visit at nersc or cc : run makeFpSummary
