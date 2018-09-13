@@ -5,16 +5,29 @@ source ${SETUP_LOCATION}/checkpoint
 
 mkdir -p ${WORK_DIR}/02-process
 
+if [[ $RERUN = *":"* ]]; then
+    IFS=":" read RERUN1 RERUN2 <<< $RERUN
+else
+    RERUN1 = $RERUN
+    RERUN2 = $RERUN
+fi
+export RERUN1
+export RERUN2
+
+if [ ! -d "$IN_DIR/rerun/$RERUN2/deepCoadd" ]; then
+    makeSkyMap.py ${IN_DIR} --rerun ${RERUN2} --configfile ${CONFIGS_LOCATION}/makeSkyMapConfig.py
+fi
+
 build_singleframe_script () {
  cat> $1<<EOF
 #!/bin/bash
 DM_SETUP=${DM_SETUP}
 source ${SETUP_LOCATION}/DMsetup.sh
 export OMP_NUM_THREADS=1
-singleFrameDriver.py ${IN_DIR} --rerun ${RERUN} $2 --cores \${NSLOTS} --timeout 999999999
+singleFrameDriver.py ${IN_DIR} --rerun ${RERUN1} $2 --cores \${NSLOTS} --timeout 999999999
 echo "Running checCcdAstrometry.py"
-${ROOT_SOFTS}/ImageProcessingPipelines/python/util/checCcdAstrometry.py ${IN_DIR}/rerun/${RERUN} $2 --clobber-versions
-${ROOT_SOFTS}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir=${IN_DIR}/rerun/${RERUN} --db=${IN_DIR}/rerun/${RERUN}/tracts_mapping.sqlite3 --visits=$3
+${ROOT_SOFTS}/ImageProcessingPipelines/python/util/checCcdAstrometry.py ${IN_DIR}/rerun/${RERUN1} $2 --clobber-versions
+${ROOT_SOFTS}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir=${IN_DIR}/rerun/${RERUN1} --db=${IN_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 --visits=$3
 EOF
 }
 
@@ -32,15 +45,15 @@ while read id; do
   echo $visit_cmd
   if [[ $SITE == "LSST-IN2P3" ]]; then
     #build script with one visit per processing
-    script="${WORK_DIR}/02-process/script_${FILT}_$visit.sh"
+    script="${WORK_DIR}/02-process/script_$visit.sh"
     build_singleframe_script "${script}" "${visit_cmd}" "${visit}"
     chmod a+x "${script}"
     # pipelineSet CUR_SCRIPT ${script} 
-    pipelineCreateStream task_SingleFrameDriver -1 CUR_SCRIPT="${script}"
+    echo pipelineCreateStream task_SingleFrameDriver -1 CUR_SCRIPT="${script}"
   else
-    raft_list=`sqlite3 ${OUTPUT_DATA_DIR}/registry.sqlite3 'select distinct raftName from raw where visit=174549'`
+    raft_list=`sqlite3 ${OUTPUT_DATA_DIR}/registry.sqlite3 'select distinct raftName from raw where visit=${visit}'`
     for raftName in $raft_list; do
-        script="${WORK_DIR}/02-process/script_${FILT}_${raftName}_$visit.sh"
+        script="${WORK_DIR}/02-process/script_${raftName}_$visit.sh"
   	build_singleframe_script "${script}" "${id} raftName=${raftName}"
   	chmod a+x "${script}"
   	# pipelineSet CUR_SCRIPT ${script} 
