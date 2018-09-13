@@ -124,8 +124,8 @@ if __name__ == "__main__":
                 except:
                     sensor_name='ccd' 
                     sensor=dataid[sensor_name]
-            file_to_save.write("--%s visit=%i raft=%s %s=%s\n" % \
-                               (args.idopt, dataid['visit'], dataid['raft'], sensor_name, sensor))
+            file_to_save.write("--%s visit=%i raftName=%s %s=%s\n" % \
+                               (args.idopt, dataid['visit'], dataid['raftName'], sensor_name, sensor))
         file_to_save.close()
         print(" - %s: %i dataids -> %s" %(filt, len(fdataids[filt]), visit_file))
 
