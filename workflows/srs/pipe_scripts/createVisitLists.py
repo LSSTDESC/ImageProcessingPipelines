@@ -56,11 +56,11 @@ if __name__ == "__main__":
 
     if not os.path.exists(args.input):
         raise IOError("Input directory does not exists")
-    if not args.input.endswith('/'):
-        args.input += '/'
     if args.idopt not in ['selectId', 'id']:
         raise IOError("Option idopt must be 'selectid' or 'id'")    
 
+    dummy = os.system('mkdir -p %s'%args.output)
+    
     # Load the butler for this input directory
     datadir=args.input
     print("butler call on dir %s"%datadir)
@@ -104,7 +104,6 @@ if __name__ == "__main__":
     print("Wrinting visit list in separated files for each filter")
     for filt in fdataids:
         shuffle(fdataids[filt])  # in case we have to re-run things, the order will not always be the same
-        dummy = os.system('mkdir -p %s'%args.output)
 
         visit_file = os.path.join(args.output, "%s_visit.list" % filt)
         file_to_save = open(visit_file, 'w')
