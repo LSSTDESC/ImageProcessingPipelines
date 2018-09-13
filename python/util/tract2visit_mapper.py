@@ -136,7 +136,7 @@ if __name__ == "__main__":
 
     parser = OptionParser(description=description, usage=usage)
     parser.add_option("-v", "--visits", type="string",
-                      help="[Required] Optional list of visits (file or coma separated list)")
+                      help="[Required] List of visits (file or coma separated list)")
     parser.add_option("-i", "--indir", type="string",
                       help="[Required] Input directory for butler")
     parser.add_option("-d", "--db", type="string",
