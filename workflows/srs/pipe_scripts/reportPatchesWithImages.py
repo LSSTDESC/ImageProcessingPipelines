@@ -91,7 +91,7 @@ def reportPatchesWithImages(butler, visits=None, ccdkey='sensor', filt=None):
     metadata = butler.queryMetadata("calexp", format=keys)
 
     # Organize the dataids by visit
-    vdataids = organize_by_visit(dataids, visits=visits)
+    vdataids = organize_by_visit(metadata, visits=visits)
 
     # Get the ccds that will be used to compute the visit corner coordinates
     # this depend on the instrument, so cannot be hardcoded
