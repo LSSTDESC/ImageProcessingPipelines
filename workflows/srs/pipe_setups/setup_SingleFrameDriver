@@ -8,8 +8,8 @@ mkdir -p ${WORK_DIR}/02-process
 if [[ $RERUN = *":"* ]]; then
     IFS=":" read RERUN1 RERUN2 <<< $RERUN
 else
-    RERUN1 = $RERUN
-    RERUN2 = $RERUN
+    RERUN1=$RERUN
+    RERUN2=$RERUN
 fi
 export RERUN1
 export RERUN2
