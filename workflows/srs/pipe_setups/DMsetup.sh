@@ -22,5 +22,7 @@ then
 else
     eups undeclare obs_lsstCam localver
     eups declare -r $ROOT_SOFTS/obs_lsstCam obs_lsstCam localver
+    eups declare -r ${ROOT_SOFTS}_bis/pipe_tasks pipe_tasks localver
     setup obs_lsstCam localver
+    setup pipe_tasks localver
 fi
