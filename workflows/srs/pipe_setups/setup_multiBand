@@ -17,13 +17,13 @@ build_multiband_script () {
 DM_SETUP=${DM_SETUP}
 source ${SETUP_LOCATION}/DMsetup.sh
 export OMP_NUM_THREADS=1
-multiBandDriver.py $IN_DIR --rerun $RERUN2 --id tract=$1  --clobber-versions --cores=${NSLOTS}
+multiBandDriver.py $IN_DIR --rerun $RERUN2 --id tract=$1 filter=${FILTERS//,/^} --cores=\${NSLOTS}
 EOF
 }
 
 while read tract; do
     build_multiband_script ${tract}
     chmod a+x multiband_${tract}.sh
-    pipelineCreateStream task_multiBandDriver -1 CUR_SCRIPT=multiband_${tract}.sh
-done <"scripts/tracts.list"
+    pipelineCreateStream task_multiBandDriver -1 CUR_SCRIPT=${WORK_DIR}/03-coadd/multiband_${tract}.sh
+done <"${WORK_DIR}/03-coadd/scripts/tracts.list"
 
