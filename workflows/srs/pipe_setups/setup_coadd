@@ -6,14 +6,16 @@ source ${SETUP_LOCATION}/checkpoint
 if [[ $RERUN = *":"* ]]; then
     IFS=":" read RERUN1 RERUN2 <<< $RERUN
 else
-    RERUN1 = $RERUN
-    RERUN2 = $RERUN
+    RERUN1=$RERUN
+    RERUN2=$RERUN
 fi
 export RERUN1
 export RERUN2
 
 if [ ! -d "$IN_DIR/rerun/$RERUN2/deepCoadd" ]; then
     makeSkyMap.py ${IN_DIR} --rerun ${RERUN} --configfile ${CONFIGS_LOCATION}/makeSkyMapConfig.py
+    #turn the absolute path into a relative one for the root entry in the yaml file, to ease shipping to NERSC
+    sed -i -e 's+'${IN_DIR}'+..\/..+g' ${IN_DIR}rerun/$RERUN2/repositoryCfg.yaml
 fi
 
 mkdir -p ${WORK_DIR}/03-coadd
