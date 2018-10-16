@@ -139,31 +139,30 @@ class CheckCcdAstrometryTask(pipeBase.CmdLineTask):
         cut = cat['mag'] < self.config.magCut
         cat = cat[cut]
 
-        #define a reference filter (not critical for what we are doing)
-        #f = 'lsst_' + filt + '_smeared'
+        # define a reference filter (not critical for what we are doing)
         f = filt
 
         # Find the approximate celestial coordinates of the sensor's center
         centerPixel = afwGeom.Point2D(2000., 2000.)
         centerCoord = wcs.pixelToSky(centerPixel)
 
-        # Retrieve reference object within a 0.5 deg radius circle around the sensor's center
-        radius = afwGeom.Angle(0.5, afwGeom.degrees)
+        # Retrieve reference object within a 0.17 deg radius circle around the sensor's center
+        radius = afwGeom.Angle(0.17, afwGeom.degrees)
         ref = self.refTask.loadSkyCircle(centerCoord, radius, f).refCat.copy(deep=True).asAstropy()
-
-        # create SkyCoord catalogs for astropy matching
         cRef = SkyCoord(ra = ref['coord_ra'], dec = ref['coord_dec'])
         cSrc = SkyCoord(ra = cat['coord_ra'], dec = cat['coord_dec'])
 
         # match catalogs
         idx, d2d, d3d = cSrc.match_to_catalog_sky(cRef)
 
-        # get median distance between matched sources and references
-        median = np.median(d2d.milliarcsecond)
-        self.log.info('astrometric scatter:  %(visit)d  %(raftName)s  %(detectorName)s  ' % dataid
-                      + '%.2f' % median)
-        self.log.info("Median astrometric scatter %.2f mas" %(median))
+        # Exclude obvious mis-matches.
+        max_sep_cut = np.where(d2d.milliarcsecond < 1000.)
 
+        # get median distance between matched sources and references
+        median = np.median(d2d.milliarcsecond[max_sep_cut])
+        mean = np.mean(d2d.milliarcsecond[max_sep_cut])
+        self.log.info('astrometric scatter: %.2f (median)  %.2f (mean)',
+                      median, mean)
         if median > self.config.rejectCut:
             self.log.error("Median astrometric scatter is too large %.2f mas astrometric fit probably failed" %(median))
 
