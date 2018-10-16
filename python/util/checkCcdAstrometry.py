@@ -109,8 +109,9 @@ class CheckCcdAstrometryTask(pipeBase.CmdLineTask):
         dataid = sensorRef.dataId
         self.log.info("Processing %s" % (dataid))
 
-        wcs = self.butler.get('calexp_wcs', dataid)
-        calib = self.butler.get("calexp_calib", dataid)
+        calexp = self.butler.get('calexp', dataid)
+        wcs = calexp.getWcs()
+        calib = calexp.getCalib()
 
         Flags = ["base_PixelFlags_flag_saturated", "base_PixelFlags_flag_cr", "base_PixelFlags_flag_interpolated",
                  self.config.fluxType + "_flag", "base_SdssCentroid_flag",
@@ -120,13 +121,7 @@ class CheckCcdAstrometryTask(pipeBase.CmdLineTask):
 
         src = self.butler.get('src', dataid).asAstropy()
 
-        # get filter name associated to this visit
-        for dataRef in self.butler.subset('src', visit=dataid['visit']):
-            if dataRef.datasetExists():
-                fullId = dataRef.dataId
-            else:
-                continue
-        filt = fullId['filter']
+        filt = calexp.getFilter().getName()
 
         # select sources
         cut = np.ones_like(src['id'], dtype=bool)
