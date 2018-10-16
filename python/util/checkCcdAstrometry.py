@@ -103,7 +103,7 @@ class CheckCcdAstrometryTask(pipeBase.CmdLineTask):
         return None
 
     @pipeBase.timeMethod
-    def run(self, sensorRef):
+    def runDataRef(self, sensorRef):
         """Process one CCD
         """
         dataid = sensorRef.dataId
@@ -132,9 +132,10 @@ class CheckCcdAstrometryTask(pipeBase.CmdLineTask):
         cut = np.ones_like(src['id'], dtype=bool)
         for flag in Flags:
             cut &= src[flag]==False
-        cut &= (src[self.config.fluxType + '_flux'] > 0) & (src[self.config.fluxType + '_flux'] / src[self.config.fluxType + '_fluxSigma'] > 5)
+        cut &= (src[self.config.fluxType + '_instFlux'] > 0) & (src[self.config.fluxType + '_instFlux'] / src[self.config.fluxType + '_instFluxErr'] > 5)
+        cut &= (src['base_ClassificationExtendedness_value'] == 0)
 
-        mag, magErr = calib.getMagnitude(src[cut][self.config.fluxType + '_flux'], src[cut][self.config.fluxType + '_fluxSigma'])
+        mag, magErr = calib.getMagnitude(src[cut][self.config.fluxType + '_instFlux'], src[cut][self.config.fluxType + '_instFluxErr'])
 
         cat = src[cut]['id', 'coord_ra', 'coord_dec']
         cat['mag'] = mag
@@ -144,7 +145,8 @@ class CheckCcdAstrometryTask(pipeBase.CmdLineTask):
         cat = cat[cut]
 
         #define a reference filter (not critical for what we are doing)
-        f = 'lsst_' + filt + '_smeared'
+        #f = 'lsst_' + filt + '_smeared'
+        f = filt
 
         # Find the approximate celestial coordinates of the sensor's center
         centerPixel = afwGeom.Point2D(2000., 2000.)
@@ -163,6 +165,8 @@ class CheckCcdAstrometryTask(pipeBase.CmdLineTask):
 
         # get median distance between matched sources and references
         median = np.median(d2d.milliarcsecond)
+        self.log.info('astrometric scatter:  %(visit)d  %(raftName)s  %(detectorName)s  ' % dataid
+                      + '%.2f' % median)
         self.log.info("Median astrometric scatter %.2f mas" %(median))
 
         if median > self.config.rejectCut:
