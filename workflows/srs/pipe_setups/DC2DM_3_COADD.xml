@@ -17,7 +17,7 @@
       <var name="IN2P3_HUGE_OPTIONS"> -q huge </var>
       <var name="IN2P3_LONG_OPTIONS"> -q long </var>
       <var name="IN2P3_MCLONG_OPTIONS"> -q mc_long -pe multicores 8 </var>
-      <var name="IN2P3_MCHUGE_OPTIONS"> -q mc_huge -pe multicores 16 </var>
+      <var name="IN2P3_MCHUGE_OPTIONS"> -q mc_huge -pe multicores 8 </var>
       <var name="NERSC_BATCH_OPTIONS"> -p MINIDRPHK | -L SCRATCH,projecta | -C haswell </var>
       <var name="BATCH_OPTIONS">${SITE=="NERSC" ? "${NERSC_BATCH_OPTIONS}" : "${IN2P3_BATCH_OPTIONS} "}</var>
       <var name="EXTRA_OPTIONS_0">${SITE=="NERSC" ? " " : "${IN2P3_HUGE_OPTIONS} "}</var>
