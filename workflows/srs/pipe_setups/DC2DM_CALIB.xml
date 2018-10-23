@@ -4,8 +4,8 @@
           xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
 			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
   
-  <task name="DC2DM_2_SINGLEFRAME" type="LSST" version="0.1">
-    <notation>Task to run the DM stack on DC2 simulated images (processEimage)</notation>
+  <task name="DC2DM_CALIB" type="LSST" version="0.9">
+    <notation>Task to run the calibration chain for LSST simulations</notation>
     <variables>
       <!-- Job site and configuration-->
       <var name="RUNID">Run1.2p</var>
@@ -53,30 +53,54 @@
       <var name="BATCH_NAME">DC2Batch.sh</var>
     </variables>
 
-    <!-- process_SingleFrameDriver -->
     <!--   setup -->
     <process name="setup_calib" site="${JOBSITE}">
       <notation>Setup for SingleFrameDriver</notation>
       <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
 	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
+    </process>
+
+    <process name="setup_bias" site="${JOBSITE}">
+      <notation>Setup for processing bias</notation>
+      <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
+	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
+      <depends>
+	<after process="setup_calib"/>
+      </depends>
       <createsSubtasks>
 	<subtask>task_bias</subtask>
       </createsSubtasks>	
+    </process>
+
+    <process name="setup_dark" site="${JOBSITE}">
+      <notation>Setup for processing darks</notation>
+      <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
+	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
+      <depends>
+	<after process="task_bias.run_bias"/>
+      </depends>
       <createsSubtasks>
 	<subtask>task_dark</subtask>
       </createsSubtasks>	
+    </process>
+
+    <process name="setup_flat" site="${JOBSITE}">
+      <notation>Setup for processing flats</notation>
+      <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
+	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
+      <depends>
+	<after process="task_dark.run_dark"/>
+      </depends>
       <createsSubtasks>
 	<subtask>task_flat</subtask>
       </createsSubtasks>	
     </process>
 
+
     <task name="task_bias" type="LSST">
       <process name="run_bias" site="${JOBSITE}">
 	<job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_2}"
 	     executable="${CUR_SCRIPT}"/>
-	<depends>
-	  <after process="setup_calib"/>
-	</depends>
       </process>                
     </task>
     
@@ -84,9 +108,6 @@
       <process name="run_dark" site="${JOBSITE}">
         <job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_2}"
              executable="${CUR_SCRIPT}"/>
-	<depends>
-	  <after process="run_bias"/>
-	</depends>
       </process>
     </task>
 
@@ -94,9 +115,6 @@
       <process name="run_flat" site="${JOBSITE}">
 	<job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_2}"
              executable="${CUR_SCRIPT}"/>
-        <depends>
-          <after process="run_dark"/>
-        </depends>
       </process>
     </task>
 

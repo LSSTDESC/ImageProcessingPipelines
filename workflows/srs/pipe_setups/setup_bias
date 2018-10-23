@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# checkpoint
+source ${SETUP_LOCATION}/checkpoint
+
+if [[ $RERUN = *":"* ]]; then
+    IFS=":" read RERUN1 RERUN2 <<< $RERUN
+else
+    RERUN1=$RERUN
+    RERUN2=$RERUN
+fi
+export RERUN1
+export RERUN2
+
+
+build_bias_script(){
+ cat> $1<<EOF
+#!/bin/bash
+DM_SETUP=${DM_SETUP}
+source ${SETUP_LOCATION}/DMsetup.sh
+export OMP_NUM_THREADS=1
+#
+constructBias.py ${OUT_DIR} --rerun ${RERUN} --cores \${NSLOTS}
+#
+ingestCalib.py ${OUT_DIR} --output ${OUT_DIR}/CALIB --cores \${NSLOTS}
+#
+sqlite3 ${OUT_DIR}/CALIB/calibRegistry.sqlite3 "update bias set validStart='2021-01-01', validEnd='2033-01-01' where id>0;"
+EOF
+}
+
+
+mkdir -p ${OUT_DIR}/rerun/${RERUN1}/scripts
+
+script=${OUT_DIR}/rerun/${RERUN1}/scripts/bias.sh
+build_bias_script ${script}
+echo pipelineCreateStream task_bias -1 CUR_SCRIPT=${script}
+

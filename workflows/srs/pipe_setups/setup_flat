@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# checkpoint
+source ${SETUP_LOCATION}/checkpoint
+
+if [[ $RERUN = *":"* ]]; then
+    IFS=":" read RERUN1 RERUN2 <<< $RERUN
+else
+    RERUN1=$RERUN
+    RERUN2=$RERUN
+fi
+export RERUN1
+export RERUN2
+
+build_flat_script(){
+ cat> $1<<EOF
+#!/bin/bash
+DM_SETUP=${DM_SETUP}
+source ${SETUP_LOCATION}/DMsetup.sh
+export OMP_NUM_THREADS=1
+#
+constructFlat.py ${OUT_DIR} --rerun ${RERUN} --id filter=$2 --cores \${NSLOTS}
+#
+ingestCalib.py ${OUT_DIR} --output ${OUT_DIR}/CALIB --cores \${NSLOTS}
+#
+sqlite3 ${OUT_DIR}/CALIB/calibRegistry.sqlite3 "update flat set validStart='2021-01-01', validEnd='2033-01-01' where id>0;"
+EOF
+}
+
+
+mkdir -p ${OUT_DIR}/rerun/${RERUN1}/scripts
+
+
+for FILT in $(echo ${FILTERS} | tr "," "\n")
+do
+    script=${OUT_DIR}/rerun/${RERUN1}/scripts/flat_$FILT.sh
+    build_flat_script ${script} ${FILT}
+    echo pipelineCreateStream task_flat -1 CUR_SCRIPT=${script}
+done
