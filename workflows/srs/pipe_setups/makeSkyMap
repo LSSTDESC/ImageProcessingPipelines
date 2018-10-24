@@ -16,4 +16,4 @@ source ${SETUP_LOCATION}/checkpoint
 #mkdir -p ${OUT_DIR}
 
 # Build the list of tracts/patches for the rings sky map
-makeSkyMap.py ${IN_DIR} --rerun ${RERUN} --configfile ${CONFIGS_LOCATION}/makeSkyMapConfig.py 
+makeSkyMap.py ${IN_DIR} --rerun ${RERUN}

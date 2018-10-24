@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # checkpoint
-source ${SETUP_LOCATION}/checkpoint
+source ${SETUP_LOCATION}/${SETUP_TAG}/checkpoint
 
 if [[ $RERUN = *":"* ]]; then
     IFS=":" read RERUN1 RERUN2 <<< $RERUN
