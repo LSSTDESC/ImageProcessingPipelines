@@ -4,11 +4,12 @@
           xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
 			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
   
-  <task name="DC2DM_2_SINGLEFRAME" type="LSST" version="0.1">
-    <notation>Task to run the DM stack on DC2 simulated images (processEimage)</notation>
+  <task name="DC2DM_2_SINGLEFRAME" type="LSST" version="0.2">
+    <notation>Task to run the DM stack on DC2 simulated images</notation>
     <variables>
       <!-- Job site and configuration-->
       <var name="RUNID">Run1.2p</var>
+      <var name="SETUP_TAG">dev</var>
       <var name="SITE">LSST-IN2P3</var>
       <var name="JOBSITE">${SITE=="NERSC" ? "CORIP" : SITE}</var>
       <var name="MAXCPU">10000</var>
@@ -32,7 +33,7 @@
       <var name="NERSC_SLAC_SETUP_LOCATION">/nfs/farm/g/lsst/u1/users/heather/minidrp/pipe_setups</var>
       <var name="SLAC_SETUP_LOCATION">${SITE=="NERSC" ? NERSC_SLAC_SETUP_LOCATION : IN2P3_SLAC_SETUP_LOCATION}</var>
       <!-- Local to JOBSITE -->
-      <var name="IN2P3_ROOT_SOFTS">/pbs/throng/lsst/software/desc/DC2/${RUNID}</var>
+      <var name="IN2P3_ROOT_SOFTS">/pbs/throng/lsst/software/desc/DC2/${RUNID}/${SETUP_TAG}</var>
       <var name="NERSC_ROOT_SOFTS">/global/homes/d/descdm/minidrp</var>  <!-- Is that right? -->
       <var name="ROOT_SOFTS">${SITE=="NERSC" ? NERSC_ROOT_SOFTS : IN2P3_ROOT_SOFTS}</var>
       <var name="IN2P3_SCRIPT_LOCATION">${IN2P3_ROOT_SOFTS}/${PIPE_SCRIPTS}</var>
