@@ -134,7 +134,7 @@ class CheckCcdAstrometryTask(pipeBase.CmdLineTask):
             cut &= src[flag]==False
         cut &= (src[self.config.fluxType + '_instFlux'] > 0) & (src[self.config.fluxType + '_instFlux'] / src[self.config.fluxType + '_instFluxErr'] > 5)
 
-        mag, magErr = calib.getMagnitude(src[cut][self.config.fluxType + '_instFlux'], src[cut][self.config.fluxType + '_intFluxErr'])
+        mag, magErr = calib.getMagnitude(src[cut][self.config.fluxType + '_instFlux'], src[cut][self.config.fluxType + '_instFluxErr'])
 
         cat = src[cut]['id', 'coord_ra', 'coord_dec']
         cat['mag'] = mag
