@@ -103,7 +103,7 @@ class CheckCcdAstrometryTask(pipeBase.CmdLineTask):
         return None
 
     @pipeBase.timeMethod
-    def run(self, sensorRef):
+    def runDataRef(self, sensorRef):
         """Process one CCD
         """
         dataid = sensorRef.dataId
@@ -132,9 +132,9 @@ class CheckCcdAstrometryTask(pipeBase.CmdLineTask):
         cut = np.ones_like(src['id'], dtype=bool)
         for flag in Flags:
             cut &= src[flag]==False
-        cut &= (src[self.config.fluxType + '_flux'] > 0) & (src[self.config.fluxType + '_flux'] / src[self.config.fluxType + '_fluxSigma'] > 5)
+        cut &= (src[self.config.fluxType + '_flux'] > 0) & (src[self.config.fluxType + '_instFlux'] / src[self.config.fluxType + '_instFluxErr'] > 5)
 
-        mag, magErr = calib.getMagnitude(src[cut][self.config.fluxType + '_flux'], src[cut][self.config.fluxType + '_fluxSigma'])
+        mag, magErr = calib.getMagnitude(src[cut][self.config.fluxType + '_instFlux'], src[cut][self.config.fluxType + '_intFluxErr'])
 
         cat = src[cut]['id', 'coord_ra', 'coord_dec']
         cat['mag'] = mag
