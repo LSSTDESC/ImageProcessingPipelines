@@ -26,9 +26,9 @@ build_singleframe_script () {
 DM_SETUP=${DM_SETUP}
 source ${SETUP_LOCATION}/DMsetup.sh
 export OMP_NUM_THREADS=1
-singleFrameDriver.py ${IN_DIR} --rerun ${RERUN1} $2 --cores \${NSLOTS} --timeout 999999999
+singleFrameDriver.py ${IN_DIR} --rerun ${RERUN1} $2 --cores \${NSLOTS} --timeout 999999999 --reuse-outputs-from  all
 echo "Running checCcdAstrometry.py"
-${ROOT_SOFTS}/ImageProcessingPipelines/python/util/checkCcdAstrometry.py ${IN_DIR}/rerun/${RERUN1} $2 --clobber-versions
+${ROOT_SOFTS}/ImageProcessingPipelines/python/util/checkCcdAstrometry.py ${IN_DIR}/rerun/${RERUN1} $2
 ${ROOT_SOFTS}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir=${IN_DIR}/rerun/${RERUN1} --db=${IN_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 --visits=$3
 EOF
 }
