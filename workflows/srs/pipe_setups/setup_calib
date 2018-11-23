@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # checkpoint
-source ${SETUP_LOCATION}/${SETUP_TAG}/checkpoint
+source ${SETUP_LOCATION}/checkpoint
 
 if [[ $RERUN = *":"* ]]; then
     IFS=":" read RERUN1 RERUN2 <<< $RERUN
@@ -15,6 +15,7 @@ export RERUN2
 if [[ -z "${RAWCALIB_FILES}" ]]; then
     echo "env var RAWCALIB_FILES not set"
 else
-    echo ingestDriver.py ${OUT_DIR} @${RAWCALIB_FILES} --rerun ${RERUN} --cores ${NSLOTS} --ignore-ingested
+    echo "Setup location: "${SETUP_LOCATION}
+    ingestDriver.py ${OUT_DIR} @${RAWCALIB_FILES} --rerun ${RERUN1} --cores ${NSLOTS} --ignore-ingested
 fi
 

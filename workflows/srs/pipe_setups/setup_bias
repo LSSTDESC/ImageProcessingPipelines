@@ -12,26 +12,26 @@ fi
 export RERUN1
 export RERUN2
 
-
 build_bias_script(){
  cat> $1<<EOF
 #!/bin/bash
 DM_SETUP=${DM_SETUP}
 source ${SETUP_LOCATION}/DMsetup.sh
 export OMP_NUM_THREADS=1
-#
-constructBias.py ${OUT_DIR} --rerun ${RERUN} --cores \${NSLOTS}
-#
-ingestCalib.py ${OUT_DIR} --output ${OUT_DIR}/CALIB --cores \${NSLOTS}
-#
-sqlite3 ${OUT_DIR}/CALIB/calibRegistry.sqlite3 "update bias set validStart='2021-01-01', validEnd='2033-01-01' where id>0;"
+constructBias.py ${OUT_DIR} --rerun ${RERUN} @$2 --cores \${NSLOTS}
 EOF
 }
 
-
 mkdir -p ${OUT_DIR}/rerun/${RERUN1}/scripts
 
-script=${OUT_DIR}/rerun/${RERUN1}/scripts/bias.sh
-build_bias_script ${script}
-echo pipelineCreateStream task_bias -1 CUR_SCRIPT=${script}
+# while read visit_id; do
+#     script=${OUT_DIR}/rerun/${RERUN1}/scripts/bias_$visit_id.sh
+#     build_bias_script ${script} ${visit_id}
+#     chmod a+x ${script}
+#     pipelineCreateStream task_bias -1 CUR_SCRIPT=${script}
+# done < ${BIAS_FILE}
 
+script=${OUT_DIR}/rerun/${RERUN1}/scripts/master_bias.sh
+build_bias_script ${script} ${BIAS_FILE}
+chmod a+x ${script}
+pipelineCreateStream task_bias -1 CUR_SCRIPT=${script}

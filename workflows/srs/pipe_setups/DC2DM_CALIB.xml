@@ -4,16 +4,18 @@
           xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
 			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
   
-  <task name="DC2DM_CALIB" type="LSST" version="0.9">
-    <notation>Task to run the calibration chain for LSST simulations</notation>
+  <task name="DC2DM_CALIB" type="LSST" version="1.56">
+    <notation>Task to run the DM stack on DC2 simulated images (ingestion)</notation>
     <variables>
       <!-- Job site and configuration-->
       <var name="RUNID">Run1.2p</var>
+      <var name="SETUP_TAG">dev</var>
       <var name="SITE">LSST-IN2P3</var>
       <var name="JOBSITE">${SITE=="NERSC" ? "CORIP" : SITE}</var>
       <var name="MAXCPU">10000</var>
       <var name="MAXCPULONG">10000</var>
       <var name="IN2P3_BATCH_OPTIONS"> -l sps=1,os=cl7,xrootd=0 </var>
+      <var name="IN2P3_LONG_OPTIONS"> -q long </var>
       <var name="IN2P3_HUGE_OPTIONS"> -q huge </var>
       <var name="IN2P3_MCLONG_OPTIONS"> -q mc_long -pe multicores 8 </var>
       <var name="IN2P3_MCHUGE_OPTIONS"> -q mc_huge -pe multicores 8 </var>
@@ -22,6 +24,7 @@
       <var name="EXTRA_OPTIONS_0">${SITE=="NERSC" ? " " : "${IN2P3_HUGE_OPTIONS} "}</var>
       <var name="EXTRA_OPTIONS_1">${SITE=="NERSC" ? " " : "${IN2P3_MCHUGE_OPTIONS} "}</var>
       <var name="EXTRA_OPTIONS_2">${SITE=="NERSC" ? " " : "${IN2P3_MCLONG_OPTIONS} "}</var>
+      <var name="EXTRA_OPTIONS_3">${SITE=="NERSC" ? " " : "${IN2P3_LONG_OPTIONS} "}</var>
       <!-- Base directory where script files will be placed -->
       <var name="PIPE_SUBDIR">ImageProcessingPipelines/workflows/srs</var>
       <var name="PIPE_SETUPS">${PIPE_SUBDIR}/pipe_setups</var>
@@ -32,7 +35,7 @@
       <var name="NERSC_SLAC_SETUP_LOCATION">/nfs/farm/g/lsst/u1/users/heather/minidrp/pipe_setups</var>
       <var name="SLAC_SETUP_LOCATION">${SITE=="NERSC" ? NERSC_SLAC_SETUP_LOCATION : IN2P3_SLAC_SETUP_LOCATION}</var>
       <!-- Local to JOBSITE -->
-      <var name="IN2P3_ROOT_SOFTS">/pbs/throng/lsst/software/desc/DC2/${RUNID}</var>
+      <var name="IN2P3_ROOT_SOFTS">/pbs/throng/lsst/software/desc/DC2/${RUNID}/${SETUP_TAG}</var>
       <var name="NERSC_ROOT_SOFTS">/global/homes/d/descdm/minidrp</var>  <!-- Is that right? -->
       <var name="ROOT_SOFTS">${SITE=="NERSC" ? NERSC_ROOT_SOFTS : IN2P3_ROOT_SOFTS}</var>
       <var name="IN2P3_SCRIPT_LOCATION">${IN2P3_ROOT_SOFTS}/${PIPE_SCRIPTS}</var>
@@ -49,13 +52,13 @@
       <var name="NERSC_logRoot">/global/homes/d/descdm/minidrp/logs</var>    
       <var name="logRoot">${SITE=="NERSC" ? NERSC_logRoot : IN2P3_logRoot}</var>
       <!-- Script names -->
-      <!--<var name="SCRIPT_NAME">DC2Workflow.py</var>-->
+      <var name="SCRIPT_NAME">DC2Workflow.py</var>
       <var name="BATCH_NAME">DC2Batch.sh</var>
     </variables>
 
     <!--   setup -->
     <process name="setup_calib" site="${JOBSITE}">
-      <notation>Setup for SingleFrameDriver</notation>
+      <notation>Setup calibration : ingest raw files</notation>
       <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
 	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
     </process>
@@ -72,16 +75,34 @@
       </createsSubtasks>	
     </process>
 
-    <process name="setup_dark" site="${JOBSITE}">
-      <notation>Setup for processing darks</notation>
+    <process name="ingest_bias" site="${JOBSITE}">
+      <notation>Setup for ingesting bias calib products</notation>
       <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
 	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
       <depends>
 	<after process="task_bias.run_bias"/>
       </depends>
+    </process>
+
+    <process name="setup_dark" site="${JOBSITE}">
+      <notation>Setup for processing darks</notation>
+      <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
+	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
+      <depends>
+	<after process="ingest_bias"/>
+      </depends>
       <createsSubtasks>
 	<subtask>task_dark</subtask>
       </createsSubtasks>	
+    </process>
+
+    <process name="ingest_dark" site="${JOBSITE}">
+      <notation>Setup for ingesting dark calib products</notation>
+      <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
+	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
+      <depends>
+	<after process="task_dark.run_dark"/>
+      </depends>
     </process>
 
     <process name="setup_flat" site="${JOBSITE}">
@@ -89,13 +110,21 @@
       <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
 	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
       <depends>
-	<after process="task_dark.run_dark"/>
+	<after process="ingest_dark"/>
       </depends>
       <createsSubtasks>
 	<subtask>task_flat</subtask>
       </createsSubtasks>	
     </process>
 
+    <process name="ingest_flat" site="${JOBSITE}">
+      <notation>Setup for ingesting flat calib products</notation>
+      <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
+	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
+      <depends>
+	<after process="task_flat.run_flat"/>
+      </depends>
+    </process>
 
     <task name="task_bias" type="LSST">
       <process name="run_bias" site="${JOBSITE}">
