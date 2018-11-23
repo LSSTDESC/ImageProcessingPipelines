@@ -21,8 +21,8 @@ then
     setup obs_lsstSim w.2018.04-35-g11f44ee -t w_2018_09
 else
     eups undeclare obs_lsstCam localver
-    eups declare -r $ROOT_SOFTS/obs_lsstCam obs_lsstCam localver
-    eups declare -r ${ROOT_SOFTS}/pipe_tasks pipe_tasks localver
-    setup obs_lsst localver
+    eups declare --force -r ${ROOT_SOFTS}/obs_lsstCam obs_lsstCam localver
+    eups declare --force -r ${ROOT_SOFTS}/pipe_tasks pipe_tasks localver
+    setup obs_lsstCam localver
     setup pipe_tasks localver
 fi
