@@ -22,7 +22,7 @@ script_builder() {
 DM_SETUP=${DM_SETUP}
 source ${SETUP_LOCATION}/DMsetup.sh
 export OMP_NUM_THREADS=1
-multiBandDriver.py $IN_DIR --rerun $RERUN2 --id tract=$1 patch=$3 filter=${FILTERS//,/^} --cores=\${NSLOTS} --clobber-versions --reuse-outputs-from  all
+multiBandDriver.py $IN_DIR --rerun $RERUN2 --id tract=$1 patch=$3 filter=${FILTERS//,/^} --cores=\${NSLOTS} --longlog --reuse-outputs-from  all
 EOF
 
 }
