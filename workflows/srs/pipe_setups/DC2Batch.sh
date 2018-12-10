@@ -2,10 +2,10 @@
 
 # IN2P3 would prefer to run without exit on error
 # see: https://github.com/LSSTDESC/ImageProcessingPipelines/issues/19
-if [ $SITE == "NERSC" ]
-then
-  set -e # exit on error
-fi
+#if [ $SITE == "NERSC" ]
+#then
+#  set -e # exit on error
+#fi
 
 # Get the local configuration
 source ${LOCAL_CONFIG}
@@ -17,7 +17,6 @@ then
 fi
 
 ulimit -c ${CORE_LIMIT:-1000} # Limit core dump
-# set -e # exit on error
 
 # Set up a unique work directory for this pipeline stream
 stream=$(echo $PIPELINE_STREAMPATH | cut -f1 -d.)
@@ -36,21 +35,7 @@ export SCRIPT=${SETUP_LOCATION}/${PIPELINE_PROCESS:-$1}
 
 export OMP_NUM_THREADS=1
 
-# For now, scripts that use pipelineSet need to be handled outside Shifter
-if [ $SITE == "NERSC" ] && (echo $PIPELINE_PROCESS | grep "setup_");
-then
-  source ${SETUP_LOCATION}/DMsetup.sh; set -xe; export SHELLOPTS; source ${SCRIPT}
-elif [ -v SHIFTER_IMAGE ] # Use Shifter if available
-then
-/usr/bin/time -v shifter --image=${SHIFTER_IMAGE} /bin/bash <<EOF
-echo "Running shifter image ${SHIFTER_IMAGE}"
-export PATH=$PATH:$SCRIPT_LOCATION
-source /opt/lsst/software/stack/loadLSST.bash
-setup lsst_distrib -t current 
-setup obs_lsstSim -t dc2
-set -xe; export SHELLOPTS; source ${SCRIPT}
-EOF
-elif [ $SITE == "NERSC" ] # NERSC when SHIFTER is not used
+if [ $SITE == "NERSC" ] # NERSC when SHIFTER is not used
 then
   source ${SETUP_LOCATION}/DMsetup.sh; set -xe; export SHELLOPTS; source ${SCRIPT}
 else # IN2P3
