@@ -1,0 +1,17 @@
+#!/bin/bash                                                                                                                                                                                                         
+
+# checkpoint                                                                                                                                                                                                        
+source ${SETUP_LOCATION}/checkpoint
+
+if [[ $RERUN = *":"* ]]; then
+    IFS=":" read RERUN1 RERUN2 <<< $RERUN
+else
+    RERUN1=$RERUN
+    RERUN2=$RERUN
+fi
+export RERUN1
+export RERUN2
+
+
+ingestCalibs.py ${OUT_DIR} --output ${OUT_DIR}/CALIB -j ${NSLOTS} --mode copy --validity 4000  ${OUT_DIR}/rerun/${RERUN1}/bias/*/*.fits --mode copy
+sqlite3 ${OUT_DIR}/CALIB/calibRegistry.sqlite3 "update bias set validStart='2021-01-01', validEnd='2033-01-01' where id>0;"
