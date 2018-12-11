@@ -4,7 +4,7 @@
           xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
 			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
   
-  <task name="DC2DM_1_INGEST" type="LSST" version="2.1">
+  <task name="DC2DM_1_INGEST" type="LSST" version="2.2">
     <notation>Task to run the DM stack on DC2 simulated images (ingestion)</notation>
     <variables>
       <!-- Job site and configuration-->
@@ -104,7 +104,7 @@
     <!--<variables>-->
     <!--  <var name="streamID">${format(pipeline.stream, "%01d")}</var>-->
     <!--</variables>-->
-	<job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_2}"
+	<job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_2} -A ingest"
 	     executable="${CUR_SCRIPT}"/>
       </process>                
     </task>

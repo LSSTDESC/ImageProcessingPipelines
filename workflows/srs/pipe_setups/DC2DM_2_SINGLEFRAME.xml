@@ -4,7 +4,7 @@
           xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
 			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
   
-  <task name="DC2DM_2_SINGLEFRAME" type="LSST" version="0.2">
+  <task name="DC2DM_2_SINGLEFRAME" type="LSST" version="0.3">
     <notation>Task to run the DM stack on DC2 simulated images</notation>
     <variables>
       <!-- Job site and configuration-->
@@ -72,7 +72,7 @@
     <!--<variables>-->
     <!--  <var name="streamID">${format(pipeline.stream, "%01d")}</var>-->
     <!--</variables>-->
-	<job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_2}"
+	<job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_2} -A calexp"
 	     executable="${CUR_SCRIPT}"/>
       </process>                
     </task>
