@@ -1,19 +1,16 @@
+#!/bin/bash
+
 # checkpoint
 source ${SETUP_LOCATION}/checkpoint
 
-# # Make sur the work directory exists
-# mkdir -p ${WORK_DIR}/03-makeSkyMap
-# cd ${WORK_DIR}/03-makeSkyMap
-# ln -sfn ${WORK_DIR} pardir
-
-# # A specific config file is needed for the rings Sky Map
-# cp ${CONFIGS_LOCATION}/makeSkyMapConfig.py .
-
-# # Build the list of visits
-# createVisitLists.py ${IN_DIR}
-
-#could be the first time OUT_DIR is populated
-#mkdir -p ${OUT_DIR}
+if [[ $RERUN = *":"* ]]; then
+   IFS=":" read RERUN1 RERUN2 <<< $RERUN
+else
+   RERUN1=$RERUN
+   RERUN2=$RERUN
+fi
+export RERUN1
+export RERUN2
 
 # Build the list of tracts/patches for the rings sky map
-makeSkyMap.py ${IN_DIR} --rerun ${RERUN}
+makeSkyMap.py ${IN_DIR} --rerun ${RERUN1}
