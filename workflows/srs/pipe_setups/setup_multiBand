@@ -98,7 +98,7 @@ while read line; do
 	for script in ${WORKDIR}/multiband_${tract}_*.sh
 	do
 	    chmod a+x $script
-	    echo pipelineCreateStream task_multiBandDriver -1 CUR_SCRIPT=$script
+	    pipelineCreateStream task_multiBandDriver -1 CUR_SCRIPT=$script
 	done
     else
 	#TRACT_FILE has the tract and patch information so just loop over it
@@ -107,7 +107,7 @@ while read line; do
 	num=`ls -1q $WORKDIR/multiband_${tract}_*.sh | wc -l`
 	script=${WORKDIR}/multiband_${tract}_$num.sh
 	chmod a+x $script
-	echo pipelineCreateStream task_multiBandDriver -1 CUR_SCRIPT=$script
+	pipelineCreateStream task_multiBandDriver -1 CUR_SCRIPT=$script
     fi
 done < ${TRACT_FILE}
 
