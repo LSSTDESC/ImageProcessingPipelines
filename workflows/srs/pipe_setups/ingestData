@@ -30,7 +30,7 @@ EOF
 }
 
 VISITBASE=`basename ${VISIT_FILE} -s`
-rm ${WORKDIR}/${VISITBASE}_chunk*
+rm -f ${WORKDIR}/${VISITBASE}_chunk*
 
 split -d -l 500000 ${VISIT_FILE} ${WORKDIR}/${VISITBASE}_chunk
 
