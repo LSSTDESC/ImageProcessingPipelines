@@ -16,7 +16,7 @@
 case $PIPELINE_PROCESS in
     # uncomment the script you would like to stop
 #    "ingestData") exit 1;;
-    "ingestRefCat") exit 1;;
+    "ingestRefCat") exit 0;;
 #    "makeSkyMap") exit 1;;
 #    "setup_assembleCoadd") exit 1;;
 #    "setup_detectCoaddSources") exit 1;;
