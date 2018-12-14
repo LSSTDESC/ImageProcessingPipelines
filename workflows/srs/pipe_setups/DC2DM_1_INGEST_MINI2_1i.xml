@@ -19,7 +19,7 @@
       <var name="IN2P3_HUGE_OPTIONS"> -q huge </var>
       <var name="IN2P3_MCLONG_OPTIONS"> -q mc_long -pe multicores 8 </var>
       <var name="IN2P3_MCHUGE_OPTIONS"> -q mc_huge -pe multicores 8 </var>
-      <var name="NERSC_BATCH_OPTIONS"> -p MINIDRP | -L SCRATCH,projecta | -C knl </var>
+      <var name="NERSC_BATCH_OPTIONS"> -p MINIDRP | -L SCRATCH,projecta | -C haswell </var>
       <var name="BATCH_OPTIONS">${SITE=="NERSC" ? "${NERSC_BATCH_OPTIONS}" : "${IN2P3_BATCH_OPTIONS} "}</var>
       <var name="EXTRA_OPTIONS_0">${SITE=="NERSC" ? " " : "${IN2P3_HUGE_OPTIONS} "}</var>
       <var name="EXTRA_OPTIONS_1">${SITE=="NERSC" ? " " : "${IN2P3_MCHUGE_OPTIONS} "}</var>
@@ -49,7 +49,7 @@
       <var name="CONFIGS_LOCATION">${SITE=="NERSC" ? NERSC_CONFIGS_LOCATION : IN2P3_CONFIGS_LOCATION}</var>
       <!-- Log Files -->
       <var name="IN2P3_logRoot">/sps/lsst/users/descprod/Pipeline2/Logs</var>    
-      <var name="NERSC_logRoot">${NERSC_ROOT_SOFTS}/logs</var>    
+      <var name="NERSC_logRoot">/global/cscratch1/sd/descdm/DC2/${RUNID}/logs</var>    
       <var name="logRoot">${SITE=="NERSC" ? NERSC_logRoot : IN2P3_logRoot}</var>
       <!-- Script names -->
       <var name="SCRIPT_NAME">DC2Workflow.py</var>
