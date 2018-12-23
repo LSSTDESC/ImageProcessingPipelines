@@ -1,5 +1,5 @@
 # Default location from which to setup DM 
-export DM_RELEASE=w_2018_39
+export DM_RELEASE=w_2018_48
 export RUN=Run2.1i
 export DM_SETUP="/cvmfs/sw.lsst.eu/linux-x86_64/lsst_distrib/${DM_RELEASE}/loadLSST.bash"
 export
