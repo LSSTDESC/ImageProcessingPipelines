@@ -1,6 +1,6 @@
 # Default location from which to setup DM 
 export DM_RELEASE=w_2018_48
-export RUN=Run2.1i
+export RUN=Run2.0i
 export DM_SETUP="/cvmfs/sw.lsst.eu/linux-x86_64/lsst_distrib/${DM_RELEASE}/loadLSST.bash"
 export
 REFCAT="/global/projecta/projectdirs/lsst/groups/SSim/DC2/reference_catalogs/Run2.0/ref_cats"
