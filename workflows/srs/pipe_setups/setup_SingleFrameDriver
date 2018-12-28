@@ -26,9 +26,10 @@ build_singleframe_script () {
 DM_SETUP=${DM_SETUP}
 source ${SETUP_LOCATION}/DMsetup.sh
 export OMP_NUM_THREADS=1
-singleFrameDriver.py ${IN_DIR} --rerun ${RERUN1} $2 --cores \${NSLOTS} --timeout 999999999
+processCcd.py ${IN_DIR} --rerun ${RERUN1} $2 -j \${NSLOTS} --longlog --timeout 999999999
 echo "Running checCcdAstrometry.py"
 ${ROOT_SOFTS}/ImageProcessingPipelines/python/util/checkCcdAstrometry.py ${IN_DIR}/rerun/${RERUN1} $2
+makeFpSummary.py ${IN_DIR} --rerun ${RERUN1} --dstype calexp --id visit=$3 
 ${ROOT_SOFTS}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir=${IN_DIR}/rerun/${RERUN1} --db=${IN_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 --visits=$3
 EOF
 }
@@ -56,7 +57,7 @@ while read id; do
     raft_list=`sqlite3 ${OUTPUT_DATA_DIR}/registry.sqlite3 'select distinct raftName from raw where visit=${visit}'`
     for raftName in $raft_list; do
         script="${WORK_DIR}/02-process/script_${raftName}_$visit.sh"
-  	build_singleframe_script "${script}" "${id} raftName=${raftName}"
+  	build_singleframe_script "${script}" "${id} raftName=${raftName}" "${visit}"
   	chmod a+x "${script}"
   	# pipelineSet CUR_SCRIPT ${script} 
   	pipelineCreateStream task_SingleFrameDriver -1 CUR_SCRIPT="${script}"
