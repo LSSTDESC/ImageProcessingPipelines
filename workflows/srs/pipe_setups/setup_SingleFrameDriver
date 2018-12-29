@@ -53,6 +53,13 @@ while read id; do
     chmod a+x "${script}"
     # pipelineSet CUR_SCRIPT ${script} 
     pipelineCreateStream task_SingleFrameDriver -1 CUR_SCRIPT="${script}"
+  elif [[ $SITE == "NERSC" ]]; then
+    #build script with one visit per processing
+    script="${WORK_DIR}/02-process/script_$visit.sh"
+    build_singleframe_script "${script}" "${visit_cmd}" "${visit}"
+    chmod a+x "${script}"
+    # pipelineSet CUR_SCRIPT ${script} 
+    pipelineCreateStream task_SingleFrameDriver -1 CUR_SCRIPT="${script}"
   else
     raft_list=`sqlite3 ${OUTPUT_DATA_DIR}/registry.sqlite3 'select distinct raftName from raw where visit=${visit}'`
     for raftName in $raft_list; do
