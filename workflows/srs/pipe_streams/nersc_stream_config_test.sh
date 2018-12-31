@@ -8,7 +8,8 @@ export REFCAT="/global/projecta/projectdirs/lsst/groups/SSim/DC2/reference_catal
 
 # Base directory for input and output data
 export CHECKPOINTS="/global/cscratch1/sd/descdm/DC2/$RUN/${DM_RELEASE}_test/checkpoints_run2.1i.sh"
-export VISIT_FILE="/global/cscratch1/sd/descdm/DC2/$RUN/${DM_RELEASE}_test/filesToIngest.txt"
+#export VISIT_FILE="/global/cscratch1/sd/descdm/DC2/$RUN/${DM_RELEASE}_test/filesToIngest.txt"
+export VISIT_FILE="/global/cscratch1/sd/descdm/DC2/$RUN/visit_list_test.txt"
 export OUTPUT_DATA_DIR="/global/cscratch1/sd/descdm/DC2/$RUN/${DM_RELEASE}_test/"
 
 # The filters
