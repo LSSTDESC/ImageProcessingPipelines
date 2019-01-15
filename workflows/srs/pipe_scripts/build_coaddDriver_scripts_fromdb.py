@@ -54,7 +54,7 @@ if __name__ == "__main__":
             if filt=='u':
                 to_write.extend(['coaddDriver.py %s --rerun %s %s @%s --cores ${NSLOTS} --doraise --configfile=${OBS_LSST_DIR}/config/coaddDriver_noPSF.py --longlog'%(os.environ['IN_DIR'],os.environ['RERUN'],id_string,filename2)])
             else:
-                to_write.extend(['coaddDriver.py %s --rerun %s %s @%s --cores ${NSLOTS} --doraise'%(os.environ['IN_DIR'],os.environ['RERUN'],id_string,\
+                to_write.extend(['coaddDriver.py %s --rerun %s %s @%s --cores ${NSLOTS} --doraise --longlog'%(os.environ['IN_DIR'],os.environ['RERUN'],id_string,\
 filename2)])
             np.savetxt(filename, to_write, fmt="%s")
             os.system("chmod a+x %s"%filename)
