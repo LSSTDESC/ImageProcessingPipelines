@@ -111,7 +111,16 @@ def main(db, butler, skyMapPolys, layer="", margin=10, verbose=True, visit=None)
         for tract, patches in skyMapPolys.findOverlaps(bbox, wcs, margin=margin):
             print("Adding patches for visit=%d, detector=%d, tract=%d to overlap table." %
                   (visit, detector, tract))
-            db.executemany(insertSql, [(tract, str(patch), visit, detector, filter, layer) for patch in patches])
+            #live with intermittent locking of the db....
+            while True:
+                try:
+                    db.executemany(insertSql, [(tract, str(patch), visit, detector, filter, layer) for patch in patches])
+                    break
+                except sqlite3.Error as e:
+                    pass
+                else:
+                    break
+            
     db.commit()
 
 def _get_visits(visit_in):

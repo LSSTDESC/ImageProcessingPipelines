@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# checkpoint
+source ${SETUP_LOCATION}/checkpoint
+
+if [[ $RERUN = *":"* ]]; then
+    IFS=":" read RERUN1 RERUN2 <<< $RERUN
+else
+    RERUN1=$RERUN
+    RERUN2=$RERUN
+fi
+export RERUN1
+export RERUN2
+
+build_dark_script(){
+ cat> $1<<EOF
+#!/bin/bash
+DM_SETUP=${DM_SETUP}
+source ${SETUP_LOCATION}/DMsetup.sh
+export OMP_NUM_THREADS=1
+constructDark.py ${OUT_DIR} --rerun ${RERUN} @$2 --cores \${NSLOTS}   
+EOF
+}
+
+
+# mkdir -p ${OUT_DIR}/rerun/${RERUN1}/scripts
+# while read visit_id; do
+#     script=${OUT_DIR}/rerun/${RERUN1}/scripts/dark_$visit_id.sh
+#     build_dark_script ${script} ${visit_id}
+#     chmod a+x ${script}
+#     pipelineCreateStream task_dark -1 CUR_SCRIPT=${script}
+# done < ${DARK_FILE}
+
+script=${OUT_DIR}/rerun/${RERUN1}/scripts/master_dark.sh
+build_dark_script ${script} ${DARK_FILE} 
+chmod a+x ${script}
+pipelineCreateStream task_dark -1 CUR_SCRIPT=${script}

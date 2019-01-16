@@ -52,9 +52,9 @@ if __name__ == "__main__":
             filename = '%s/%s/tract_%i.sh'%(dirout,filt,tract)
             to_write = ["#!/bin/bash\nDM_SETUP=%s\nsource ${SETUP_LOCATION}/DMsetup.sh\nexport OMP_NUM_THREADS=1"%(os.environ['DM_SETUP'])]
             if filt=='u':
-                to_write.extend(['coaddDriver.py %s --rerun %s %s @%s --cores ${NSLOTS} --doraise --configfile=${OBS_LSSTCAM_DIR}/config/coaddDriver_noPSF.py'%(os.environ['IN_DIR'],os.environ['RERUN'],id_string,filename2)])
+                to_write.extend(['coaddDriver.py %s --rerun %s %s @%s --cores ${NSLOTS} --doraise --configfile=${OBS_LSST_DIR}/config/coaddDriver_noPSF.py --longlog'%(os.environ['IN_DIR'],os.environ['RERUN'],id_string,filename2)])
             else:
-                to_write.extend(['coaddDriver.py %s --rerun %s %s @%s --cores ${NSLOTS} --doraise'%(os.environ['IN_DIR'],os.environ['RERUN'],id_string,\
+                to_write.extend(['coaddDriver.py %s --rerun %s %s @%s --cores ${NSLOTS} --doraise --longlog'%(os.environ['IN_DIR'],os.environ['RERUN'],id_string,\
 filename2)])
             np.savetxt(filename, to_write, fmt="%s")
             os.system("chmod a+x %s"%filename)

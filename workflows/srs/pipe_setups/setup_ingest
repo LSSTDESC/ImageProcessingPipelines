@@ -8,10 +8,6 @@ source ${SETUP_LOCATION}/checkpoint
 mkdir -p ${IN_DIR}
 cd ${IN_DIR}
 
-# If the output directory does not contain a mapper file, create one
-cp ${CONFIGS_LOCATION}/_mapper ${IN_DIR}/
-
-
 #if reference cat ingestion is about to be bypassed
 #then create the soft link to an existing 
 var=`grep ingestRefCat ${CHECKPOINTS}`

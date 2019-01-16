@@ -15,7 +15,9 @@ export RERUN1
 export RERUN2
 
 if [ ! -d "$IN_DIR/rerun/$RERUN1/deepCoadd" ]; then
-    makeSkyMap.py ${IN_DIR} --output ${IN_DIR}/rerun/${RERUN1} --configfile ${CONFIGS_LOCATION}/makeSkyMapConfig.py
+    makeSkyMap.py ${IN_DIR} --output ${IN_DIR}/rerun/${RERUN1}
+    #turn the absolute path into a relative one for the root entry in the yaml file, to ease shipping to NERSC
+    sed -i -e 's+'${IN_DIR}'+..\/..+g' ${IN_DIR}rerun/$RERUN1/repositoryCfg.yaml
 fi
 
 build_singleframe_script () {
@@ -26,7 +28,7 @@ source ${SETUP_LOCATION}/DMsetup.sh
 export OMP_NUM_THREADS=1
 singleFrameDriver.py ${IN_DIR} --rerun ${RERUN1} $2 --cores \${NSLOTS} --timeout 999999999
 echo "Running checCcdAstrometry.py"
-${ROOT_SOFTS}/ImageProcessingPipelines/python/util/checkCcdAstrometry.py ${IN_DIR}/rerun/${RERUN1} $2 --clobber-versions
+${ROOT_SOFTS}/ImageProcessingPipelines/python/util/checkCcdAstrometry.py ${IN_DIR}/rerun/${RERUN1} $2
 ${ROOT_SOFTS}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir=${IN_DIR}/rerun/${RERUN1} --db=${IN_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 --visits=$3
 EOF
 }
