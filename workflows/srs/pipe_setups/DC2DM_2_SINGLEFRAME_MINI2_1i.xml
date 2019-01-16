@@ -4,11 +4,11 @@
           xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
 			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
   
-  <task name="DC2DM_2_SINGLEFRAME_MINI2_0i" type="LSST" version="0.2">
+  <task name="DC2DM_2_SINGLEFRAME_MINI2_1i" type="LSST" version="0.2">
     <notation>Task to run the DM stack on DC2 simulated images</notation>
     <variables>
       <!-- Job site and configuration-->
-      <var name="RUNID">Run2.0i</var>
+      <var name="RUNID">Run2.1i</var>
       <var name="SETUP_TAG">dev</var>
       <var name="SITE">LSST-IN2P3</var>
       <var name="JOBSITE">${SITE=="NERSC" ? "CORIP" : SITE}</var>
@@ -18,7 +18,7 @@
       <var name="IN2P3_HUGE_OPTIONS"> -q huge </var>
       <var name="IN2P3_MCLONG_OPTIONS"> -q mc_long -pe multicores 8 </var>
       <var name="IN2P3_MCHUGE_OPTIONS"> -q mc_huge -pe multicores 8 </var>
-      <var name="NERSC_BATCH_OPTIONS"> -p MINIDRP | -L SCRATCH,projecta | -C knl </var>
+      <var name="NERSC_BATCH_OPTIONS"> -p MINIDRP | -L SCRATCH,projecta | -C haswell </var>
       <var name="BATCH_OPTIONS">${SITE=="NERSC" ? "${NERSC_BATCH_OPTIONS}" : "${IN2P3_BATCH_OPTIONS} "}</var>
       <var name="EXTRA_OPTIONS_0">${SITE=="NERSC" ? " " : "${IN2P3_HUGE_OPTIONS} "}</var>
       <var name="EXTRA_OPTIONS_1">${SITE=="NERSC" ? " " : "${IN2P3_MCHUGE_OPTIONS} "}</var>
