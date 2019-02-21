@@ -26,7 +26,7 @@ build_singleframe_script () {
 DM_SETUP=${DM_SETUP}
 source ${SETUP_LOCATION}/DMsetup.sh
 export OMP_NUM_THREADS=1
-processCcd.py ${IN_DIR} --rerun ${RERUN1} $2 -j \${NSLOTS} --longlog --timeout 999999999
+processCcd.py ${IN_DIR} --rerun ${RERUN1} $2 -j \${NSLOTS} --longlog --timeout 999999999 --configfile ${SFD_config}
 echo "Running checCcdAstrometry.py"
 ${ROOT_SOFTS}/ImageProcessingPipelines/python/util/checkCcdAstrometry.py ${IN_DIR}/rerun/${RERUN1} $2
 makeFpSummary.py ${IN_DIR} --rerun ${RERUN1} --dstype calexp --id visit=$3 
