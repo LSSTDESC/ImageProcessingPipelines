@@ -15,7 +15,8 @@ config.file_reader.header_lines=1
 config.file_reader.colnames=['id', 'ra', 'dec', 'sigma_ra', 'sigma_dec', 'ra_smeared', 'dec_smeared', 'lsst_u', 'sigma_lsst_u',
                              'lsst_g', 'sigma_lsst_g', 'lsst_r', 'sigma_lsst_r', 'lsst_i', 'sigma_lsst_i', 'lsst_z', 'sigma_lsst_z',
                              'lsst_y', 'sigma_lsst_y', 'lsst_u_smeared', 'lsst_g_smeared', 'lsst_r_smeared',
-                             'lsst_i_smeared', 'lsst_z_smeared', 'lsst_y_smeared', 'isresolved', 'isagn', 'properMotionRa',
+                             'lsst_i_smeared', 'lsst_z_smeared', 'lsst_y_smeared', 'u_rms', 'g_rms', 'r_rms', 'i_rms', 'z_rms',
+                             'y_rms', 'isresolved', 'isagn', 'properMotionRa',
                              'properMotionDec', 'parallax', 'radialVelocity']
 
 # Delimiter to use when reading text reference files.  Comma is default.
@@ -47,5 +48,6 @@ config.is_variable_name='isagn'
 config.id_name='id'
 
 # Extra columns to add to the reference catalog.
-config.extra_col_names=['ra', 'dec', 'sigma_ra', 'sigma_dec', 'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y',
+config.extra_col_names=['ra', 'dec', 'sigma_ra', 'sigma_dec', 'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y', 
+                        'u_rms', 'g_rms', 'r_rms', 'i_rms', 'z_rms', 'y_rms',
                         'properMotionRa', 'properMotionDec', 'parallax', 'radialVelocity']
