@@ -110,7 +110,7 @@ class CheckCcdAstrometryTask(pipeBase.CmdLineTask):
         self.log.info("Processing %s" % (dataid))
 
         wcs = self.butler.get('calexp_wcs', dataid)
-        calib = self.butler.get("calexp_calib", dataid)
+        calib = self.butler.get("calexp_photoCalib", dataid)
 
         Flags = ["base_PixelFlags_flag_saturated", "base_PixelFlags_flag_cr", "base_PixelFlags_flag_interpolated",
                  self.config.fluxType + "_flag", "base_SdssCentroid_flag",
