@@ -3,21 +3,16 @@
 # checkpoint
 source ${SETUP_LOCATION}/checkpoint
 
-mkdir -p ${WORK_DIR}/02-process
+WORKDIR=${IN_DIR}/work/${RERUN}/${streamID}/calexp
+mkdir -p ${WORKDIR}
+export SCRDIR=${WORKDIR}/scripts
+mkdir -p ${SCRDIR}
 
-if [[ $RERUN = *":"* ]]; then
-    IFS=":" read RERUN1 RERUN2 <<< $RERUN
-else
-    RERUN1=$RERUN
-    RERUN2=$RERUN
-fi
-export RERUN1
-export RERUN2
-
-if [ ! -d "$IN_DIR/rerun/$RERUN1/deepCoadd" ]; then
-    makeSkyMap.py ${IN_DIR} --output ${IN_DIR}/rerun/${RERUN1}
+#start by building the skymap as it is needed for the tract/patch mapping DB construction
+if [ ! -d "$IN_DIR/rerun/$RERUN2/deepCoadd" ]; then
+    makeSkyMap.py ${IN_DIR} --output ${IN_DIR}/rerun/${RERUN2}
     #turn the absolute path into a relative one for the root entry in the yaml file, to ease shipping to NERSC
-    sed -i -e 's+'${IN_DIR}'+..\/..+g' ${IN_DIR}/rerun/$RERUN1/repositoryCfg.yaml
+    sed -i -e 's+'${IN_DIR}'+..\/..+g' ${IN_DIR}/rerun/$RERUN2/repositoryCfg.yaml
 fi
 
 build_singleframe_script () {
@@ -25,13 +20,21 @@ build_singleframe_script () {
 #!/bin/bash
 DM_SETUP=${DM_SETUP}
 source ${SETUP_LOCATION}/DMsetup.sh
+WORKDIR=\${WORKDIR}/task_calexp/\${streamID}
 export OMP_NUM_THREADS=1
 singleFrameDriver.py ${IN_DIR} --rerun ${RERUN1} $2 --cores \${NSLOTS} --timeout 999999999
 echo "Running checCcdAstrometry.py"
 ${ROOT_SOFTS}/ImageProcessingPipelines/python/util/checkCcdAstrometry.py ${IN_DIR}/rerun/${RERUN1} $2
-${ROOT_SOFTS}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir=${IN_DIR}/rerun/${RERUN1} --db=${IN_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 --visits=$3
+echo '{"jobid":"${JOB_ID}", "stream_id":"${streamID}", "logfile\:"${JOBCONTROL_LOGFILE}", "script":"${CUR_SCRIPT}",  "release":"${DM_RELEASE}","run":"${RUN}","tag":"${SETUP_TAG}","visit":"${visit}"}' >> ${WORKDIR}/singleframe_housekeeping.txt
 EOF
 }
+
+
+if [[ -z "${VISIT_FILE}" ]]; then
+    sqlite3 ${IN_DIR}/registry.sqlite3 "select DISTINCT visit from raw_visit;" > ${WORKDIR}/all_visits_from_register.list
+    VISIT_FILE=${WORKDIR}/all_visits_from_register.list
+    export VISIT_FILE
+fi
 
  
 while read id; do
@@ -43,30 +46,23 @@ while read id; do
       visit=$DUMMY2
       visit_cmd=$id
   fi
-  echo $visit
-  echo $visit_cmd
+  export visit
+  #echo $visit
   if [[ $SITE == "LSST-IN2P3" ]]; then
     #build script with one visit per processing
-    script="${WORK_DIR}/02-process/script_$visit.sh"
+    script="${SCRDIR}/script_$visit.sh"
     build_singleframe_script "${script}" "${visit_cmd}" "${visit}"
     chmod a+x "${script}"
-    # pipelineSet CUR_SCRIPT ${script} 
-    pipelineCreateStream task_SingleFrameDriver -1 CUR_SCRIPT="${script}"
+    #echo pipelineCreateStream task_SingleFrameDriver -1 CUR_SCRIPT="${script}",WORKDIR=${WORKDIR}
+    pipelineCreateStream task_SingleFrameDriver -1 CUR_SCRIPT="${script}",WORKDIR=${WORKDIR}
   elif [[ $SITE == "NERSC" ]]; then
-    #build script with one visit per processing
-    script="${WORK_DIR}/02-process/script_$visit.sh"
-    build_singleframe_script "${script}" "${visit_cmd}" "${visit}"
-    chmod a+x "${script}"
-    # pipelineSet CUR_SCRIPT ${script} 
-    pipelineCreateStream task_SingleFrameDriver -1 CUR_SCRIPT="${script}"
-  else
     raft_list=`sqlite3 ${OUTPUT_DATA_DIR}/registry.sqlite3 'select distinct raftName from raw where visit=${visit}'`
     for raftName in $raft_list; do
-        script="${WORK_DIR}/02-process/script_${raftName}_$visit.sh"
+        script="${SCRDIR}/script_${raftName}_$visit.sh"
   	build_singleframe_script "${script}" "${id} raftName=${raftName}"
   	chmod a+x "${script}"
-  	# pipelineSet CUR_SCRIPT ${script} 
-  	pipelineCreateStream task_SingleFrameDriver -1 CUR_SCRIPT="${script}"
+  	pipelineSet VISIT ${visit} 
+  	pipelineCreateStream task_SingleFrameDriver -1 CUR_SCRIPT="${script}",WORKDIR=${WORKDIR},VISIT=${visit}
     done
   fi
   #one full complete visit at nersc or cc : run makeFpSummary
