@@ -4,11 +4,11 @@
           xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
 			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
   
-  <task name="DC2DM_1_INGEST" type="LSST" version="2.2">
+  <task name="DC2DM_1_INGEST" type="LSST" version="2.31">
     <notation>Task to run the DM stack on DC2 simulated images (ingestion)</notation>
     <variables>
       <!-- Job site and configuration-->
-      <var name="RUNID">Run1.2p</var>
+      <var name="RUNID">Run2.1i</var>
       <var name="SETUP_TAG">dev</var>
       <var name="SITE">LSST-IN2P3</var>
       <var name="JOBSITE">${SITE=="NERSC" ? "CORIP" : SITE}</var>
@@ -29,7 +29,7 @@
       <var name="PIPE_SUBDIR">ImageProcessingPipelines/workflows/srs</var>
       <var name="PIPE_SETUPS">${PIPE_SUBDIR}/pipe_setups</var>
       <var name="PIPE_SCRIPTS">${PIPE_SUBDIR}/pipe_scripts</var>
-      <var name="DM_CONFIGS">${PIPE_SUBDIR}/dm_configs</var>
+      <var name="DM_CONFIGS">ImageProcessingPipelines/configs</var>
       <!-- At SLAC // SHOULD BE THE SAME FOR NERSC AND IN2P3 -->
       <var name="IN2P3_SLAC_SETUP_LOCATION">/afs/slac.stanford.edu/u/ec/nchotard/software/desc/DC2/Run1.1/${PIPE_SETUPS}</var>
       <var name="NERSC_SLAC_SETUP_LOCATION">/nfs/farm/g/lsst/u1/users/heather/minidrp/pipe_setups</var>
@@ -52,58 +52,43 @@
       <var name="NERSC_logRoot">/global/homes/d/descdm/minidrp/logs</var>    
       <var name="logRoot">${SITE=="NERSC" ? NERSC_logRoot : IN2P3_logRoot}</var>
       <!-- Script names -->
-      <var name="SCRIPT_NAME">DC2Workflow.py</var>
       <var name="BATCH_NAME">DC2Batch.sh</var>
     </variables>
 
     <!-- setup ingests -->
     <process name="setup_ingest" site="${JOBSITE}">
-      <notation>Ingest the input data serially</notation>
+      <notation>Ingest raw data</notation>
+        <variables>
+          <var name="streamID">${format(pipeline.stream, "%s")}</var>
+        </variables>
       <job maxCPU="${MAXCPU}" 
            batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_3}"
 	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
-    </process>
-
-    <!-- ingest images -->
-    <process name="ingestData" site="${JOBSITE}">
-      <notation>Ingest the input data serially</notation>
-      <job maxCPU="${MAXCPU}" 
-           batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_3}"
-	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
-      <depends>
-        <after process="setup_ingest"/>
-      </depends>
       <createsSubtasks>
 	<subtask>task_ingestData</subtask>
       </createsSubtasks>	
     </process>
 
-    <!-- ingest reference catalog -->
-    <process name="ingestRefCat" site="${JOBSITE}">
-      <notation>Ingest the reference catalog</notation>
-      <job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_0}"
-	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
-      <depends>
-        <after process="setup_ingest"/>
-      </depends>
-    </process>    
+      <process name="finish_ingest" site="${JOBSITE}">
+        <notation>Finalize Ingest</notation>
+        <variables>
+          <var name="streamID">${format(pipeline.stream, "%s")}</var>
+        </variables>
+        <job maxCPU="${MAXCPU}" 
+             batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_3}"
+	     executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
+        <depends>
+          <after process="setup_ingest"/>
+          <after process="task_ingestData.run_ingestData"/>
+        </depends>
+      </process>
 
-    <!-- makeSkyMap -->
-    <process name="makeSkyMap" site="${JOBSITE}">
-      <notation>Make the sky map</notation>
-      <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
-	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
-      <depends>
-        <after process="setup_ingest"/>
-      </depends>
-    </process>
-
-    <!--   Subtasks -->
     <task name="task_ingestData" type="LSST">
       <process name="run_ingestData" site="${JOBSITE}">
-    <!--<variables>-->
-    <!--  <var name="streamID">${format(pipeline.stream, "%01d")}</var>-->
-    <!--</variables>-->
+          <variables>
+            <var name="SGE_QACCT">${SITE=="NERSC" ? "" : "-A ingest"}</var>
+            <var name="streamID">${format(pipeline.stream, "%01d")}</var>
+          </variables>
 	<job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_2} -A ingest"
 	     executable="${CUR_SCRIPT}"/>
       </process>                

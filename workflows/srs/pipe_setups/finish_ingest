@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# checkpoint
+source ${SETUP_LOCATION}/checkpoint
+
+#WORKDIR=${IN_DIR}/rerun/${RERUN1}/scripts/ingest
+#mkdir -p $WORKDIR
+#export WORKDIR
+
+BASEDIR=${IN_DIR}/work/${RERUN}/${streamID}
+
+echo "Merging registries in ${WORKDIR}/registries"
+
+merge_registries.py "RAW2VISIT" "${BASEDIR}/task_ingestion/${streamID}/registries/registry_*.sqlite3" "${IN_DIR}/registry.sqlite3"
