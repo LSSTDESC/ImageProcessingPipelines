@@ -3,32 +3,33 @@
 # checkpoint
 source ${SETUP_LOCATION}/checkpoint
 
-if [[ $RERUN = *":"* ]]; then
-    IFS=":" read RERUN1 RERUN2 <<< $RERUN
-else
-    RERUN1=$RERUN
-    RERUN2=$RERUN
-fi
-export RERUN1
-export RERUN2
+WORKDIR=${IN_DIR}/work/${RERUN}/${streamID}/coadd
+mkdir -p ${WORKDIR}
+export SCRDIR=${WORKDIR}/scripts
+mkdir -p ${SCRDIR}
 
 if [ ! -d "$IN_DIR/rerun/$RERUN2/deepCoadd" ]; then
     makeSkyMap.py ${IN_DIR} --rerun ${RERUN}
     #turn the absolute path into a relative one for the root entry in the yaml file, to ease shipping to NERSC
-    sed -i -e 's+'${IN_DIR}'+..\/..+g' ${IN_DIR}rerun/$RERUN2/repositoryCfg.yaml
+    sed -i -e 's+'${IN_DIR}'+..\/..+g' ${IN_DIR}/rerun/$RERUN2/repositoryCfg.yaml
 fi
-
-mkdir -p ${WORK_DIR}/03-coadd
-cd ${WORK_DIR}/03-coadd
 
 for FILT in $(echo ${FILTERS} | tr "," "\n")
 do
-  build_coaddDriver_scripts_fromdb.py --filt $FILT "${IN_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3"
-  for script in ${OUT_DIR}/rerun/${RERUN2}/scripts/$FILT/tract_*.sh
-  do
-    #pipelineSet does not seem to do the job here.... but leaving for now
-    pipelineSet DM_SETUP ${DM_SETUP} 
-    pipelineSet WORK_DIR ${WORK_DIR} 
-    pipelineCreateStream task_coaddDriver -1 CUR_SCRIPT=${script}
-  done
+    #if tract file is not provided, create it with all the tracts in the database, or pick it up from the workdir
+    if [[ -z "${TRACT_FILE}" ]]; then
+	if [[ ! -f ${WORKDIR}/all_tracts_$FILT.list ]]; then
+	    sqlite3 ${IN_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 "select DISTINCT tract from overlaps where filter=${FILT};" > ${WORKDIR}/all_tracts_$FILT.list
+	fi
+	TRACT_FILE=${WORKDIR}/all_tracts_$FILT.list
+    fi
+
+    build_coaddDriver_scripts_fromdb.py --tractfile ${TRACT_FILE} --outdir ${SCRDIR} --filt $FILT "${IN_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3"
+    for script in ${SCRDIR}/$FILT/tract_*.sh
+    do
+	#pipelineSet does not seem to do the job here.... but leaving for now
+	pipelineSet DM_SETUP ${DM_SETUP} 
+	pipelineSet WORKDIR ${WORKDIR} 
+	pipelineCreateStream task_coaddDriver -1 CUR_SCRIPT=${script}
+    done
 done
