@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# checkpoint
+source ${SETUP_LOCATION}/checkpoint
+
+WORKDIR=${IN_DIR}/work/${RERUN}/${streamID}/calexp
+mkdir -p ${WORKDIR}                                                                                                                                                                                                export WORKDIR 
+
+#WORKDIR=${WORKDIR}/task_calexp/${streamID}
+#mkdir -p ${WORKDIR}
+echo "merging registries in ${WORKDIR}/registries"
+merge_registries.py "VISIT2TRACT" "${WORKDIR}/registries/tracts_mapping*.sqlite3" "${OUT_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3" 
+echo "Merging overlaps registries ${WORKDIR}/registries/tracts_mapping*.sqlite3 into ${OUT_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3"

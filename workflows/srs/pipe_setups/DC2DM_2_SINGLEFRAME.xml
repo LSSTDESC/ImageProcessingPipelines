@@ -4,11 +4,11 @@
           xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
 			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
   
-  <task name="DC2DM_2_SINGLEFRAME" type="LSST" version="0.3">
+  <task name="DC2DM_2_SINGLEFRAME" type="LSST" version="0.44">
     <notation>Task to run the DM stack on DC2 simulated images</notation>
     <variables>
       <!-- Job site and configuration-->
-      <var name="RUNID">Run1.2p</var>
+      <var name="RUNID">Run2.1i</var>
       <var name="SETUP_TAG">dev</var>
       <var name="SITE">LSST-IN2P3</var>
       <var name="JOBSITE">${SITE=="NERSC" ? "CORIP" : SITE}</var>
@@ -23,15 +23,12 @@
       <var name="EXTRA_OPTIONS_0">${SITE=="NERSC" ? " " : "${IN2P3_HUGE_OPTIONS} "}</var>
       <var name="EXTRA_OPTIONS_1">${SITE=="NERSC" ? " " : "${IN2P3_MCHUGE_OPTIONS} "}</var>
       <var name="EXTRA_OPTIONS_2">${SITE=="NERSC" ? " " : "${IN2P3_MCLONG_OPTIONS} "}</var>
+      <var name="EXTRA_OPTIONS_3">${SITE=="NERSC" ? " " : "-q long "}</var>
       <!-- Base directory where script files will be placed -->
       <var name="PIPE_SUBDIR">ImageProcessingPipelines/workflows/srs</var>
       <var name="PIPE_SETUPS">${PIPE_SUBDIR}/pipe_setups</var>
       <var name="PIPE_SCRIPTS">${PIPE_SUBDIR}/pipe_scripts</var>
-      <var name="DM_CONFIGS">${PIPE_SUBDIR}/dm_configs</var>
-      <!-- At SLAC // SHOULD BE THE SAME FOR NERSC AND IN2P3 -->
-      <var name="IN2P3_SLAC_SETUP_LOCATION">/afs/slac.stanford.edu/u/ec/nchotard/software/desc/DC2/Run1.1/${PIPE_SETUPS}</var>
-      <var name="NERSC_SLAC_SETUP_LOCATION">/nfs/farm/g/lsst/u1/users/heather/minidrp/pipe_setups</var>
-      <var name="SLAC_SETUP_LOCATION">${SITE=="NERSC" ? NERSC_SLAC_SETUP_LOCATION : IN2P3_SLAC_SETUP_LOCATION}</var>
+      <var name="DM_CONFIGS">ImageProcessingPipelines/configs</var>
       <!-- Local to JOBSITE -->
       <var name="IN2P3_ROOT_SOFTS">/pbs/throng/lsst/software/desc/DC2/${RUNID}/${SETUP_TAG}</var>
       <var name="NERSC_ROOT_SOFTS">/global/homes/d/descdm/minidrp</var>  <!-- Is that right? -->
@@ -50,32 +47,53 @@
       <var name="NERSC_logRoot">/global/homes/d/descdm/minidrp/logs</var>    
       <var name="logRoot">${SITE=="NERSC" ? NERSC_logRoot : IN2P3_logRoot}</var>
       <!-- Script names -->
-      <!--<var name="SCRIPT_NAME">DC2Workflow.py</var>-->
       <var name="BATCH_NAME">DC2Batch.sh</var>
     </variables>
 
     <!-- process_SingleFrameDriver -->
     <!--   setup -->
-    <process name="setup_SingleFrameDriver" site="${JOBSITE}">
-      <notation>Setup for SingleFrameDriver</notation>
+    <process name="setup_calexp" site="${JOBSITE}">
+      <notation>Setup for calexp processing on visits</notation>
+        <variables>
+          <var name="streamID">${format(pipeline.stream, "%01d")}</var>
+        </variables>
       <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
 	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
       <createsSubtasks>
-	<subtask>task_SingleFrameDriver</subtask>
+	<subtask>task_calexp</subtask>
       </createsSubtasks>	
     </process>
-
-    <!--   Subtasks -->
-    <!--   Subtask to run processEimage -->
-    <task name="task_SingleFrameDriver" type="LSST">
-      <process name="run_SingleFrameDriver" site="${JOBSITE}">
-    <!--<variables>-->
-    <!--  <var name="streamID">${format(pipeline.stream, "%01d")}</var>-->
-    <!--</variables>-->
-	<job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_2} -A calexp"
-	     executable="${CUR_SCRIPT}"/>
-      </process>                
-    </task>
+    <process name="finish_calexp" site="${JOBSITE}">
+      <notation>Finish calexp production</notation>
+        <variables>
+          <var name="streamID">${format(pipeline.stream, "%01d")}</var>
+        </variables>
+      <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
+           executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
+      <depends>
+        <after process="task_calexp.run_calexp"/>
+      </depends>
+    </process>
     
+
+    <task name="task_calexp" type="LSST">
+      <process name="run_calexp" site="${JOBSITE}">
+        <variables>
+          <var name="streamID">${format(pipeline.stream, "%01d")}</var>
+        </variables>
+	<job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_2} -A calexp"
+	     executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
+      </process>
+    <!--   <process name="run_skyCorrection" site="${JOBSITE}"> -->
+    <!--     <variables> -->
+    <!--       <var name="streamID">${format(pipeline.stream, "%01d")}</var> -->
+    <!--     </variables> -->
+    <!--     <job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_2} -A skycor" -->
+    <!--          executable="${SETUP_LOCATION}/${BATCH_NAME}"/> -->
+    <!--     <depends> -->
+    <!--       <after process="run_SingleFrameDriver"/> -->
+    <!--     </depends> -->
+    <!--   </process> -->
+    </task>    
   </task>
 </pipeline>
