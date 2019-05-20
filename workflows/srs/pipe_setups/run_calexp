@@ -15,6 +15,8 @@ verify_checkpoint () {
     if [ "${var%${var#?}}"x != '#x' ]
     then
 	local status=`echo ${var: -3:1}`
+    else
+	local status=""
     fi
     echo $status
 }
@@ -28,14 +30,14 @@ elif [[ $status = 1 ]]; then
 else
     echo "Running singleFrameDriver.py"
     if [[ -z "${RAFTNAME}" ]]; then
-	singleFrameDriver.py ${IN_DIR} --rerun ${RERUN1} --id visit=${VISIT} --cores ${NSLOTS} --timeout 999999999 --no-versions
+	singleFrameDriver.py ${IN_DIR} --rerun ${RERUN1} --id visit=${VISIT} --cores $((NSLOTS+1)) --timeout 999999999 --loglevel CameraMapper=warn
 	echo '{'\"pipe_step\":\"singleFrameDriver\", \"jobid\":\"${JOB_ID}\", \"stream_id\":\"${streamID}\", \"logfile:\"${JOBCONTROL_LOGFILE}\", \"script\":\"${CUR_SCRIPT}\",  \"release\":\"${DM_RELEASE}\",\"run\":\"${RUN}\",\"tag\":\"${SETUP_TAG}\",\"visit\":\"${VISIT}\"'}' >> ${WORKDIR}/singleframe_housekeeping.txt
     else
-	singleFrameDriver.py ${IN_DIR} --rerun ${RERUN1} --id visit=${VISIT} raftName=${RAFTNAME} --cores ${NSLOTS} --timeout 999999999 --no-versions
+	singleFrameDriver.py ${IN_DIR} --rerun ${RERUN1} --id visit=${VISIT} raftName=${RAFTNAME} --cores $((NSLOTS+1)) --timeout 99999999 --loglevel CameraMapper=warn
 	echo '{'\"pipe_step\":\"singleFrameDriver\",\"jobid\":\"${JOB_ID}\", \"stream_id\":\"${streamID}\", \"logfile:\"${JOBCONTROL_LOGFILE}\", \"script\":\"${CUR_SCRIPT}\",  \"release\":\"${DM_RELEASE}\",\"run\":\"${RUN}\",\"tag\":\"${SETUP_TAG}\",\"visit\":\"${VISIT}\",\"raft\":\"${RAFTNAME}\"'}' >> ${WORKDIR}/singleframe_housekeeping.txt
     fi
     echo "Running checCcdAstrometry.py"
-    ${ROOT_SOFTS}/ImageProcessingPipelines/python/util/checkCcdAstrometry.py ${IN_DIR}/rerun/${RERUN1} --id visit=${VISIT} --no-versions
+    ${ROOT_SOFTS}/ImageProcessingPipelines/python/util/checkCcdAstrometry.py ${IN_DIR}/rerun/${RERUN1} --id visit=${VISIT} --loglevel CameraMapper=warn
 
     echo "building mapper"
     ${ROOT_SOFTS}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir=${IN_DIR}/rerun/${RERUN1} --db=${REGISTRIES}/tracts_mapping_${VISIT}.sqlite3 --visits=${VISIT}
@@ -50,7 +52,7 @@ elif [[ $status = 1 ]]; then
     exit 1
 else
     echo "Running skyCorrection.py"
-    skyCorrection.py ${OUT_DIR}  --rerun ${RERUN} --id visit=${VISIT} --cores ${NSLOTS} --timeout 999999999 --no-versions
+    skyCorrection.py ${OUT_DIR}  --rerun ${RERUN} --id visit=${VISIT} --cores $((NSLOTS+1)) --timeout 999999999 --no-versions --loglevel CameraMapper=warn
     echo '{'\"pipe_step\":\"sky_correction\", \"jobid\":\"${JOB_ID}\", \"logfile\":\"${JOBCONTROL_LOGFILE}\",  \"release\":\"${DM_RELEASE}\",\"run\":\"${RUN}\",\"tag\":\"${SETUP_TAG}\",\"visit\":\"${VISIT}\"'}' >> ${WORKDIR}/skycorrection_housekeeping.txt
 fi
 
