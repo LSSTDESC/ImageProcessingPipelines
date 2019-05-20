@@ -28,7 +28,7 @@ then
 else
   cd \${TMPDIR}
   cp ${IN_DIR}/_mapper .
-  ingestDriver.py . @$1 --cores \${NSLOTS} --output . --mode link
+  ingestDriver.py . @$1 --cores \$((NSLOTS + 1)) --output . --mode link
   mkdir -p ${IN_DIR}/raw
   cp -r raw/* ${IN_DIR}/raw/
   cp -r registry.sqlite3 $REGDIR/registry_\${JOB_ID}.sqlite3
