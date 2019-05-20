@@ -14,7 +14,8 @@ export WORKDIR
 if [ ! -d "$IN_DIR/rerun/$RERUN2/deepCoadd" ]; then
     makeSkyMap.py ${IN_DIR} --output ${IN_DIR}/rerun/${RERUN2}
     #turn the absolute path into a relative one for the root entry in the yaml file, to ease shipping to NERSC
-    sed -i -e 's+'${IN_DIR}'+..\/..+g' ${IN_DIR}/rerun/$RERUN2/repositoryCfg.yaml
+    #we need to do that at the end 
+    #sed -i -e 's+'${IN_DIR}'+..\/..+g' ${IN_DIR}/rerun/$RERUN2/repositoryCfg.yaml
 fi
 
 # build_singleframe_script () {
