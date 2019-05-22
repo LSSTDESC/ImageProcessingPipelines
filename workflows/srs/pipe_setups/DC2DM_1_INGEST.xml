@@ -4,12 +4,12 @@
           xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
 			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
   
-  <task name="DC2DM_1_INGEST" type="LSST" version="2.31">
+  <task name="DC2DM_1_INGEST" type="LSST" version="3.0">
     <notation>Task to run the DM stack on DC2 simulated images (ingestion)</notation>
     <variables>
       <!-- Job site and configuration-->
       <var name="RUNID">Run2.1i</var>
-      <var name="SETUP_TAG">dev</var>
+      <var name="SETUP_TAG">v1</var>
       <var name="SITE">LSST-IN2P3</var>
       <var name="JOBSITE">${SITE=="NERSC" ? "CORIP" : SITE}</var>
       <var name="MAXCPU">10000</var>
