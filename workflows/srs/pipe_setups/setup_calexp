@@ -18,22 +18,6 @@ if [ ! -d "$IN_DIR/rerun/$RERUN2/deepCoadd" ]; then
     #sed -i -e 's+'${IN_DIR}'+..\/..+g' ${IN_DIR}/rerun/$RERUN2/repositoryCfg.yaml
 fi
 
-# build_singleframe_script () {
-#  cat> $1<<EOF
-# #!/bin/bash
-# DM_SETUP=${DM_SETUP}
-# source ${SETUP_LOCATION}/DMsetup.sh
-# WORKDIR=\${WORKDIR}/task_calexp/\${streamID}
-# export OMP_NUM_THREADS=1
-# #singleFrameDriver.py ${IN_DIR} --rerun ${RERUN1} $2 --cores \${NSLOTS} --timeout 999999999
-# echo "Running checCcdAstrometry.py"
-# ${ROOT_SOFTS}/ImageProcessingPipelines/python/util/checkCcdAstrometry.py ${IN_DIR}/rerun/${RERUN1} $2
-# echo '{"jobid":"${JOB_ID}", "stream_id":"${streamID}", "logfile\:"${JOBCONTROL_LOGFILE}", "script":"${CUR_SCRIPT}",  "release":"${DM_RELEASE}","run":"${RUN}","tag":"${SETUP_TAG}","visit":"${visit}"}' >> ${WORKDIR}/singleframe_housekeeping.txt
-# ${ROOT_SOFTS}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir=${IN_DIR}/rerun/${RERUN1} --db=${IN_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 --visits=$visit
-# EOF
-# }
-
-
 if [[ -z "${VISIT_FILE}" ]]; then
     sqlite3 ${IN_DIR}/registry.sqlite3 "select DISTINCT visit from raw_visit;" > ${WORKDIR}/all_visits_from_register.list
     VISIT_FILE=${WORKDIR}/all_visits_from_register.list
@@ -53,23 +37,15 @@ while read id; do
   export visit
   #echo $visit
   if [[ $SITE == "LSST-IN2P3" ]]; then
-    #build script with one visit per processing
-    # script="${SCRDIR}/script_$visit.sh"
-    # build_singleframe_script "${script}" "${visit_cmd}" "${visit}"
-    # chmod a+x "${script}"
     pipelineSet VISIT ${visit} 
     pipelineCreateStream task_calexp -1 WORKDIR=${WORKDIR},VISIT=${visit}
   elif [[ $SITE == "NERSC" ]]; then
     raft_list=`sqlite3 ${OUTPUT_DATA_DIR}/registry.sqlite3 'select distinct raftName from raw where visit=${visit}'`
     for raftName in $raft_list; do
-        # script="${SCRDIR}/script_${raftName}_$visit.sh"
-  	# build_singleframe_script "${script}" "${id} raftName=${raftName}"
-  	# chmod a+x "${script}"
   	pipelineSet VISIT ${visit}
 	pipelineSet RAFTNAME ${raftName}
   	pipelineCreateStream task_calexp -1 WORKDIR=${WORKDIR},VISIT=${visit},RAFTNAME=${raftName}
     done
   fi
-  #one full complete visit at nersc or cc : run makeFpSummary
 done < ${VISIT_FILE}
 
