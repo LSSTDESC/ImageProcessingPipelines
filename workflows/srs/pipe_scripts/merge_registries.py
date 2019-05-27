@@ -13,12 +13,13 @@ if os.path.exists(outfile):
     os.system('cp %s %s'%(outfile, tmp_registry))
     os.system('cp %s %s'%(outfile, outfile+'_bak'))
 else:
-    os.system('cp %s %s'%(registries[0], tmp_registry))
-    registries = registries[1:]
     if len(registries)==0:
         print('copying single file')
         os.system('cp %s %s'%(tmp_registry,outfile))
         sys.exit(0)
+    else:
+        os.system('cp %s %s'%(registries[0], tmp_registry))
+        registries = registries[1:]
 
 if reg_type=="RAW2VISIT":
     tables=['raw','raw_visit']

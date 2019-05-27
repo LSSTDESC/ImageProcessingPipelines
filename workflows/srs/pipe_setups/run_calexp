@@ -49,7 +49,7 @@ elif [[ $status = 1 ]]; then
 else
     echo "Running visitAnalysis.py for visit=${VISIT} et streamID=${streamID}"
     tract=`sqlite3 ${REGISTRIES}/tracts_mapping_${VISIT}.sqlite3 "select distinct tract from overlaps where visit=${VISIT} limit 1;"`
-    visitAnalysis.py ${IN_DIR} -j ${NSLOTS} --rerun ${RERUN1}:QA-${RERUN1} --id visit=$VISIT --tract=$tract -c doWriteParquetTables=False
+    visitAnalysis.py ${IN_DIR} --rerun ${RERUN1}:QA-${RERUN1} --id visit=$VISIT --tract=$tract -j ${NSLOTS} -c doWriteParquetTables=False
 fi                                                                                                                                                                          
                                                                                                                                                                                                                     
                                                                                                                                                                                                                     

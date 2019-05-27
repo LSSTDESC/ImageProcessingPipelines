@@ -1,0 +1,4 @@
+#!/bin/bash
+
+echo forcedPhotCcd.py ${IN_DIR} -j \$((NSLOTS+1)) --rerun ${RERUN1} --id visit=${VISIT} --timeout 999999999 -c references.skipMissing=True
+echo \${JOB_ID} ${VISIT} \${JOBCONTROL_LOGFILE} \${CUR_SCRIPT} >> ${IN_DIR}/forcedPhotCcd_housekeeping.txt
