@@ -2,14 +2,14 @@
 
 # checkpoint
 source ${SETUP_LOCATION}/checkpoint
-DPDD_DIR=${WORKDIR}/dpdd
+DPDD_DIR=${OUT_DIR}/dpdd/${RERUN}/object_table_summary/
 mkdir -p $DPDD_DIR
 
 #DM_SETUP=${DM_SETUP}
 #source ${SETUP_LOCATION}/DMsetup.sh
 #export OMP_NUM_THREADS=1
 
-echo "DPDD : make summary files for tract=${TRACT}"
+echo "DPDD : generate files for object table in tract=${TRACT}"
 
 DC2PROD="${ROOT_SOFTS}/DC2-production/scripts"
 echo python ${DC2PROD}/merge_tract_cat.py "${OUT_DIR}/rerun/${RERUN2}" ${TRACT} --output_dir=${DPDD_DIR}
