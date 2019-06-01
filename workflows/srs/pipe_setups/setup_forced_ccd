@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# checkpoint
+source ${SETUP_LOCATION}/checkpoint
+
+if [ ! -d "$IN_DIR/rerun/$RERUN1/deepCoadd" ]; then
+    makeSkyMap.py ${IN_DIR} --rerun ${RERUN}
+    #turn the absolute path into a relative one for the root entry in the yaml file, to ease shipping to NERSC
+    #sed -i -e 's+'${IN_DIR}'+..\/..+g' ${IN_DIR}rerun/$RERUN1/repositoryCfg.yaml
+fi
+
+while read id; do
+  IFS="=" read DUMMY1 DUMMY2 <<< $id
+  if [ -z "${DUMMY2}" ]; then
+      visit=$id #=$DUMMY1
+      visit_cmd="--id visit=${visit}"
+  else
+      visit=$DUMMY2
+      visit_cmd=$id
+  fi
+  pipelineSet VISIT $visit
+
+  pipelineCreateStream task_forced_ccd -1 VISIT="${visit}"
+done < ${VISIT_FILE}
+

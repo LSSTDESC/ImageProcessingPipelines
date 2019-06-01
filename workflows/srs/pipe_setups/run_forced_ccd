@@ -1,4 +1,15 @@
 #!/bin/bash
 
-echo forcedPhotCcd.py ${IN_DIR} -j \$((NSLOTS+1)) --rerun ${RERUN1} --id visit=${VISIT} --timeout 999999999 -c references.skipMissing=True
-echo \${JOB_ID} ${VISIT} \${JOBCONTROL_LOGFILE} \${CUR_SCRIPT} >> ${IN_DIR}/forcedPhotCcd_housekeeping.txt
+# checkpoint
+source ${SETUP_LOCATION}/checkpoint
+DPDD_DIR=${OUT_DIR}/dpdd/${RERUN}/source_table_summary
+mkdir -p $DPDD_DIR
+
+forcedPhotCcd.py ${IN_DIR} -j ${NSLOTS} --rerun ${RERUN} --id visit=${VISIT} --timeout 999999999 -C ${ROOT_SOFTS}/ImageProcessingPipelines/config/forcedPhotCcdConfig.py
+#echo ${JOB_ID} ${VISIT} ${JOBCONTROL_LOGFILE} ${CUR_SCRIPT} >> ${IN_DIR}/forcedPhotCcd_housekeeping.txt
+
+echo "DPDD : generate files for source table in visit=${VISIT}"
+DC2PROD="${ROOT_SOFTS}/DC2-production/scripts" 
+echo python ${DC2PROD}/merge_source_cat.py "${OUT_DIR}/rerun/${RERUN2}" --visit ${VISIT} --output_dir=${DPDD_DIR} --silent 
+python ${DC2PROD}/merge_source_cat.py "${OUT_DIR}/rerun/${RERUN2}" --visit ${VISIT} --output_dir=${DPDD_DIR} --silent
+
