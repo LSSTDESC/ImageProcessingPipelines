@@ -14,6 +14,10 @@ if [ ! -d "$OUT_DIR/rerun/$RERUN2/deepCoadd" ]; then
     cp -r $IN_DIR/rerun/$RERUN1/tracts_mapping.sqlite3 $IN_DIR/rerun/$RERUN2/
 #turn the absolute path into a relative one for the root entry in the yaml file, to ease shipping to NERSC
     #sed -i -e 's+'${IN_DIR}'+..\/..+g' ${IN_DIR}rerun/$RERUN2/repositoryCfg.yaml
+    #Prepare the separate u and grizy reruns that occur in run_coaddDriver
+    number=`grep -n ${RERUN1} ${OUT_DIR}/rerun/${RERUN2}/repositoryCfg.yaml | cut -f1 -d:`
+    sed -i "$((number+1))i -\ ../${RERUN2}-u" ${OUT_DIR}/rerun/${RERUN2}/repositoryCfg.yaml
+    sed -i "$((number+2))i -\ ../${RERUN2}-grizy" ${OUT_DIR}/rerun/${RERUN2}/repositoryCfg.yaml
 fi
 
 #retrieve or build the list of tracts
