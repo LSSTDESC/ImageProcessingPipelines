@@ -10,6 +10,6 @@ forcedPhotCcd.py ${IN_DIR} -j ${NSLOTS} --rerun ${RERUN} --id visit=${VISIT} --t
 
 echo "DPDD : generate files for source table in visit=${VISIT}"
 DC2PROD="${ROOT_SOFTS}/DC2-production/scripts" 
-echo python ${DC2PROD}/merge_source_cat.py "${OUT_DIR}/rerun/${RERUN2}" --visit ${VISIT} --output_dir=${DPDD_DIR} --silent 
-python ${DC2PROD}/merge_source_cat.py "${OUT_DIR}/rerun/${RERUN2}" --visit ${VISIT} --output_dir=${DPDD_DIR} --silent
+echo python ${DC2PROD}/merge_source_cat.py "${OUT_DIR}/rerun/${RERUN2}" --visits ${VISIT} --output_dir=${DPDD_DIR}
+python ${DC2PROD}/merge_source_cat.py "${OUT_DIR}/rerun/${RERUN2}" --visits ${VISIT} --output_dir=${DPDD_DIR}
 
