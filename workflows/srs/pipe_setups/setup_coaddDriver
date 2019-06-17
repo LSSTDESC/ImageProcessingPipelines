@@ -1,49 +1,47 @@
 #!/bin/bash
 
-### build a coaddDriver script for each filter and for the tract and set of patches passed as input
-### and send these scripts to the farm
-
 # checkpoint
-source ${SETUP_LOCATION}/checkpoint
+#source ${SETUP_LOCATION}/checkpoint
 
 
-# build_coaddDriver_scripts () {
-#     FILT=$1
-#     #again we need to fiddle around with patches
-#     IFS='^' read -ra array <<< ${PATCH}
-#     patch_str="(";for d in ${array[@]}; do patch_str+="patch='(${d//,/, })' or ";done
-#     patch_str=${patch_str::-4}\)
-#     visit_list=`sqlite3 ${OUT_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 "SELECT DISTINCT visit,detector FROM overlaps WHERE tract=${TRACT} and filter='${FILT}' and ${patch_str}"`
-#     mkdir -p ${WORKDIR}/${streamID}/${TRACT}
-#     visit_file=${WORKDIR}/${streamID}/${TRACT}/${PATCH}_${FILT}_visits.list
-#     touch ${visit_file}
-#     for line in $visit_list; do 
-# 	IFS="|" read visit detector <<< $line
-# 	echo "--selectId visit=$visit detector=$detector">>${visit_file}
-#     done
-    
-#     cmd="coaddDriver.py ${OUT_DIR} --rerun $RERUN --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores \$((NSLOTS+1)) --doraise --longlog"
-#     if [ $FILT = u ]; then
-# 	cmd=$cmd+" --configfile=${OBS_LSST_DIR}/config/coaddDriver_noPSF.py"
-#     fi
-#     export cmd
+FILEDIR=${WORKDIR}/${streamID}
+mkdir -p $FILEDIR
 
-#     cat> $2<<EOF
-# DM_SETUP=${DM_SETUP}
-# source ${SETUP_LOCATION}/DMsetup.sh
-# export OMP_NUM_THREADS=1
-# $cmd
-# EOF
-# chmod a+x $2
-# }
+IFS='^' read -ra array <<< ${PATCH}
+patch_str="(";for d in ${array[@]}; do patch_str+="patch='(${d//,/, })' or ";done
+patch_str=${patch_str::-4}\)
 
 for FILT in $(echo ${FILTERS} | tr "," "\n")
 do
-    # script=${WORKDIR}/${streamID}/${TRACT}/tract_${PATCH}_$FILT.sh
-    # build_coaddDriver_scripts $FILT $script
-    # #pipelineSet does not seem to do the job here.... but leaving for now
-    # pipelineSet DM_SETUP ${DM_SETUP} 
-    # pipelineSet WORK_DIR ${WORK_DIR} 
-    echo pipelineCreateStream task_coaddDriver "FILT="\""${FILT}"\"""
-    pipelineCreateStream task_coaddDriver -1 "FILT="\""${FILT}"\"""
+    visit_list=`sqlite3 ${OUT_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 "SELECT DISTINCT visit FROM overlaps WHERE tract=${TRACT} and filter='${FILT}' and ${patch_str}"`
+    echo $visit_list
+
+    if [[ -z "${COADD_VISITS}" ]]; then
+	usable_visits=$visit_list
+    else
+	comm -12 <(sort ${COADD_VISITS}) <(sort <<<"${visit_list[*]}")
+	usable_visits=`comm -12 <(sort ${COADD_VISITS}) <(sort <<<"${visit_list[*]}")`
+    fi
+    echo "usable visits: ${usable_visits}"
+
+    if [[ ! -z "${usable_visits}" ]]; then
+	visit_file=${WORKDIR}/${streamID}/${TRACT}_${PATCH}_${FILT}_visits.list
+	if [ -f "${visit_file}" ]; then
+	    rm "${visit_file}"
+	fi
+	touch ${visit_file}
+	for line in $usable_visits; do
+	    detector_list=`sqlite3 ${OUT_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 "SELECT DISTINCT detector FROM overlaps WHERE visit=${line} and tract=${TRACT} and filter='${FILT}' and ${patch_str}"`
+	    #IFS="|" read visit detector <<< $line
+	    for detector in $detector_list; do
+		echo "--selectId visit=$line detector=$detector">>${visit_file}
+	    done
+	done
+	echo pipelineCreateStream task_coaddDriver "FILT="\""${FILT}"\"",FILEDIR="\""${FILEDIR}"\"""
+	pipelineCreateStream task_coaddDriver -1 "FILT="\""${FILT}"\"",FILEDIR="\""${FILEDIR}"\""" 
+    else
+	echo "No visit match the requested tract/patch/filter"
+    fi
+    # echo pipelineCreateStream task_coaddDriver "FILT="\""${FILT}"\"""
+    # pipelineCreateStream task_coaddDriver -1 "FILT="\""${FILT}"\"""
 done

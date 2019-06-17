@@ -1,23 +1,29 @@
 #!/bin/bash
 
 echo "Working on TRACT=${TRACT}, PATH=${PATCH}, FILT=${FILT}"
+# mkdir -p ${WORKDIR}/${streamID}
 
-IFS='^' read -ra array <<< ${PATCH}
-patch_str="(";for d in ${array[@]}; do patch_str+="patch='(${d//,/, })' or ";done 
-patch_str=${patch_str::-4}\)
+# IFS='^' read -ra array <<< ${PATCH}
+# patch_str="(";for d in ${array[@]}; do patch_str+="patch='(${d//,/, })' or ";done 
+# patch_str=${patch_str::-4}\)
+# visit_list=`sqlite3 ${OUT_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 "SELECT DISTINCT visit,detector FROM overlaps WHERE tract=${TRACT} and filter='${FILT}' and ${patch_str}"`
 
-visit_list=`sqlite3 ${OUT_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 "SELECT DISTINCT visit,detector FROM overlaps WHERE tract=${TRACT} and filter='${FILT}' and ${patch_str}"`
-mkdir -p ${WORKDIR}/${streamID}/${TRACT}
-visit_file=${WORKDIR}/${streamID}/${TRACT}/${PATCH}_${FILT}_visits.list 
-touch ${visit_file}
-for line in $visit_list; do
-    IFS="|" read visit detector <<< $line 
-    echo "--selectId visit=$visit detector=$detector">>${visit_file}
-done
+# if [[ -z ${COADD_VISITS} ]]; then
+#     usable_visits=`comm -12 <(sort ${COADD_VISITS}) <(sort <<<"${visit_list[*]}")`
+# fi
+
+visit_file=${FILEDIR}/${TRACT}_${PATCH}_${FILT}_visits.list 
+# touch ${visit_file}
+# for line in $visit_list; do
+#     IFS="|" read visit detector <<< $line 
+#     echo "--selectId visit=$visit detector=$detector">>${visit_file}
+# done
 
 
 if [ $FILT = u ]; then
-    coaddDriver.py ${OUT_DIR} --rerun $RERUN --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog --configfile=${OBS_LSST_DIR}/config/coaddDriver_noPSF.py --clobber-config
+    echo "coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-u --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog --configfile=${OBS_LSST_DIR}/config/coaddDriver_noPSF.py"
+    coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-u --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog --configfile=${OBS_LSST_DIR}/config/coaddDriver_noPSF.py
 else
-    coaddDriver.py ${OUT_DIR} --rerun $RERUN --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog --clobber-config
+    coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog
 fi
+
