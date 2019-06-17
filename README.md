@@ -1,4 +1,7 @@
-# Alert Production and Data Release Pipelines
+# LSST Data Release Production (DRP) Pipeline
 
-These are image processing pipeline implementations using the LSST Stack.
+This repo contains the DESC version of the LSST image processing DRP pipeline.
+
+Documentation can be found on the [wiki pages](https://github.com/LSSTDESC/ImageProcessingPipelines/wiki).
+
 
