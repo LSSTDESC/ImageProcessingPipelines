@@ -9,8 +9,8 @@ source ${SETUP_LOCATION}/checkpoint
 #source ${DM_SETUP_SCRIPT}
 #export OMP_NUM_THREADS=1
 
-echo processDeblendedCoaddsMetacalMax.py ${OUT_DIR} --rerun ${RERUN} --id tract=${TRACT} patch=${PATCH} filter=r^i^z -C ${ROOT_SOFTS}/ImageProcessingPipelines/config/mcal-filters.py -C ${ROOT_SOFTS}/ImageProcessingPipelines/config/ngmix-deblended-mcalmax.py --loglevel processDeblendedCoaddsMetacalMax=WARN
+echo processDeblendedCoaddsMetacalMax.py ${OUT_DIR} --rerun ${RERUN} --id tract=${TRACT} patch=${PATCH} filter=g^r^i^z -C ${ROOT_SOFTS}/ImageProcessingPipelines/config/mcal-filters.py -C ${ROOT_SOFTS}/ImageProcessingPipelines/config/ngmix-deblended-mcalmax.py --loglevel processDeblendedCoaddsMetacalMax=WARN
 
-processDeblendedCoaddsMetacalMax.py ${OUT_DIR} --rerun ${RERUN} --id tract=${TRACT} patch=${PATCH} filter=r^i^z -C ${ROOT_SOFTS}/ImageProcessingPipelines/config/mcal-filters.py -C ${ROOT_SOFTS}/ImageProcessingPipelines/config/ngmix-deblended-mcalmax.py --loglevel processDeblendedCoaddsMetacalMax=WARN
+processDeblendedCoaddsMetacalMax.py ${OUT_DIR} --rerun ${RERUN} --id tract=${TRACT} patch=${PATCH} filter=g^r^i^z -C ${ROOT_SOFTS}/ImageProcessingPipelines/config/mcal-filters.py -C ${ROOT_SOFTS}/ImageProcessingPipelines/config/ngmix-deblended-mcalmax.py --loglevel processDeblendedCoaddsMetacalMax=WARN
 
 echo \{\"job_type\":\"metacal\", \"stream_id\":\"${streamID}\", \"jobid\":\"${JOB_ID}\", \"logfile\":\"${JOBCONTROL_LOGFILE}\", \"release\":\"${DM_RELEASE}\",\"run\":\"${RUN}\",\"tag\":\"${SETUP_TAG}\",\"tract\":\"${TRACT}\",\"patch\":\"${PATCH}\"\} >> ${WORKDIR}/postcoadd_housekeeping.txt
