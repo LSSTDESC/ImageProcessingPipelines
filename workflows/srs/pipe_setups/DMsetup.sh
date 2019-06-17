@@ -52,12 +52,13 @@ else
     setup meas_extensions_ngmix  dc2-run2.1
     export PYTHONPATH=${ROOT_SOFTS}/ngmix/build/lib:$PYTHONPATH
     eups list meas_extensions_ngmix
+    setup meas_extensions_psfex
 
     echo "checking ngmix availability..."
     python -c "import ngmix"
     echo "done"
 
-    echo "setting pipe_analysis"
+    echo "setting pipe_analysis for QA"
     eups undeclare pipe_analysis dc2-run2.1
     eups declare -r $ROOT_SOFTS/pipe_analysis pipe_analysis dc2-run2.1
     setup display_matplotlib
