@@ -1,5 +1,10 @@
 #!/bin/bash
 
+
+# checkpoint
+source ${SETUP_LOCATION}/checkpoint
+
+
 echo "Working on TRACT=${TRACT}, PATH=${PATCH}, FILT=${FILT}"
 # mkdir -p ${WORKDIR}/${streamID}
 
