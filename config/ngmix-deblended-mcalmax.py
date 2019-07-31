@@ -97,7 +97,7 @@ config.stamps.bits_to_null = [
 # well cause a detection/selection bias we can't control
 config.stamps.bits_to_cut = [
     'BRIGHT_OBJECT',
-    'INEXACT_PSF',
+    #'INEXACT_PSF',
     #'NOT_DEBLENDED',
 ]
 
