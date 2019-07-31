@@ -11,4 +11,4 @@ BASEDIR=${IN_DIR}/work/${RERUN}/${streamID}
 
 echo "Merging registries in ${WORKDIR}/registries"
 
-merge_registries.py "RAW2VISIT" "${BASEDIR}/task_ingestion/${streamID}/registries/registry_*.sqlite3" "${IN_DIR}/registry.sqlite3"
+merge_registries.sh "RAW2VISIT" "${BASEDIR}/task_ingestion/${streamID}/registries/registry_*.sqlite3" "${IN_DIR}/registry.sqlite3"
