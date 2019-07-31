@@ -45,6 +45,7 @@ else
     eups declare -r $ROOT_SOFTS/obs_lsst obs_lsst dc2-run2.1
     setup obs_lsst  dc2-run2.1
     eups list obs_lsst
+    cd ${ROOT_SOFTS}/obs_lsst;git status;cd -
 
     echo "setting meas_extensions_ngmix"
     eups undeclare meas_extensions_ngmix  dc2-run2.1
@@ -53,17 +54,25 @@ else
     export PYTHONPATH=${ROOT_SOFTS}/ngmix/build/lib:$PYTHONPATH
     eups list meas_extensions_ngmix
     setup meas_extensions_psfex
-
+    cd ${ROOT_SOFTS}/meas_extensions_ngmix;git status;cd -
     echo "checking ngmix availability..."
-    python -c "import ngmix"
-    echo "done"
+    python -c "import ngmix;print(\"NGMIX %s\"%ngmix.__version__)"
 
-    echo "setting pipe_analysis for QA"
-    eups undeclare pipe_analysis dc2-run2.1
-    eups declare -r $ROOT_SOFTS/pipe_analysis pipe_analysis dc2-run2.1
-    setup display_matplotlib
-    setup meas_extensions_astrometryNet
-    setup pipe_analysis  dc2-run2.1
-    eups list pipe_analysis
+    export PYTHONPATH=$PYTHONPATH:${ROOT_SOFTS}/generic-catalog-reader/lib/python3.7/site-packages
+    python -c "import GCR;print(f'GCR:{GCR.__version__}')"
+    export PYTHONPATH=$PYTHONPATH:${ROOT_SOFTS}/gcr-catalogs/lib/python3.7/site-packages
+    python -c "import GCRCatalogs;print(f'GCRCatalogs:{GCRCatalogs.__version__}')"
+    export PYTHONPATH=$PYTHONPATH:${ROOT_SOFTS}/pyarrow_conda/lib/python3.7/site-packages;cd -
+    python -c "import pyarrow;print(f'pyarrow:{pyarrow.__version__}')"
+
+
+    # pipe_analysis not ready for parallel execution
+    # echo "setting pipe_analysis for QA"
+    # eups undeclare pipe_analysis dc2-run2.1
+    # eups declare -r $ROOT_SOFTS/pipe_analysis pipe_analysis dc2-run2.1
+    # setup display_matplotlib
+    # setup meas_extensions_astrometryNet
+    # setup pipe_analysis  dc2-run2.1
+    # eups list pipe_analysis
 fi
 
