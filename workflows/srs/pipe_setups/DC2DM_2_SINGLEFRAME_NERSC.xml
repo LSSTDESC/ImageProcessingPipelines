@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pipeline xmlns="http://glast-ground.slac.stanford.edu/pipeline" 
+          xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" 
+          xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
+			     http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
+  
+  <task name="DC2DM_2_SINGLEFRAME_NERSC" type="LSST" version="2.4">
+    <notation>Task to run the DM stack on DC2 simulated images</notation>
+    <variables>
+      <!-- Job site and configuration-->
+      <var name="RUNID">Run2.1.1i</var>
+      <var name="SETUP_TAG">v1</var>
+      <var name="SITE">NERSC</var>
+      <var name="JOBSITE">${SITE=="NERSC" ? "CORIP" : SITE}</var>
+      <var name="MAXCPU">10000</var>
+      <var name="MAXCPULONG">10000</var>
+      <var name="MAXCPU_RUN">28800</var>
+      <!-- MAXMEM in kB - used for scheduling but not enforced by pilot jobs
+           -->
+      <var name="MAXMEM_RUN">44000000</var>
+
+      <var name="IN2P3_BATCH_OPTIONS"> -l sps=1,os=cl7,xrootd=0 </var>
+      <var name="IN2P3_HUGE_OPTIONS"> -q huge </var>
+      <var name="IN2P3_MCLONG_OPTIONS"> -q mc_long -pe multicores 8 </var>
+      <var name="IN2P3_MCHUGE_OPTIONS"> -q mc_huge -pe multicores 8 </var>
+      <var name="NERSC_BATCH_OPTIONS"> -p HKDRP | -L SCRATCH,projecta,cvmfs | -C knl </var>
+      <var name="BATCH_OPTIONS">${SITE=="NERSC" ? "${NERSC_BATCH_OPTIONS}" : "${IN2P3_BATCH_OPTIONS} "}</var>
+      <var name="EXTRA_OPTIONS_0">${SITE=="NERSC" ? " " : "${IN2P3_HUGE_OPTIONS} "}</var>
+      <var name="EXTRA_OPTIONS_1">${SITE=="NERSC" ? " " : "${IN2P3_MCHUGE_OPTIONS} "}</var>
+      <var name="EXTRA_OPTIONS_2">${SITE=="NERSC" ? " " : "${IN2P3_MCLONG_OPTIONS} "}</var>
+      <var name="EXTRA_OPTIONS_3">${SITE=="NERSC" ? " " : "-q long "}</var>
+      <!-- Base directory where script files will be placed -->
+      <var name="PIPE_SUBDIR">ImageProcessingPipelines/workflows/srs</var>
+      <var name="PIPE_SETUPS">${PIPE_SUBDIR}/pipe_setups</var>
+      <var name="PIPE_SCRIPTS">${PIPE_SUBDIR}/pipe_scripts</var>
+      <var name="DM_CONFIGS">ImageProcessingPipelines/configs</var>
+      <!-- Local to JOBSITE -->
+      <var name="IN2P3_ROOT_SOFTS">/pbs/throng/lsst/software/desc/DC2/${RUNID}/${SETUP_TAG}</var>
+      <var name="NERSC_ROOT_SOFTS">/global/common/software/lsst/cori-haswell-gcc/DC2/run2.1.1i/software</var>  
+      <var name="ROOT_SOFTS">${SITE=="NERSC" ? NERSC_ROOT_SOFTS : IN2P3_ROOT_SOFTS}</var>
+      <var name="IN2P3_SCRIPT_LOCATION">${IN2P3_ROOT_SOFTS}/${PIPE_SCRIPTS}</var>
+      <var name="IN2P3_SETUP_LOCATION">${IN2P3_ROOT_SOFTS}/${PIPE_SETUPS}</var>
+      <var name="IN2P3_CONFIGS_LOCATION">${IN2P3_ROOT_SOFTS}/${DM_CONFIGS}</var>
+      <var name="NERSC_SCRIPT_LOCATION">${NERSC_ROOT_SOFTS}/pipe_scripts</var>
+      <var name="NERSC_SETUP_LOCATION">${NERSC_ROOT_SOFTS}/pipe_setups</var>
+      <var name="NERSC_CONFIGS_LOCATION">${NERSC_ROOT_SOFTS}/dm_configs</var>
+      <var name="SCRIPT_LOCATION">${SITE=="NERSC" ? NERSC_SCRIPT_LOCATION : IN2P3_SCRIPT_LOCATION}</var>
+      <var name="SETUP_LOCATION">${SITE=="NERSC" ? NERSC_SETUP_LOCATION : IN2P3_SETUP_LOCATION}</var>
+      <var name="CONFIGS_LOCATION">${SITE=="NERSC" ? NERSC_CONFIGS_LOCATION : IN2P3_CONFIGS_LOCATION}</var>
+      <!-- Log Files -->
+      <var name="IN2P3_logRoot">/sps/lsst/users/descprod/Pipeline2/Logs</var>    
+      <var name="NERSC_logRoot">/global/cscratch1/sd/descdm/DC2/${RUNID}/logs</var>    
+      <var name="logRoot">${SITE=="NERSC" ? NERSC_logRoot : IN2P3_logRoot}</var>
+      <!-- Script names -->
+      <var name="BATCH_NAME">DC2Batch.sh</var>
+    </variables>
+
+    <!-- process_SingleFrameDriver -->
+    <!--   setup -->
+    <process name="setup_calexp" site="${JOBSITE}">
+      <notation>Setup for calexp processing on visits</notation>
+        <variables>
+          <var name="streamID">${format(pipeline.stream, "%01d")}</var>
+        </variables>
+      <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
+	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
+      <createsSubtasks>
+	<subtask>task_calexp</subtask>
+      </createsSubtasks>	
+    </process>
+    <process name="finish_calexp" site="${JOBSITE}">
+      <notation>Finish calexp production</notation>
+        <variables>
+          <var name="streamID">${format(pipeline.stream, "%01d")}</var>
+        </variables>
+      <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
+           executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
+      <depends>
+        <after process="task_calexp.run_calexp"/>
+      </depends>
+    </process>
+    
+
+    <task name="task_calexp" type="LSST">
+      <process name="run_calexp" site="${JOBSITE}">
+        <variables>
+          <var name="streamID">${format(pipeline.stream, "%s")}</var>
+        </variables>
+    <job maxCPU="${MAXCPU_RUN}" 
+         maxMemory="${MAXMEM_RUN}"
+	     batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_2} "
+	     executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
+      </process>
+    </task>    
+  </task>
+</pipeline>
