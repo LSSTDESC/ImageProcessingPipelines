@@ -40,6 +40,18 @@ else
     # setup obs_lsst  dc2-run1.2-v3
     # setup pipe_tasks u-rearmstr-desc-ccd-fix_w39
 
+    echo "setting up local libraries"
+    echo "-- checking pyarrow..."
+    export PYTHONPATH=$PYTHONPATH:${ROOT_SOFTS}/pyarrow_conda/lib/python3.7/site-packages
+    python -c "import pyarrow;print(f'pyarrow:{pyarrow.__version__}')"
+    export PYTHONPATH=${ROOT_SOFTS}/local/lib/python3.7/site-packages:$PYTHONPATH
+    echo "-- checking ngmix..."
+    python -c "import ngmix;print(\"NGMIX %s\"%ngmix.__version__)"
+    echo "-- checking GCR..."
+    python -c "import GCR;print(f'GCR:{GCR.__version__}')"
+    echo "-- checking GCRtalogs..."
+    python -c "import GCRCatalogs;print(f'GCRCatalogs:{GCRCatalogs.__version__}')"
+    
     echo "setting obs_lsst"
     eups undeclare obs_lsst dc2-run2.1
     eups declare -r $ROOT_SOFTS/obs_lsst obs_lsst dc2-run2.1
@@ -51,20 +63,9 @@ else
     eups undeclare meas_extensions_ngmix  dc2-run2.1
     eups declare -r $ROOT_SOFTS/meas_extensions_ngmix meas_extensions_ngmix dc2-run2.1
     setup meas_extensions_ngmix  dc2-run2.1
-    export PYTHONPATH=${ROOT_SOFTS}/ngmix/build/lib:$PYTHONPATH
     eups list meas_extensions_ngmix
     setup meas_extensions_psfex
     cd ${ROOT_SOFTS}/meas_extensions_ngmix;git status;cd -
-    echo "checking ngmix availability..."
-    python -c "import ngmix;print(\"NGMIX %s\"%ngmix.__version__)"
-
-    export PYTHONPATH=$PYTHONPATH:${ROOT_SOFTS}/generic-catalog-reader/lib/python3.7/site-packages
-    python -c "import GCR;print(f'GCR:{GCR.__version__}')"
-    export PYTHONPATH=$PYTHONPATH:${ROOT_SOFTS}/gcr-catalogs/lib/python3.7/site-packages
-    python -c "import GCRCatalogs;print(f'GCRCatalogs:{GCRCatalogs.__version__}')"
-    export PYTHONPATH=$PYTHONPATH:${ROOT_SOFTS}/pyarrow_conda/lib/python3.7/site-packages;cd -
-    python -c "import pyarrow;print(f'pyarrow:{pyarrow.__version__}')"
-
 
     # pipe_analysis not ready for parallel execution
     # echo "setting pipe_analysis for QA"
