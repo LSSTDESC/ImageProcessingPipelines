@@ -22,7 +22,7 @@ fi
 
 #retrieve or build the list of tracts
 if [[ -z "${TRACT_FILE}" ]]; then
-    sqlite3 ${OUT_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 "select DISTINCT tract from overlaps;" ${WORKDIR}/all_tracts.list
+    sqlite3 ${OUT_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 "select DISTINCT tract from overlaps;" > ${WORKDIR}/all_tracts.list
     TRACT_FILE=${WORKDIR}/all_tracts.list
     export TRACT_FILE
     pipelineSet TRACT_FILE ${TRACT_FILE}
