@@ -1,0 +1,32 @@
+#!/bin/bash
+
+cd $1
+shift
+
+# this is to move pip --user installs outside of the default
+# location in ~
+# really a conda/virtualenv should be used for this, but the
+# shifter image being used already has one of those, and it is
+# not writeable.
+# in a more production setting, the shifter image would have
+# parsl and its dependencies installed there.
+# but for me to hack on parsl, I want my own easily editable
+# package repo in addition to the shifter image provided
+# set of installs.
+
+export PYTHONUSERBASE=/global/homes/b/bxc/dm/in-shifter-userbase
+
+source /opt/lsst/software/stack/loadLSST.bash
+setup lsst_distrib
+setup obs_lsst
+export PYTHONPATH=/global/homes/b/bxc/dm/parsl:$PYTHONPATH
+
+# the following two lines were useful for uncommenting to debug
+# python environment / startup problems
+# if bash is left in here, then inside parsl, with no stdin, it
+# exits right away and carries onto process_worker_pool, which
+# is convenient for debugging
+# bash
+# ingestDriver.py --batch-type none /global/cscratch1/sd/bxc/parslTest/test0 /global/projecta/projectdirs/lsst/production/DC2_ImSim/Run2.1.1i/sim/agn-test/00385844to00445379/00425529/lsst_a_425529_R14_S00_y.fits --cores 1 --mode link --output /global/cscratch1/sd/bxc/parslTest/test0 -c clobber=True allowError=True register.ignore=True
+
+/global/homes/b/bxc/dm/parsl/parsl/executors/high_throughput/process_worker_pool.py $*

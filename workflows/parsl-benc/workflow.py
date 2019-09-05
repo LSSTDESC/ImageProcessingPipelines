@@ -113,7 +113,7 @@ truncated_ingest_list = files_to_ingest[0:3]
 # view of what is happening
 
 @bash_app(executors=['worker-nodes'])
-def ingest(file, in_dir):
+def ingest(file, in_dir, stdout=parsl.AUTO_LOGNAME, stderr=parsl.AUTO_LOGNAME):
     """This comes from workflows/srs/pipe_setups/setup_ingest.
     The NERSC version runs just command; otherwise a bunch of other stuff
     happens - which I'm not implementing here at the moment.
@@ -121,7 +121,7 @@ def ingest(file, in_dir):
     There SRS workflow using @{chunk_of_ingest_list}, but I'm going to specify a single filename
     directly for now.
     """
-    return "ingestDriver.py {in_dir} {arg1} --cores 1 --mode link --output {in_dir} -c clobber=True allowError=True register.ignore=True".format(in_dir=in_dir, arg1=file.strip())
+    return "ingestDriver.py --batch-type none {in_dir} {arg1} --cores 1 --mode link --output {in_dir} -c clobber=True allowError=True register.ignore=True".format(in_dir=in_dir, arg1=file.strip())
 
 in_dir = "/global/cscratch1/sd/bxc/parslTest/test0"
 
