@@ -44,7 +44,7 @@ cori_queue_executor = HighThroughputExecutor(
             # process workers run inside the appropriate shifter container with
             # lsst setup commands executed. That means that everything running in
             # those workers will inherit the correct environment.
-            launch_cmd="/global/homes/b/bxc/dm/ImageProcessingPipelines/workflows/parsl-benc/launch_process_worker_pool.py {debug} -c {cores_per_worker} --task_url={task_url} --result_url={result_url}",
+            launch_cmd="/global/homes/b/bxc/dm/ImageProcessingPipelines/workflows/parsl-benc/worker-wrapper process_worker_pool.py {debug} -c {cores_per_worker} --task_url={task_url} --result_url={result_url}",
 
             heartbeat_period = 300,
             heartbeat_threshold = 1200,

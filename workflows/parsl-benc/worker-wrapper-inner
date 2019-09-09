@@ -20,6 +20,7 @@ source /opt/lsst/software/stack/loadLSST.bash
 setup lsst_distrib
 setup obs_lsst
 export PYTHONPATH=/global/homes/b/bxc/dm/parsl:$PYTHONPATH
+export PATH=/global/homes/b/bxc/dm/parsl/parsl/executors/high_throughput/:$PATH
 
 # the following two lines were useful for uncommenting to debug
 # python environment / startup problems
@@ -29,4 +30,5 @@ export PYTHONPATH=/global/homes/b/bxc/dm/parsl:$PYTHONPATH
 # bash
 # ingestDriver.py --batch-type none /global/cscratch1/sd/bxc/parslTest/test0 /global/projecta/projectdirs/lsst/production/DC2_ImSim/Run2.1.1i/sim/agn-test/00385844to00445379/00425529/lsst_a_425529_R14_S00_y.fits --cores 1 --mode link --output /global/cscratch1/sd/bxc/parslTest/test0 -c clobber=True allowError=True register.ignore=True
 
-/global/homes/b/bxc/dm/parsl/parsl/executors/high_throughput/process_worker_pool.py $*
+# /global/homes/b/bxc/dm/parsl/parsl/executors/high_throughput/process_worker_pool.py $*
+$*
