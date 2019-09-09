@@ -35,6 +35,16 @@ max_blocks = 3 # aside from maxwalltime/discount/queue limit considerations, it 
                # more easily?
 compute_nodes = 1
 walltime = "00:27:00"
+
+
+class CoriShifterSRunLauncher:
+    def __init__(self):
+        self.srun_launcher = SrunLauncher()
+
+    def __call__(self, command, tasks_per_node, nodes_per_block):
+        new_command="/global/homes/b/bxc/dm/ImageProcessingPipelines/workflows/parsl-benc/worker-wrapper {}".format(command)
+        return self.srun_launcher(new_command, tasks_per_node, nodes_per_block)
+
 cori_queue_executor = HighThroughputExecutor(
             label='worker-nodes',
             address=address_by_hostname(),
@@ -44,7 +54,6 @@ cori_queue_executor = HighThroughputExecutor(
             # process workers run inside the appropriate shifter container with
             # lsst setup commands executed. That means that everything running in
             # those workers will inherit the correct environment.
-            launch_cmd="/global/homes/b/bxc/dm/ImageProcessingPipelines/workflows/parsl-benc/worker-wrapper process_worker_pool.py {debug} -c {cores_per_worker} --task_url={task_url} --result_url={result_url}",
 
             heartbeat_period = 300,
             heartbeat_threshold = 1200,
@@ -56,7 +65,7 @@ cori_queue_executor = HighThroughputExecutor(
                 min_blocks=1,
                 max_blocks=max_blocks,
                 scheduler_options="""#SBATCH --constraint=haswell""",
-                launcher=SrunLauncher(),
+                launcher=CoriShifterSRunLauncher(),
                 cmd_timeout=60,
                 walltime=walltime
             ),
