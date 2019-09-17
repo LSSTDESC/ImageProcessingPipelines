@@ -13,8 +13,11 @@ from parsl.utils import get_all_checkpoints
 # assumption: this is running with the same-ish python as inside the expected
 # container:
 
-# eg.
+# eg. on the outside:
 #   module load python/3.7-anaconda-2019.07
+#   source activate dm-play
+# with parsl installed in that container
+
 
 # OLD:
 # at least this much, inside a suitable container:
