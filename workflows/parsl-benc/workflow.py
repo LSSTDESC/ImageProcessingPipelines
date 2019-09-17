@@ -2,11 +2,13 @@ import logging
 
 import parsl
 from parsl import bash_app
+from parsl.monitoring import MonitoringHub
 from parsl.addresses import address_by_hostname
 from parsl.config import Config
 from parsl.executors import ThreadPoolExecutor, HighThroughputExecutor
 from parsl.launchers import SrunLauncher
 from parsl.providers import SlurmProvider
+from parsl.utils import get_all_checkpoints
 
 # assumption: this is running with the same-ish python as inside the expected
 # container:
@@ -56,7 +58,7 @@ cori_queue_executor = HighThroughputExecutor(
             # those workers will inherit the correct environment.
 
             heartbeat_period = 300,
-            heartbeat_threshold = 1200,
+            heartbeat_threshold = 1201,
             provider=SlurmProvider(
                 cori_queue,
                 nodes_per_block=compute_nodes,
@@ -71,12 +73,20 @@ cori_queue_executor = HighThroughputExecutor(
             ),
         )
 
-config = Config(executors=[local_executor, cori_queue_executor])
+config = Config(executors=[local_executor, cori_queue_executor],
+                app_cache=True, checkpoint_mode='task_exit',
+                checkpoint_files=get_all_checkpoints(),
+                monitoring=MonitoringHub(
+                    hub_address=address_by_hostname(),
+                    hub_port=55055,
+                    logging_level=logging.INFO,
+                    resource_monitoring_interval=10
+                ))
 
 parsl.load(config)
 
 
-@bash_app(executors=["worker-nodes"])
+@bash_app(executors=["worker-nodes"], cache=True)
 def create_ingest_file_list(pipe_scripts_dir, ingest_source):
     return "{pipe_scripts_dir}/createIngestFileList.py {ingest_source} --recursive --ext .fits".format(pipe_scripts_dir=pipe_scripts_dir, ingest_source=ingest_source)
 
@@ -94,7 +104,7 @@ ingest_list_future = create_ingest_file_list(pipe_scripts_dir, ingest_source)
 # (see  https://github.com/LSSTDESC/DC2-production/issues/359#issuecomment-521330263 )
 # Two centroid files were identified as failing the centroid check and will be omitted from processing: 00458564 (R32 S21) and 00466748 (R43 S21)
 
-@bash_app(executors=["submit-node"])
+@bash_app(executors=["submit-node"], cache=True)
 def filter_in_place(ingest_list_future):
     return "grep --invert-match 466748_R43_S21 filesToIngest.txt > filter-filesToIngest.tmp && mv filter-filesToIngest.tmp filesToIngest.txt"
 
@@ -121,7 +131,7 @@ truncated_ingest_list = files_to_ingest[0:3]
 # cost of the ingest code more, but it will give parsl monitoring and/or checkpointing a better
 # view of what is happening
 
-@bash_app(executors=['worker-nodes'])
+@bash_app(executors=['worker-nodes'], cache=True)
 def ingest(file, in_dir, stdout=parsl.AUTO_LOGNAME, stderr=parsl.AUTO_LOGNAME):
     """This comes from workflows/srs/pipe_setups/setup_ingest.
     The NERSC version runs just command; otherwise a bunch of other stuff
