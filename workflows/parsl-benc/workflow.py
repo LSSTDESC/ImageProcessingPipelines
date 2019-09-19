@@ -135,7 +135,8 @@ truncated_ingest_list = files_to_ingest[0:3]
 # view of what is happening
 
 @bash_app(executors=['worker-nodes'], cache=True)
-def ingest(file, in_dir, stdout=parsl.AUTO_LOGNAME, stderr=parsl.AUTO_LOGNAME):
+def ingest(file, in_dir):
+# def ingest(file, in_dir, stdout=parsl.AUTO_LOGNAME, stderr=parsl.AUTO_LOGNAME):
     """This comes from workflows/srs/pipe_setups/setup_ingest.
     The NERSC version runs just command; otherwise a bunch of other stuff
     happens - which I'm not implementing here at the moment.
