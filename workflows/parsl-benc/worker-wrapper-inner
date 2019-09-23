@@ -22,6 +22,8 @@ setup obs_lsst
 export PYTHONPATH=/global/homes/b/bxc/dm/parsl:$PYTHONPATH
 export PATH=/global/homes/b/bxc/dm/parsl/parsl/executors/high_throughput/:$PATH
 
+export export OMP_NUM_THREADS=1
+
 # the following two lines were useful for uncommenting to debug
 # python environment / startup problems
 # if bash is left in here, then inside parsl, with no stdin, it

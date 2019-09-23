@@ -60,8 +60,8 @@ cori_queue_executor = HighThroughputExecutor(
             # lsst setup commands executed. That means that everything running in
             # those workers will inherit the correct environment.
 
-            heartbeat_period = 300,
-            heartbeat_threshold = 1201,
+            heartbeat_period = 43,
+            heartbeat_threshold = 180,
             provider=SlurmProvider(
                 cori_queue,
                 nodes_per_block=compute_nodes,
@@ -121,7 +121,7 @@ with open("filesToIngest.txt") as f:
 logger.info("There are {} entries in ingest list".format(len(files_to_ingest)))
 
 # for testing, truncated this list heavilty
-truncated_ingest_list = files_to_ingest[0:3]
+truncated_ingest_list = files_to_ingest[0:314]
 
 # we'll then have a list of files that we want to do the "step 1" ingest on
 # the implementation of this in SRS is three sets of tasks:
@@ -134,8 +134,11 @@ truncated_ingest_list = files_to_ingest[0:3]
 # cost of the ingest code more, but it will give parsl monitoring and/or checkpointing a better
 # view of what is happening
 
+def run_ingest(file, in_dir, n):
+    return ingest(file, in_dir, stdout="ingest.{}.stdout".format(n), stderr="ingest.{}.stderr".format(n))
+
 @bash_app(executors=['worker-nodes'], cache=True)
-def ingest(file, in_dir):
+def ingest(file, in_dir, stdout=None, stderr=None):
 # def ingest(file, in_dir, stdout=parsl.AUTO_LOGNAME, stderr=parsl.AUTO_LOGNAME):
     """This comes from workflows/srs/pipe_setups/setup_ingest.
     The NERSC version runs just command; otherwise a bunch of other stuff
@@ -148,7 +151,13 @@ def ingest(file, in_dir):
 
 in_dir = "/global/cscratch1/sd/bxc/parslTest/test0"
 
-ingest_futures = [ingest(f, in_dir) for f in truncated_ingest_list]
+ingest_futures = [run_ingest(f, in_dir, n) for (f, n) in zip(truncated_ingest_list, range(0,len(truncated_ingest_list)))]
+
+# this will wait for all futures to complete before proceeding
+# and then any exceptions will be thrown in ingest_results
+# comprehension afterwards. This gives opportunity for everything
+# to run before hitting an exception.
+[future.exception() for future in ingest_futures]
 
 ingest_results = [future.result() for future in ingest_futures]
 
