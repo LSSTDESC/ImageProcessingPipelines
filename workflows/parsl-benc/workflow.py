@@ -179,6 +179,8 @@ logger.info("ingest(s) completed")
 #   makeSkyMap.py
 #   QUESTION: in xml, this does copying of files out of one rerun dir into another, neither of which is the rerun dir passed to makeSkyMap... what is going on there? I'm going to ignore reruns entirely here if i can...
 
+# QUESTION: what is the concurrency between make_sky_map and the raw visit list? can they run concurrently or must make_sky_map run before generating the raw visit list?
+
 @bash_app(cache=True)
 def make_sky_map(in_dir, rerun, stdout=None, stderr=None):
     return "makeSkyMap.py {} --rerun {}".format(in_dir, rerun)
@@ -189,14 +191,25 @@ skymap_future = make_sky_map(in_dir, rerun, stdout="make_sky_map.stdout", stderr
 skymap_future.result()
 logger.info("makeSkyMap completed")
 
-#   use DB to make a visit file
+#  setup_calexp: use DB to make a visit file
+logger.info("Making visit file from raw_visit table")
 
+@bash_app(cache=True)
+def make_visit_file(in_dir):
+    return 'sqlite3 {}/registry.sqlite3 "select DISTINCT visit from raw_visit;" > all_visits_from_register.list'.format(in_dir)
+
+visit_file_future = make_visit_file(in_dir)
+visit_file_future.result()
+
+logger.info("Finished making visit file")
+
+# setup_calexp:
 #   for each visit line read from visit file, create a task_calexp with that visit as para
 #   on LSST-IN2P2 ...
 #   ... or on NERSC...
 #   split that visit into rafts, and create a task_calexp per (visit,raft)
 
-# creates task_calexp (x n ?)
+
 # finish_calexp - should run after task_calexp.run_calexp
 
 
