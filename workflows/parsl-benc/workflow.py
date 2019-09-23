@@ -60,8 +60,8 @@ cori_queue_executor = HighThroughputExecutor(
             # lsst setup commands executed. That means that everything running in
             # those workers will inherit the correct environment.
 
-            heartbeat_period = 43,
-            heartbeat_threshold = 180,
+            heartbeat_period = 25,
+            heartbeat_threshold = 75,
             provider=SlurmProvider(
                 cori_queue,
                 nodes_per_block=compute_nodes,
@@ -121,7 +121,7 @@ with open("filesToIngest.txt") as f:
 logger.info("There are {} entries in ingest list".format(len(files_to_ingest)))
 
 # for testing, truncated this list heavilty
-truncated_ingest_list = files_to_ingest[0:314]
+truncated_ingest_list = files_to_ingest[0:123]
 
 # we'll then have a list of files that we want to do the "step 1" ingest on
 # the implementation of this in SRS is three sets of tasks:
