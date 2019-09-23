@@ -172,4 +172,32 @@ ingest_results = [future.result() for future in ingest_futures]
 
 logger.info("ingest(s) completed")
 
+# now equivalent of DC2DM_2_SINGLEFRAME_NERSC.xml
+
+# setup_calexp .... eg workflows/srs/pipe_setups/setup_calexp
+
+#   makeSkyMap.py
+#   QUESTION: in xml, this does copying of files out of one rerun dir into another, neither of which is the rerun dir passed to makeSkyMap... what is going on there? I'm going to ignore reruns entirely here if i can...
+
+@bash_app(cache=True)
+def make_sky_map(in_dir, rerun, stdout=None, stderr=None):
+    return "makeSkyMap.py {} --rerun {}".format(in_dir, rerun)
+
+logger.info("launching makeSkyMap")
+rerun = "some_rerun"
+skymap_future = make_sky_map(in_dir, rerun, stdout="make_sky_map.stdout", stderr="make_sky_map.stderr")
+skymap_future.result()
+logger.info("makeSkyMap completed")
+
+#   use DB to make a visit file
+
+#   for each visit line read from visit file, create a task_calexp with that visit as para
+#   on LSST-IN2P2 ...
+#   ... or on NERSC...
+#   split that visit into rafts, and create a task_calexp per (visit,raft)
+
+# creates task_calexp (x n ?)
+# finish_calexp - should run after task_calexp.run_calexp
+
+
 logger.info("Reached the end of the parsl driver for DM pipeline")
