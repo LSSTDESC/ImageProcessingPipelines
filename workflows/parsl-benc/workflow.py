@@ -39,7 +39,7 @@ max_blocks = 3 # aside from maxwalltime/discount/queue limit considerations, it 
                # better to increase max_blocks rather than compute_nodes to fit into schedule
                # more easily?
 compute_nodes = 1
-walltime = "00:27:00"
+walltime = "00:29:30"
 
 
 class CoriShifterSRunLauncher:
@@ -121,7 +121,13 @@ with open("filesToIngest.txt") as f:
 logger.info("There are {} entries in ingest list".format(len(files_to_ingest)))
 
 # for testing, truncated this list heavilty
-truncated_ingest_list = files_to_ingest[0:123]
+truncated_ingest_list = files_to_ingest[0:50]
+
+logger.info("writing truncated list")
+truncatedFileList= "filesToIngestTruncated.txt"
+with open(truncatedFileList, "w") as f:
+    f.writelines(truncated_ingest_list) # caution line endings - writelines needs them, apparently but unsure if readlines trims them off
+logger.info("wrote truncated list")
 
 # we'll then have a list of files that we want to do the "step 1" ingest on
 # the implementation of this in SRS is three sets of tasks:
@@ -139,7 +145,8 @@ def run_ingest(file, in_dir, n):
 
 @bash_app(executors=['worker-nodes'], cache=True)
 def ingest(file, in_dir, stdout=None, stderr=None):
-# def ingest(file, in_dir, stdout=parsl.AUTO_LOGNAME, stderr=parsl.AUTO_LOGNAME):
+    # parsl.AUTO_LOGNAME does not work with checkpointing: see https://github.com/Parsl/parsl/issues/1293
+    # def ingest(file, in_dir, stdout=parsl.AUTO_LOGNAME, stderr=parsl.AUTO_LOGNAME):
     """This comes from workflows/srs/pipe_setups/setup_ingest.
     The NERSC version runs just command; otherwise a bunch of other stuff
     happens - which I'm not implementing here at the moment.
@@ -147,18 +154,22 @@ def ingest(file, in_dir, stdout=None, stderr=None):
     There SRS workflow using @{chunk_of_ingest_list}, but I'm going to specify a single filename
     directly for now.
     """
-    return "ingestDriver.py --batch-type none {in_dir} {arg1} --cores 1 --mode link --output {in_dir} -c clobber=True allowError=True register.ignore=True".format(in_dir=in_dir, arg1=file.strip())
+    return "ingestDriver.py --batch-type none {in_dir} @{arg1} --cores 1 --mode link --output {in_dir} -c clobber=True allowError=True register.ignore=True".format(in_dir=in_dir, arg1=file.strip())
 
 in_dir = "/global/cscratch1/sd/bxc/parslTest/test0"
 
-ingest_futures = [run_ingest(f, in_dir, n) for (f, n) in zip(truncated_ingest_list, range(0,len(truncated_ingest_list)))]
+#ingest_futures = [run_ingest(f, in_dir, n) for (f, n) in zip(truncated_ingest_list, range(0,len(truncated_ingest_list)))]
+ingest_futures = [run_ingest(truncatedFileList, in_dir, 0)] 
 
 # this will wait for all futures to complete before proceeding
 # and then any exceptions will be thrown in ingest_results
 # comprehension afterwards. This gives opportunity for everything
 # to run before hitting an exception.
+logger.info("waiting for ingest(s) to complete")
 [future.exception() for future in ingest_futures]
 
 ingest_results = [future.result() for future in ingest_futures]
+
+logger.info("ingest(s) completed")
 
 logger.info("Reached the end of the parsl driver for DM pipeline")
