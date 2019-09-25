@@ -208,12 +208,17 @@ logger.info("submitting task_calexps")
 
 
 @bash_app(executors=["worker-nodes"], cache=True)
-def task_calexp(in_dir, rerun, visit_id, stdout=None, stderr=None):
+def single_frame_driver(in_dir, rerun, visit_id, raft_name, stdout=None, stderr=None):
     # params for stream are WORKDIR=workdir, VISIT=visit_id
     # this is going to be something like found in workflows/srs/pipe_setups/run_calexp
     # run_calexp uses --cores as NSLOTS+1. I'm using cores 1 because I am not sure of
     # the right parallelism here.
-    return "singleFrameDriver.py --batch-type none {in_dir} --rerun {rerun} --id visit={visit} --cores 1 --timeout 999999999 --loglevel CameraMapper=warn".format(in_dir=in_dir, rerun=rerun, visit=visit_id)
+    return "singleFrameDriver.py --batch-type none {in_dir} --rerun {rerun} --id visit={visit} raftName={raft_name} --cores 1 --timeout 999999999 --loglevel CameraMapper=warn".format(in_dir=in_dir, rerun=rerun, visit=visit_id, raft_name=raft_name)
+
+
+@bash_app(executors=["worker-nodes"], cache=True)
+def raft_list_for_visit(in_dir, visit_id, out_filename):
+    return "sqlite3 {in_dir}/registry.sqlite3 'select distinct raftName from raw where visit={visit_id}' > {out_filename}".format(in_dir = in_dir, visit_id = visit_id, out_filename = out_filename)
 
 with open("all_visits_from_register.list") as f:
     visit_lines = f.readlines()
@@ -221,8 +226,27 @@ with open("all_visits_from_register.list") as f:
 calexp_futs = []
 for (n, visit_id_unstripped) in zip(range(0,len(visit_lines)), visit_lines):
     visit_id = visit_id_unstripped.strip()
-    # assume visit_id really is a visit id... workflows/srs/pipe_setups/setup_calexp has a case where the visit file has two fields per line, and this is handled differently there. I have ignored that here.
-    calexp_futs.append(task_calexp(in_dir, rerun, visit_id, stdout="task_calexp.{}.stdout".format(n), stderr="task_calexp.{}.stderr".format(n)))
+  
+    raft_list_fn = "raft_list_for_visit.{}".format(visit_id)
+
+    raft_list_future = raft_list_for_visit(in_dir, visit_id, raft_list_fn)
+    raft_list_future.result()
+    # this wait here means that we don't get parallelisation so much
+    # there are problems with launching tasks within tasks due to locking up
+    # a local worker... so avoid doing that.
+    # i.e. the monadness
+
+    with open(raft_list_fn) as f:
+        raft_lines = f.readlines()
+
+    for (m, raft_name_stripped) in zip(range(0,len(raft_lines)), raft_lines):
+        raft_name=raft_name_stripped.strip()
+        logger.info("visit {} raft {}".format(visit_id, raft_name))
+
+        # assume visit_id really is a visit id... workflows/srs/pipe_setups/setup_calexp has a case where the visit file has two fields per line, and this is handled differently there. I have ignored that here.
+        # raft_name is the $RAFTNAME environment variable in run_calexp in the XML workflows
+        sfd_output_basename="single_frame_driver.{}.{}".format(m,n)
+        calexp_futs.append(single_frame_driver(in_dir, rerun, visit_id, raft_name, stdout=sfd_output_basename+".stdout", stderr=sfd_output_basename+".stderr"))
 
 logger.info("submitted task_calexps. waiting for completion of all of them.")
 
