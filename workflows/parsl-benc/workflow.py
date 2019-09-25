@@ -1,3 +1,4 @@
+import concurrent.futures
 import logging
 
 import parsl
@@ -181,7 +182,7 @@ logger.info("ingest(s) completed")
 
 # QUESTION: what is the concurrency between make_sky_map and the raw visit list? can they run concurrently or must make_sky_map run before generating the raw visit list?
 
-@bash_app(cache=True)
+@bash_app(executors=["worker-nodes"], cache=True)
 def make_sky_map(in_dir, rerun, stdout=None, stderr=None):
     return "makeSkyMap.py {} --rerun {}".format(in_dir, rerun)
 
@@ -194,7 +195,7 @@ logger.info("makeSkyMap completed")
 #  setup_calexp: use DB to make a visit file
 logger.info("Making visit file from raw_visit table")
 
-@bash_app(cache=True)
+@bash_app(executors=["worker-nodes"], cache=True)
 def make_visit_file(in_dir):
     return 'sqlite3 {}/registry.sqlite3 "select DISTINCT visit from raw_visit;" > all_visits_from_register.list'.format(in_dir)
 
@@ -202,6 +203,35 @@ visit_file_future = make_visit_file(in_dir)
 visit_file_future.result()
 
 logger.info("Finished making visit file")
+
+logger.info("submitting task_calexps")
+
+
+@bash_app(executors=["worker-nodes"], cache=True)
+def task_calexp(in_dir, rerun, visit_id, stdout=None, stderr=None):
+    # params for stream are WORKDIR=workdir, VISIT=visit_id
+    # this is going to be something like found in workflows/srs/pipe_setups/run_calexp
+    # run_calexp uses --cores as NSLOTS+1. I'm using cores 1 because I am not sure of
+    # the right parallelism here.
+    return "singleFrameDriver.py --batch-type none {in_dir} --rerun {rerun} --id visit={visit} --cores 1 --timeout 999999999 --loglevel CameraMapper=warn".format(in_dir=in_dir, rerun=rerun, visit=visit_id)
+
+with open("all_visits_from_register.list") as f:
+    visit_lines = f.readlines()
+
+calexp_futs = []
+for (n, visit_id_unstripped) in zip(range(0,len(visit_lines)), visit_lines):
+    visit_id = visit_id_unstripped.strip()
+    # assume visit_id really is a visit id... workflows/srs/pipe_setups/setup_calexp has a case where the visit file has two fields per line, and this is handled differently there. I have ignored that here.
+    calexp_futs.append(task_calexp(in_dir, rerun, visit_id, stdout="task_calexp.{}.stdout".format(n), stderr="task_calexp.{}.stderr".format(n)))
+
+logger.info("submitted task_calexps. waiting for completion of all of them.")
+
+# wait for them all to complete ...
+concurrent.futures.wait(calexp_futs)
+
+# ... and throw exception here if any of them threw exceptions
+[future.result() for future in calexp_futs]
+
 
 # setup_calexp:
 #   for each visit line read from visit file, create a task_calexp with that visit as para
