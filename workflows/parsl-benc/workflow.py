@@ -2,7 +2,7 @@ import concurrent.futures
 import logging
 
 import parsl
-from parsl import bash_app
+from parsl import bash_app, python_app
 from parsl.monitoring import MonitoringHub
 from parsl.addresses import address_by_hostname
 from parsl.config import Config
@@ -122,7 +122,11 @@ with open("filesToIngest.txt") as f:
 logger.info("There are {} entries in ingest list".format(len(files_to_ingest)))
 
 # for testing, truncated this list heavilty
-truncated_ingest_list = files_to_ingest[0:50]
+@python_app(executors=["submit-node"], cache=True)
+def truncate_ingest_list(files_to_ingest, n):
+    return files_to_ingest[0:n]
+
+truncated_ingest_list = truncate_ingest_list(files_to_ingest, 50).result()
 
 logger.info("writing truncated list")
 truncatedFileList= "filesToIngestTruncated.txt"
