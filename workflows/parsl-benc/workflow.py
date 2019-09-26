@@ -260,6 +260,16 @@ def check_ccd_astrometry(in_dir, rerun, visit, inputs=[]):
     root_softs="/global/homes/b/bxc/dm/"
     return "{root_softs}/ImageProcessingPipelines/python/util/checkCcdAstrometry.py {in_dir}/rerun/{rerun} --id visit={visit} --loglevel CameraMapper=warn".format(visit=visit, rerun=rerun, in_dir=in_dir, root_softs=root_softs)
 
+@bash_app(executors=["worker-nodes"], cache=True)
+def tract2visit_mapper(in_dir, rerun, visit, inputs=[], stderr=None, stdout=None):
+    root_softs="/global/homes/b/bxc/dm/"
+
+    # TODO: this seems to be how $REGISTRIES is figured out (via $WORKDIR) perhaps?
+    # I'm unsure though
+    registries="{in_dir}/rerun/{rerun}/registries".format(in_dir=in_dir, rerun=rerun)
+
+    return "mkdir -p {registries} && {root_softs}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir={in_dir}/rerun/{rerun} --db={registries}/tracts_mapping_{visit}.sqlite3 --visits={visit}".format(in_dir=in_dir, rerun=rerun, visit=visit, registries=registries, root_softs=root_softs)
+
 with open("all_visits_from_register.list") as f:
     visit_lines = f.readlines()
 
@@ -299,11 +309,15 @@ for (n, visit_id_unstripped) in zip(range(0,len(visit_lines)), visit_lines):
     # steps don't take raft as a parameter? so what's the deal there?
     # TODO: assume for now we need to wait for all rafts to be done, and process per visit
 
-    calexp_futs.append(check_ccd_astrometry(in_dir, rerun, visit_id, inputs=this_visit_single_frame_futs))
+    # TODO: which of these post-processing steps need to happen in sequence rather than
+    # in parallel?
 
-    # this call is also based on run_calexp shell script
+    fut1 = check_ccd_astrometry(in_dir, rerun, visit_id, inputs=this_visit_single_frame_futs)
 
-    # TODO: tract2visit_mapper
+    tract2visit_mapper_stdbase = "track2visit_mapper.{}".format(visit_id)
+    fut2 = tract2visit_mapper(in_dir, rerun, visit_id, inputs=[fut1], stdout=tract2visit_mapper_stdbase+".stdout", stderr=tract2visit_mapper_stdbase+".stderr")
+
+    calexp_futs.append(fut2)
 
     # TODO: skyCorrection.py
 
