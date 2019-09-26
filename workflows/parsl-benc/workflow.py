@@ -1,15 +1,20 @@
 import concurrent.futures
 import logging
+import os
 
 import parsl
 from parsl import bash_app, python_app
 from parsl.monitoring import MonitoringHub
 from parsl.addresses import address_by_hostname
 from parsl.config import Config
+from parsl.data_provider.files import File # TODO: in parsl, export File from parsl.data_provider top
+from parsl.dataflow.memoization import id_for_memo
 from parsl.executors import ThreadPoolExecutor, HighThroughputExecutor
 from parsl.launchers import SrunLauncher
 from parsl.providers import SlurmProvider
 from parsl.utils import get_all_checkpoints
+
+
 
 # assumption: this is running with the same-ish python as inside the expected
 # container:
@@ -41,6 +46,19 @@ max_blocks = 3 # aside from maxwalltime/discount/queue limit considerations, it 
                # more easily?
 compute_nodes = 1
 walltime = "00:29:30"
+
+@id_for_memo.register(File)
+def id_for_memo_File(f, output_ref=False):
+    if output_ref:
+        logger.debug("hashing File as output ref without content: {}".format(f))
+        return f.url
+    else:
+        logger.debug("hashing File as input with content: {}".format(f))
+        assert f.scheme == "file"
+        filename = f.filepath
+        stat_result = os.stat(filename)
+
+        return [f.url, stat_result.st_size, stat_result.st_mtime]
 
 
 class CoriShifterSRunLauncher:
@@ -91,16 +109,19 @@ parsl.load(config)
 
 
 @bash_app(executors=["worker-nodes"], cache=True)
-def create_ingest_file_list(pipe_scripts_dir, ingest_source):
-    return "{pipe_scripts_dir}/createIngestFileList.py {ingest_source} --recursive --ext .fits".format(pipe_scripts_dir=pipe_scripts_dir, ingest_source=ingest_source)
+def create_ingest_file_list(pipe_scripts_dir, ingest_source, outputs=[]):
+    outfile = outputs[0]
+    return "{pipe_scripts_dir}/createIngestFileList.py {ingest_source} --recursive --ext .fits && mv filesToIngest.txt {out_fn}".format(pipe_scripts_dir=pipe_scripts_dir, ingest_source=ingest_source, out_fn=outfile.filepath)
 
 pipe_scripts_dir = "/global/homes/b/bxc/dm/ImageProcessingPipelines/workflows/srs/pipe_scripts/"
 ingest_source = "/global/projecta/projectdirs/lsst/production/DC2_ImSim/Run2.1.1i/sim/agn-test"
-ingest_list_future = create_ingest_file_list(pipe_scripts_dir, ingest_source)
-
-# this gives about 45000 files listed in "filesToIngest.txt"
+ingest_file = File("wf_files_to_ingest")
 
 
+ingest_fut = create_ingest_file_list(pipe_scripts_dir, ingest_source, outputs=[ingest_file])
+# this gives about 45000 files listed in ingest_file
+
+ingest_file_output_file = ingest_fut.outputs[0] # same as ingest_file but with dataflow ordering
 
 # heather then advises cutting out two specific files - although I only see the second at the
 # moment so I'm only filtering that out...
@@ -109,10 +130,10 @@ ingest_list_future = create_ingest_file_list(pipe_scripts_dir, ingest_source)
 # Two centroid files were identified as failing the centroid check and will be omitted from processing: 00458564 (R32 S21) and 00466748 (R43 S21)
 
 @bash_app(executors=["submit-node"], cache=True)
-def filter_in_place(ingest_list_future):
-    return "grep --invert-match 466748_R43_S21 filesToIngest.txt > filter-filesToIngest.tmp && mv filter-filesToIngest.tmp filesToIngest.txt"
+def filter_in_place(ingest_file):
+    return "grep --invert-match 466748_R43_S21 {} > filter-filesToIngest.tmp && mv filter-filesToIngest.tmp filesToIngest.txt".format(ingest_file.filepath)
 
-filtered_ingest_list_future = filter_in_place(ingest_list_future)
+filtered_ingest_list_future = filter_in_place(ingest_file_output_file)
 
 filtered_ingest_list_future.result()
 
@@ -123,16 +144,21 @@ logger.info("There are {} entries in ingest list".format(len(files_to_ingest)))
 
 # for testing, truncated this list heavilty
 @python_app(executors=["submit-node"], cache=True)
-def truncate_ingest_list(files_to_ingest, n):
-    return files_to_ingest[0:n]
+def truncate_ingest_list(files_to_ingest, n, outputs=[]):
+    l = files_to_ingest[0:n]
+    logger.info("writing truncated list")
+    with open(outputs[0].filepath, "w") as f:
+        f.writelines(l) # caution line endings - writelines needs them, apparently but unsure if readlines trims them off
+    logger.info("wrote truncated list")
 
-truncated_ingest_list = truncate_ingest_list(files_to_ingest, 50).result()
+truncatedFileListName= "wf_FilesToIngestTruncated.txt"
+truncatedFileList = File(truncatedFileListName)
+truncated_ingest_list = truncate_ingest_list(files_to_ingest, 500, outputs=[truncatedFileList])
+truncatedFileList_output_future = truncated_ingest_list.outputs[0] # future form of truncatedFileList
+# parsl discussion: the UI is awkward that we can make a truncatedFileList
+# File but then we need to extract out the datafuture that contains "the same"
+# file to get dependency ordering.
 
-logger.info("writing truncated list")
-truncatedFileList= "filesToIngestTruncated.txt"
-with open(truncatedFileList, "w") as f:
-    f.writelines(truncated_ingest_list) # caution line endings - writelines needs them, apparently but unsure if readlines trims them off
-logger.info("wrote truncated list")
 
 # we'll then have a list of files that we want to do the "step 1" ingest on
 # the implementation of this in SRS is three sets of tasks:
@@ -159,12 +185,12 @@ def ingest(file, in_dir, stdout=None, stderr=None):
     There SRS workflow using @{chunk_of_ingest_list}, but I'm going to specify a single filename
     directly for now.
     """
-    return "ingestDriver.py --batch-type none {in_dir} @{arg1} --cores 1 --mode link --output {in_dir} -c clobber=True allowError=True register.ignore=True".format(in_dir=in_dir, arg1=file.strip())
+    return "ingestDriver.py --batch-type none {in_dir} @{arg1} --cores 1 --mode link --output {in_dir} -c clobber=True allowError=True register.ignore=True".format(in_dir=in_dir, arg1=file.filepath)
 
 in_dir = "/global/cscratch1/sd/bxc/parslTest/test0"
 
 #ingest_futures = [run_ingest(f, in_dir, n) for (f, n) in zip(truncated_ingest_list, range(0,len(truncated_ingest_list)))]
-ingest_futures = [run_ingest(truncatedFileList, in_dir, 0)] 
+ingest_futures = [run_ingest(truncatedFileList_output_future, in_dir, 0)] 
 
 # this will wait for all futures to complete before proceeding
 # and then any exceptions will be thrown in ingest_results
@@ -186,13 +212,15 @@ logger.info("ingest(s) completed")
 
 # QUESTION: what is the concurrency between make_sky_map and the raw visit list? can they run concurrently or must make_sky_map run before generating the raw visit list?
 
+# ingest list is passed in but not used explicity because it represents that some stuff
+# has gone into the DB potentially during ingest - for checkpointing
 @bash_app(executors=["worker-nodes"], cache=True)
-def make_sky_map(in_dir, rerun, stdout=None, stderr=None):
+def make_sky_map(in_dir, rerun, ingest_list, stdout=None, stderr=None):
     return "makeSkyMap.py {} --rerun {}".format(in_dir, rerun)
 
 logger.info("launching makeSkyMap")
 rerun = "some_rerun"
-skymap_future = make_sky_map(in_dir, rerun, stdout="make_sky_map.stdout", stderr="make_sky_map.stderr")
+skymap_future = make_sky_map(in_dir, rerun, truncatedFileList_output_future, stdout="make_sky_map.stdout", stderr="make_sky_map.stderr")
 skymap_future.result()
 logger.info("makeSkyMap completed")
 
@@ -200,10 +228,10 @@ logger.info("makeSkyMap completed")
 logger.info("Making visit file from raw_visit table")
 
 @bash_app(executors=["worker-nodes"], cache=True)
-def make_visit_file(in_dir):
+def make_visit_file(in_dir, ingest_list):
     return 'sqlite3 {}/registry.sqlite3 "select DISTINCT visit from raw_visit;" > all_visits_from_register.list'.format(in_dir)
 
-visit_file_future = make_visit_file(in_dir)
+visit_file_future = make_visit_file(in_dir, truncatedFileList_output_future)
 visit_file_future.result()
 
 logger.info("Finished making visit file")
