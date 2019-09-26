@@ -252,6 +252,14 @@ def single_frame_driver(in_dir, rerun, visit_id, raft_name, stdout=None, stderr=
 def raft_list_for_visit(in_dir, visit_id, out_filename):
     return "sqlite3 {in_dir}/registry.sqlite3 'select distinct raftName from raw where visit={visit_id}' > {out_filename}".format(in_dir = in_dir, visit_id = visit_id, out_filename = out_filename)
 
+
+@bash_app(executors=["worker-nodes"], cache=True)
+def check_ccd_astrometry(in_dir, rerun, visit, inputs=[]):
+    # inputs=[] ignored but used for dependency handling
+    # TODO: what is ROOT_SOFTS? probably the path to this workflow's repo.
+    root_softs="/global/homes/b/bxc/dm/"
+    return "{root_softs}/ImageProcessingPipelines/python/util/checkCcdAstrometry.py {in_dir}/rerun/{rerun} --id visit={visit} --loglevel CameraMapper=warn".format(visit=visit, rerun=rerun, in_dir=in_dir, root_softs=root_softs)
+
 with open("all_visits_from_register.list") as f:
     visit_lines = f.readlines()
 
@@ -271,14 +279,37 @@ for (n, visit_id_unstripped) in zip(range(0,len(visit_lines)), visit_lines):
     with open(raft_list_fn) as f:
         raft_lines = f.readlines()
 
+    this_visit_single_frame_futs = []
+
     for (m, raft_name_stripped) in zip(range(0,len(raft_lines)), raft_lines):
         raft_name=raft_name_stripped.strip()
         logger.info("visit {} raft {}".format(visit_id, raft_name))
 
+        # this call is based on run_calexp shell scriprt
         # assume visit_id really is a visit id... workflows/srs/pipe_setups/setup_calexp has a case where the visit file has two fields per line, and this is handled differently there. I have ignored that here.
         # raft_name is the $RAFTNAME environment variable in run_calexp in the XML workflows
         sfd_output_basename="single_frame_driver.{}.{}".format(m,n)
-        calexp_futs.append(single_frame_driver(in_dir, rerun, visit_id, raft_name, stdout=sfd_output_basename+".stdout", stderr=sfd_output_basename+".stderr"))
+        this_visit_single_frame_futs.append(single_frame_driver(in_dir, rerun, visit_id, raft_name, stdout=sfd_output_basename+".stdout", stderr=sfd_output_basename+".stderr"))
+
+    # now need to join based on all of this_visit_single_frame_futs... but not in sequential code
+    # because otherwise we won't launch later visits until after we're done with this one, and
+    # lose parallelism
+    # question here: should these be done per-raft or per-visit?
+    # the workflow looks like you can rnu with a single vist-raft but then the subsequent
+    # steps don't take raft as a parameter? so what's the deal there?
+    # TODO: assume for now we need to wait for all rafts to be done, and process per visit
+
+    calexp_futs.append(check_ccd_astrometry(in_dir, rerun, visit_id, inputs=this_visit_single_frame_futs))
+
+    # this call is also based on run_calexp shell script
+
+    # TODO: tract2visit_mapper
+
+    # TODO: skyCorrection.py
+
+    # TODO: visitAnlysis.py for stream and visit - this involves sqlite
+
+
 
 logger.info("submitted task_calexps. waiting for completion of all of them.")
 
