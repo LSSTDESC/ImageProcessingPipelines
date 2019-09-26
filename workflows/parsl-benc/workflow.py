@@ -153,7 +153,7 @@ def truncate_ingest_list(files_to_ingest, n, outputs=[]):
 
 truncatedFileListName= "wf_FilesToIngestTruncated.txt"
 truncatedFileList = File(truncatedFileListName)
-truncated_ingest_list = truncate_ingest_list(files_to_ingest, 500, outputs=[truncatedFileList])
+truncated_ingest_list = truncate_ingest_list(files_to_ingest, 20, outputs=[truncatedFileList])
 truncatedFileList_output_future = truncated_ingest_list.outputs[0] # future form of truncatedFileList
 # parsl discussion: the UI is awkward that we can make a truncatedFileList
 # File but then we need to extract out the datafuture that contains "the same"
