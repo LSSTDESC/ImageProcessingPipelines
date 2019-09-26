@@ -253,6 +253,10 @@ def raft_list_for_visit(in_dir, visit_id, out_filename):
     return "sqlite3 {in_dir}/registry.sqlite3 'select distinct raftName from raw where visit={visit_id}' > {out_filename}".format(in_dir = in_dir, visit_id = visit_id, out_filename = out_filename)
 
 
+# the parsl checkpointing for this won't detect if we ingested more stuff to do with the
+# specified visit - I'm not sure quite the right way to do it, and I think its only
+# useful in during workflow development when the original ingest list might change?
+# would need eg "files in each visit" list to generate a per-visit input "version" id/hash
 @bash_app(executors=["worker-nodes"], cache=True)
 def check_ccd_astrometry(in_dir, rerun, visit, inputs=[]):
     # inputs=[] ignored but used for dependency handling
@@ -260,6 +264,8 @@ def check_ccd_astrometry(in_dir, rerun, visit, inputs=[]):
     root_softs="/global/homes/b/bxc/dm/"
     return "{root_softs}/ImageProcessingPipelines/python/util/checkCcdAstrometry.py {in_dir}/rerun/{rerun} --id visit={visit} --loglevel CameraMapper=warn".format(visit=visit, rerun=rerun, in_dir=in_dir, root_softs=root_softs)
 
+# the parsl checkpointing for this won't detect if we ingested more stuff to do with the
+# specified visit - see comments for check_ccd_astrometry
 @bash_app(executors=["worker-nodes"], cache=True)
 def tract2visit_mapper(in_dir, rerun, visit, inputs=[], stderr=None, stdout=None):
     root_softs="/global/homes/b/bxc/dm/"
