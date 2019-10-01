@@ -276,6 +276,11 @@ def tract2visit_mapper(in_dir, rerun, visit, inputs=[], stderr=None, stdout=None
 
     return "mkdir -p {registries} && {root_softs}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir={in_dir}/rerun/{rerun} --db={registries}/tracts_mapping_{visit}.sqlite3 --visits={visit}".format(in_dir=in_dir, rerun=rerun, visit=visit, registries=registries, root_softs=root_softs)
 
+
+@bash_app(executors=["worker-nodes"], cache=True)
+def sky_correction(in_dir, rerun, visit, inputs=[], stdout=None, stderr=None):
+    return "skyCorrection.py {in_dir}  --rerun {rerun} --id visit={visit} --batch-type none --cores 1 --timeout 999999999 --no-versions --loglevel CameraMapper=warn".format(in_dir=in_dir, rerun=rerun, visit=visit)
+
 with open("all_visits_from_register.list") as f:
     visit_lines = f.readlines()
 
@@ -323,9 +328,14 @@ for (n, visit_id_unstripped) in zip(range(0,len(visit_lines)), visit_lines):
     tract2visit_mapper_stdbase = "track2visit_mapper.{}".format(visit_id)
     fut2 = tract2visit_mapper(in_dir, rerun, visit_id, inputs=[fut1], stdout=tract2visit_mapper_stdbase+".stdout", stderr=tract2visit_mapper_stdbase+".stderr")
 
-    calexp_futs.append(fut2)
 
-    # TODO: skyCorrection.py
+    # this is invoked in run_calexp with $OUT_DIR at the first parameter, but that's not something
+    # i've used so far -- so I'm using IN_DIR as used in previous steps
+    # TODO: is that the right thing to do? otherwise how does IN_DIR and OUT_DIR differ?
+    sky_correction_stdbase = "sky_correction.{}".format(visit_id)
+    fut3 = sky_correction(in_dir, rerun, visit_id, inputs=[fut2], stdout=sky_correction_stdbase+".stdout", stderr=sky_correction_stdbase+".stderr")
+
+    calexp_futs.append(fut3)
 
     # TODO: visitAnlysis.py for stream and visit - this involves sqlite
 
