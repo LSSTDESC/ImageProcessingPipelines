@@ -1,0 +1,16 @@
+2 Oct 2019
+
+This directory contains the setup_desc_drp.sh script which installs the current
+set of ancillary packages necessary for the SRS workflow, beyond a vanilla
+DMstack installation.
+
+To Use:
+source setup_desc_drp.sh <fullpath to installation directory>
+
+The installation directory will store the additional installed packages for
+use in the DMstack's conda environment.
+
+The dm-constraints*.txt file contains the current list of DM python package
+versions. This constraints file is utilized in the setup_desc_drp.sh script
+to enforce the DM python package versions, rather than allowing them to 
+potentially being upgraded. 
