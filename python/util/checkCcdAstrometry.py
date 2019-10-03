@@ -25,7 +25,7 @@ import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 import lsst.daf.persistence as dafPersist
 import lsst.afw.table as afwTable
-import lsst.afw.geom as afwGeom
+import lsst.geom as geom
 import lsst.afw.coord as afwCoord
 import lsst.afw.image as afwImage
 from lsst.meas.algorithms import LoadIndexedReferenceObjectsTask
@@ -110,7 +110,7 @@ class CheckCcdAstrometryTask(pipeBase.CmdLineTask):
         self.log.info("Processing %s" % (dataid))
 
         wcs = self.butler.get('calexp_wcs', dataid)
-        calib = self.butler.get("calexp_calib", dataid)
+        calib = self.butler.get("calexp_photoCalib", dataid)
 
         Flags = ["base_PixelFlags_flag_saturated", "base_PixelFlags_flag_cr", "base_PixelFlags_flag_interpolated",
                  self.config.fluxType + "_flag", "base_SdssCentroid_flag",
@@ -118,7 +118,9 @@ class CheckCcdAstrometryTask(pipeBase.CmdLineTask):
                  "base_SdssCentroid_flag_notAtMaximum", "base_SdssCentroid_flag_resetToPeak",
                  "base_SdssShape_flag", "base_ClassificationExtendedness_flag"]
 
-        src = self.butler.get('src', dataid).asAstropy()
+        src = self.butler.get('src', dataid)
+        # Apply photoCalib to src catalog
+        srcCal = calib.calibrateCatalog(src).asAstropy()
 
         # get filter name associated to this visit
         for dataRef in self.butler.subset('src', visit=dataid['visit']):
@@ -129,29 +131,24 @@ class CheckCcdAstrometryTask(pipeBase.CmdLineTask):
         filt = fullId['filter']
 
         # select sources
-        cut = np.ones_like(src['id'], dtype=bool)
+        cut = np.ones_like(srcCal['id'], dtype=bool)
         for flag in Flags:
-            cut &= src[flag]==False
-        cut &= (src[self.config.fluxType + '_instFlux'] > 0) & (src[self.config.fluxType + '_instFlux'] / src[self.config.fluxType + '_instFluxErr'] > 5)
+            cut &= srcCal[flag]==False
+        cut &= srcCal[self.config.fluxType + '_instFlux'] > 0 
+        cut &= srcCal[self.config.fluxType + '_instFlux'] / srcCal[self.config.fluxType + '_instFluxErr'] > 5
+        cut &= srcCal[self.config.fluxType + '_mag'] < self.config.magCut
 
-        mag, magErr = calib.getMagnitude(src[cut][self.config.fluxType + '_instFlux'], src[cut][self.config.fluxType + '_instFluxErr'])
-
-        cat = src[cut]['id', 'coord_ra', 'coord_dec']
-        cat['mag'] = mag
-        cat['magErr'] = magErr
-
-        cut = cat['mag'] < self.config.magCut
-        cat = cat[cut]
-
+        cat = srcCal[cut]['id', 'coord_ra', 'coord_dec', self.config.fluxType + '_mag', self.config.fluxType + '_magErr']
+        
         #define a reference filter (not critical for what we are doing)
         f = 'lsst_' + filt + '_smeared'
 
         # Find the approximate celestial coordinates of the sensor's center
-        centerPixel = afwGeom.Point2D(2000., 2000.)
+        centerPixel = geom.Point2D(2000., 2000.)
         centerCoord = wcs.pixelToSky(centerPixel)
 
         # Retrieve reference object within a 0.5 deg radius circle around the sensor's center
-        radius = afwGeom.Angle(0.5, afwGeom.degrees)
+        radius = geom.Angle(0.5, geom.degrees)
         ref = self.refTask.loadSkyCircle(centerCoord, radius, f).refCat.copy(deep=True).asAstropy()
 
         # create SkyCoord catalogs for astropy matching

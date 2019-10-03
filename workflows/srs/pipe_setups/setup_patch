@@ -1,0 +1,56 @@
+#!/bin/bash
+
+### read or build the list of patches for a given tract and launch a series of coaddDriver task
+### based on $MAX_PATCH_NB number of patches per job. 
+
+# checkpoint
+source ${SETUP_LOCATION}/checkpoint
+
+echo "tract ${TRACT}"
+echo "patch ${PATCH}"
+
+#for a given TRACT, build the series of patches to be coadded in parallel
+if [[ $PATCH = "" ]]; then
+   #only tracts were provided, so we need to build the patch distribution
+   echo "only tracks provided"
+   PATCH=`sqlite3 ${IN_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 "select DISTINCT patch from overlaps WHERE tract=${TRACT};"`
+   #remove the space inside the patch pai
+   patches="${PATCH//[\ ()]/}"
+else
+    #replace carets with spaces so that patches can be looped over
+    patches="${PATCH//^/ }"
+fi
+
+#prepare for housekeeping and save into archives previous jousekeeping files
+if [ -f ${WORKDIR}/postcoadd_housekeeping.txt ]; then
+    mkdir -p ${WORKDIR}/archives
+    timestamp=$( date +"%s" )
+    mv ${WORKDIR}/postcoadd_housekeeping.txt ${WORKDIR}/archives/postcoadd_housekeeping_${timestamp}.txt
+fi
+
+patch_str=""
+count=0
+if [[ -z $MAX_PATCH_NB ]]; then
+    MAX_PATCH_NB=2;
+fi
+
+echo $patches
+for patch in $patches; do
+    if [ "$patch_str" = "" ]; then
+        patch_str=$patch
+    else
+        patch_str=$patch_str^$patch
+    fi
+    count=$((count + 1))
+    if [ "$count" = "${MAX_PATCH_NB}" ]; then
+	echo pipelineCreateStream task_coadd_tract_patch -1 "DM_SETUP="\""${DM_SETUP}"\"",WORKDIR="\""${WORKDIR}"\"",TRACT="\""${TRACT}"\"",PATCH="\""${patch_str}"\"""
+	pipelineCreateStream task_coadd_tract_patch -1 "DM_SETUP="\""${DM_SETUP}"\"",WORKDIR="\""${WORKDIR}"\"",TRACT="\""${TRACT}"\"",PATCH="\""${patch_str}"\"""
+	idx=$((idx + 1))
+	count=0
+	patch_str=""
+    fi
+done
+if [[ ! -z $patch_str ]]; then
+    echo pipelineCreateStream task_coadd_tract_patch -1 "DM_SETUP="\""${DM_SETUP}"\"",WORKDIR="\""${WORKDIR}"\"",TRACT="\""${TRACT}"\"",PATCH="\""${patch_str}"\"""
+    pipelineCreateStream task_coadd_tract_patch -1 "DM_SETUP="\""${DM_SETUP}"\"",WORKDIR="\""${WORKDIR}"\"",TRACT="\""${TRACT}"\"",PATCH="\""${patch_str}"\"""
+fi

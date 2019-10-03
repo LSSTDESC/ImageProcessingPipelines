@@ -1,0 +1,12 @@
+#!/bin/bash
+
+### run multiband on the tract and set of patches provided as input
+
+# checkpoint
+source ${SETUP_LOCATION}/checkpoint
+
+#DM_SETUP=${DM_SETUP}
+#source ${SETUP_LOCATION}/DMsetup.sh
+#export OMP_NUM_THREADS=1
+echo multiBandDriver.py ${OUT_DIR} --rerun ${RERUN2} --id tract=${TRACT} patch=${PATCH} filter=${FILTERS//,/^} --cores=$((NSLOTS+1)) --longlog --reuse-outputs-from  all
+multiBandDriver.py ${OUT_DIR} --rerun ${RERUN2} --id tract=${TRACT} patch=${PATCH} filter=${FILTERS//,/^} --cores=$((NSLOTS+1)) --longlog --reuse-outputs-from  all

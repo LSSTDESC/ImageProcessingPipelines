@@ -4,11 +4,11 @@
           xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
        http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
   
-  <task name="DC2DM_3_COADD" type="LSST" version="1.8">
+  <task name="DC2DM_3_COADD" type="LSST" version="1.9">
     <notation>Task to run the DM stack on DC2 simulated images (coadd)</notation>
     <variables>
       <!-- Job site and configuration-->
-      <var name="RUNID">Run1.2p</var>
+      <var name="RUNID">Run2.1i</var>
       <var name="SETUP_TAG">dev</var>
       <var name="SITE">LSST-IN2P3</var>
       <var name="JOBSITE">${SITE=="NERSC" ? "CORIP" : SITE}</var>

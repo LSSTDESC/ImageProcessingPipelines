@@ -3,17 +3,53 @@
 # checkpoint
 source ${SETUP_LOCATION}/checkpoint
 
-# Ready to ingest
-# Make sure the output directory exists
-mkdir -p ${IN_DIR}
-cd ${IN_DIR}
+BASEDIR=${IN_DIR}/work/${RERUN}/${streamID}
+mkdir -p $BASEDIR
+export BASEDIR
 
-#if reference cat ingestion is about to be bypassed
-#then create the soft link to an existing 
-var=`grep ingestRefCat ${CHECKPOINTS}`
-if [ "${var%${var#?}}"x != '#x' ]
+WORKDIR=${BASEDIR}/task_ingestion/${streamID}
+mkdir -p ${WORKDIR}
+export REGDIR=${WORKDIR}/registries
+mkdir -p ${REGDIR}
+export SCRDIR=${WORKDIR}/scripts
+mkdir -p ${SCRDIR}
+pipelineSet REGDIR ${REGDIR}
+pipelineSet REGDIR ${SCRDIR}
+
+build_ingest_script () {
+    cat> $1.sh<<EOF
+#!/bin/bash
+DM_SETUP=${DM_SETUP}
+source ${SETUP_LOCATION}/DMsetup.sh
+export OMP_NUM_THREADS=1
+if [[ \${SITE} == "NERSC" ]]
 then
-    echo "locally linking ${REFCAT}"
-    ln -sfn $REFCAT ${IN_DIR}/ref_cats
+  ingestDriver.py ${IN_DIR} @$1 --cores 20 --mode link --output ${IN_DIR} -c clobber=True allowError=True register.ignore=True 
+else
+  cd \${TMPDIR}
+  cp ${IN_DIR}/_mapper .
+  ingestDriver.py . @$1 --cores \$((NSLOTS + 1)) --output . --mode link
+  mkdir -p ${IN_DIR}/raw
+  cp -r raw/* ${IN_DIR}/raw/
+  cp -r registry.sqlite3 $REGDIR/registry_\${JOB_ID}.sqlite3
 fi
+echo "{\"jobid\":\"\${JOB_ID}\", \"logfile\":\"\${JOBCONTROL_LOGFILE}\", \"script\":\"\${CUR_SCRIPT}\",  \"release\":\"\${DM_RELEASE}\",\"run\":\"\${RUN}\",\"tag\":\"\${SETUP_TAG}\",\"infile\":\"${RAW_VISIT_FILE}\"}" >> ${WORKDIR}/ingest_housekeeping.txt
+EOF
+}
+
+VISITBASE=`basename ${RAW_VISIT_FILE} -s`
+rm -f ${SCRDIR}/${VISITBASE}_chunk*
+
+split -d -l ${RAW_CHUNKS} ${RAW_VISIT_FILE} ${SCRDIR}/${VISITBASE}_chunk
+
+CHUNKFILES="${SCRDIR}/${VISITBASE}_chunk*"
+cd ${SCRDIR}
+
+for f in ${SCRDIR}/${VISITBASE}_chunk*
+do
+    build_ingest_script $f
+    chmod a+x ${f}.sh
+    pipelineCreateStream task_ingestData -1 CUR_SCRIPT=${f}.sh,REGDIR=${REGDIR}
+done
+
 

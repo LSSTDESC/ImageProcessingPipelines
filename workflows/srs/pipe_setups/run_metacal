@@ -1,0 +1,25 @@
+#!/bin/bash
+
+### run metacalibration on the tract and set of patches provided as input
+
+# checkpoint
+source ${SETUP_LOCATION}/checkpoint
+
+cmd="processDeblendedCoaddsMetacalMax.py ${OUT_DIR} --rerun ${RERUN} --id tract=${TRACT} patch=${PATCH} filter=g^r^i^z -C ${ROOT_SOFTS}/ImageProcessingPipelines/config/mcal-filters.py -C ${ROOT_SOFTS}/ImageProcessingPipelines/config/ngmix-deblended-mcalmax.py"
+
+echo $cmd;$cmd;
+
+echo \{\"job_type\":\"metacal\", \"stream_id\":\"${streamID}\", \"jobid\":\"${JOB_ID}\", \"logfile\":\"${JOBCONTROL_LOGFILE}\", \"release\":\"${DM_RELEASE}\",\"run\":\"${RUN}\",\"tag\":\"${SETUP_TAG}\",\"tract\":\"${TRACT}\",\"patch\":\"${PATCH}\"\} >> ${WORKDIR}/postcoadd_housekeeping.txt
+
+
+status=`verify_checkpoint run_ngmix`
+if [[ $status = 0 ]]; then
+    echo "skipping bulge-disk ngmix fit and proceeding"
+elif [[ $status = 1 ]]; then
+    echo "halting at bulge-disk ngmix computation"
+    exit 1
+else
+    cmd="processDeblendedCoaddsNGMixMax.py ${OUT_DIR} --rerun ${RERUN} --id tract=${TRACT} patch=${PATCH} filter=g^r^i^z -C ${ROOT_SOFTS}/ImageProcessingPipelines/config/mcal-filters.py -C ${ROOT_SOFTS}/ImageProcessingPipelines/config/ngmix-deblended-bd.py"
+
+    echo $cmd;$cmd;
+fi

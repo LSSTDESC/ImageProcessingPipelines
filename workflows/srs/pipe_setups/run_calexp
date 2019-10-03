@@ -1,0 +1,56 @@
+#!/bin/bash
+
+mkdir -p ${WORKDIR}/registries/
+export REGISTRIES="${WORKDIR}/registries"
+pipelineSet REGISTRIES ${REGISTRIES}
+
+status=`verify_checkpoint singleFrameDriver`
+if [[ $status = 0 ]]; then
+    echo "skipping singleFrameDriver and proceeding" 
+elif [[ $status = 1 ]]; then
+    echo "halting at singleFrameDriver" 
+    exit 1
+else
+    echo "Running singleFrameDriver.py"
+    if [[ -z "${RAFTNAME}" ]]; then
+	singleFrameDriver.py ${IN_DIR} --rerun ${RERUN1} --id visit=${VISIT} --cores $((NSLOTS+1)) --timeout 999999999 --loglevel CameraMapper=warn
+	echo '{'\"pipe_step\":\"singleFrameDriver\", \"jobid\":\"${JOB_ID}\", \"stream_id\":\"${streamID}\", \"logfile:\"${JOBCONTROL_LOGFILE}\",  \"release\":\"${DM_RELEASE}\",\"run\":\"${RUN}\",\"tag\":\"${SETUP_TAG}\",\"visit\":\"${VISIT}\"'}' >> ${WORKDIR}/singleframe_housekeeping.txt
+    else
+	singleFrameDriver.py ${IN_DIR} --rerun ${RERUN1} --id visit=${VISIT} raftName=${RAFTNAME} --cores $((NSLOTS+1)) --timeout 99999999 --loglevel CameraMapper=warn
+	echo '{'\"pipe_step\":\"singleFrameDriver\",\"jobid\":\"${JOB_ID}\", \"stream_id\":\"${streamID}\", \"logfile:\"${JOBCONTROL_LOGFILE}\", \"script\":\"${CUR_SCRIPT}\",  \"release\":\"${DM_RELEASE}\",\"run\":\"${RUN}\",\"tag\":\"${SETUP_TAG}\",\"visit\":\"${VISIT}\",\"raft\":\"${RAFTNAME}\"'}' >> ${WORKDIR}/singleframe_housekeeping.txt
+    fi
+    echo "Running checCcdAstrometry.py"
+    ${ROOT_SOFTS}/ImageProcessingPipelines/python/util/checkCcdAstrometry.py ${IN_DIR}/rerun/${RERUN1} --id visit=${VISIT} --loglevel CameraMapper=warn
+
+    echo "building mapper"
+    ${ROOT_SOFTS}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir=${IN_DIR}/rerun/${RERUN1} --db=${REGISTRIES}/tracts_mapping_${VISIT}.sqlite3 --visits=${VISIT}
+fi
+
+
+status=`verify_checkpoint skyCorrection`
+if [[ $status = 0 ]]; then
+    echo "skipping skyCorrection and proceeding"
+elif [[ $status = 1 ]]; then
+    echo "halting at skyCorrection"
+    exit 1
+else
+    echo "Running skyCorrection.py"
+    skyCorrection.py ${OUT_DIR}  --rerun ${RERUN1} --id visit=${VISIT} --cores $((NSLOTS+1)) --timeout 999999999 --no-versions --loglevel CameraMapper=warn
+    echo '{'\"pipe_step\":\"sky_correction\", \"jobid\":\"${JOB_ID}\", \"logfile\":\"${JOBCONTROL_LOGFILE}\",  \"release\":\"${DM_RELEASE}\",\"run\":\"${RUN}\",\"tag\":\"${SETUP_TAG}\",\"visit\":\"${VISIT}\"'}' >> ${WORKDIR}/skycorrection_housekeeping.txt
+fi
+
+
+status=`verify_checkpoint visitAnalysis`
+if [[ $status = 0 ]]; then
+    echo "skipping visitAnalysis and proceeding"
+elif [[ $status = 1 ]]; then
+    echo "halting at visitAnalysis"
+    exit 1
+else
+    echo "Running visitAnalysis.py for visit=${VISIT} et streamID=${streamID}"
+    tract=`sqlite3 ${REGISTRIES}/tracts_mapping_${VISIT}.sqlite3 "select distinct tract from overlaps where visit=${VISIT} limit 1;"`
+    visitAnalysis.py ${IN_DIR} --rerun ${RERUN1}:QA-${RERUN1} --id visit=$VISIT --tract=$tract -j ${NSLOTS} -c doWriteParquetTables=False
+fi                                                                                                                                                                          
+                                                                                                                                                                                                                    
+                                                                                                                                                                                                                    
+
