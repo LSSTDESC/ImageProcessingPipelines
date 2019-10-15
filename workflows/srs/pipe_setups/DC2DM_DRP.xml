@@ -4,12 +4,12 @@
           xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
 			     https://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
   
-  <task name="DC2DM_DRP" type="LSST" version="1.1">
+  <task name="DC2DM_DRP" type="LSST" version="2.0">
     <notation>Task to run the DM stack on DC2 simulated images (ingestion)</notation>
     <variables>
       <!-- Job site and configuration-->
       <var name="RUNID">Run2.1i</var>
-      <var name="SETUP_TAG">v3</var>
+      <var name="SETUP_TAG">v4</var>
       <var name="SITE">LSST-IN2P3</var>
       <var name="JOBSITE">${SITE=="NERSC" ? "CORIP" : SITE}</var>
       <var name="MAXCPU">10000</var>
@@ -54,20 +54,20 @@
       <!-- Script names -->
       <var name="BATCH_NAME">DC2Batch.sh</var>
     </variables>
-
+    
     <process name="setup_ingest" site="${JOBSITE}">
       <notation>Ingest raw data</notation>
-        <variables>
-          <var name="streamID">${format(pipeline.stream, "%s")}</var>
-        </variables>
+      <variables>
+        <var name="streamID">${format(pipeline.stream, "%s")}</var>
+      </variables>
       <job maxCPU="${MAXCPU}" 
            batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_3}"
 	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
       <createsSubtasks>
 	<subtask>task_ingestData</subtask>
-      </createsSubtasks>	
+      </createsSubtasks>
     </process>
-
+    
     <process name="finish_ingest" site="${JOBSITE}">
       <notation>Finalize Ingest</notation>
       <variables>
@@ -83,9 +83,9 @@
     
     <process name="setup_calexp" site="${JOBSITE}">
       <notation>Setup for calexp processing on visits</notation>
-        <variables>
-          <var name="streamID">${format(pipeline.stream, "%01d")}</var>
-        </variables>
+      <variables>
+        <var name="streamID">${format(pipeline.stream, "%01d")}</var>
+      </variables>
       <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
 	   executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
       <depends>
@@ -93,14 +93,14 @@
       </depends>
       <createsSubtasks>
 	<subtask>task_calexp</subtask>
-      </createsSubtasks>	
+      </createsSubtasks>
     </process>
-
+    
     <process name="finish_calexp" site="${JOBSITE}">
       <notation>Finish calexp production</notation>
-        <variables>
-          <var name="streamID">${format(pipeline.stream, "%01d")}</var>
-        </variables>
+      <variables>
+        <var name="streamID">${format(pipeline.stream, "%01d")}</var>
+      </variables>
       <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS}"
            executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
       <depends>
@@ -108,7 +108,7 @@
       </depends>
     </process>
     
-
+    
     <process name="setup_fullcoadd" site="${JOBSITE}">
       <notation> note </notation>
       <variables>
@@ -238,15 +238,15 @@
     <!-- ##################### INGEST ########################## -->
     <task name="task_ingestData" type="LSST">
       <process name="run_ingestData" site="${JOBSITE}">
-          <variables>
-            <var name="SGE_QACCT">${SITE=="NERSC" ? "" : "-A ingest"}</var>
-            <var name="streamID">${format(pipeline.stream, "%01d")}</var>
-          </variables>
+        <variables>
+          <var name="SGE_QACCT">${SITE=="NERSC" ? "" : "-A ingest"}</var>
+          <var name="streamID">${format(pipeline.stream, "%01d")}</var>
+        </variables>
 	<job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_2} -A ingest"
 	     executable="${CUR_SCRIPT}"/>
       </process>                
     </task>
-
+    
     <!-- ##################### CALEXP ########################## -->
     <task name="task_calexp" type="LSST">
       <process name="run_calexp" site="${JOBSITE}">
@@ -273,20 +273,34 @@
         </createsSubtasks> 
       </process>
       
-      <!-- <process name="run_forced_coadd" site="${JOBSITE}"> -->
-      <!--   <notation>Wrap up per tract coadd processing</notation> -->
-      <!--   <variables> -->
-      <!--     <var name="streamID">${format(pipeline.stream, "%s")}</var> -->
-      <!--     <var name="SGE_QACCT">${SITE=="NERSC" ? "" : "-A forced_coadd"}</var> -->
-      <!--   </variables> -->
-      <!--   <job maxCPU="${MAXCPU}" -->
-      <!--        batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_1} ${SGE_QACCT}" -->
-      <!--        executable="${SETUP_LOCATION}/${BATCH_NAME}"/> -->
-      <!--   <depends> -->
-      <!--     <after process="task_coadd_tract_patch.run_multiband"/> -->
-      <!--   </depends> -->
-      <!-- </process> -->
-
+      <process name="setup_metacal" site="${JOBSITE}">
+        <notation> metacalibration </notation>
+        <variables>
+          <var name="streamID">${format(pipeline.stream, "%s")}</var>
+        </variables>
+        <job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_3} ${SGE_QACCT}"
+	     executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
+        <depends>
+          <after process="task_coadd_tract_patch.run_multiband"/>
+        </depends>
+        <createsSubtasks>
+	  <subtask>task_metacal</subtask>
+        </createsSubtasks> 
+      </process>
+      
+      <process name="merge_metacal" site="${JOBSITE}">
+        <notation>merge the per patch metacal files into a single file per tract</notation>
+        <variables>
+          <var name="streamID">${format(pipeline.stream, "%s")}</var>
+          <var name="SGE_QACCT">${SITE=="NERSC" ? "" : "-A dpdd"}</var>
+        </variables>
+        <job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_3} ${SGE_QACCT}"
+             executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
+        <depends>
+          <after process="task_metacal.run_metacal"/>
+        </depends>
+      </process>
+      
       <process name="run_dpdd" site="${JOBSITE}">
         <notation>Build the per tract catalogue for DPDD</notation>
         <variables>
@@ -300,21 +314,8 @@
         </depends>
       </process>
       
-      <process name="merge_metacal" site="${JOBSITE}">
-        <notation>merge the per patch metacal files into a single file per tract</notation>
-        <variables>
-          <var name="streamID">${format(pipeline.stream, "%s")}</var>
-          <var name="SGE_QACCT">${SITE=="NERSC" ? "" : "-A dpdd"}</var>
-        </variables>
-        <job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_3} ${SGE_QACCT}"
-             executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
-        <depends>
-          <after process="task_coadd_tract_patch.run_metacal"/>
-        </depends>
-      </process>
-      
       <task name="task_coadd_tract_patch" type="LSST">
-
+	
         <process name="setup_coaddDriver" site="${JOBSITE}">
           <notation> set the subtask to run coaddDriver on each filter in parallel  </notation>
           <variables>
@@ -324,8 +325,8 @@
 	       executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
           <createsSubtasks>
 	    <subtask>task_coaddDriver</subtask>
-          </createsSubtasks> 
-        </process>
+	  </createsSubtasks> 
+	</process>
         
         <process name="run_multiband" site="${JOBSITE}">
           <notation> note </notation>
@@ -339,20 +340,7 @@
             <after process="task_coaddDriver.run_coaddDriver"/>
           </depends>
         </process>
-
-        <process name="run_metacal" site="${JOBSITE}">
-          <notation> metacalibration </notation>
-          <variables>
-            <var name="streamID">${format(pipeline.stream, "%s")}</var>
-            <var name="SGE_QACCT">${SITE=="NERSC" ? "" : "-A metacal"}</var>
-          </variables>
-          <job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_0} ${SGE_QACCT}"
-	       executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
-          <depends>
-            <after process="run_multiband"/>
-          </depends>
-        </process>
-
+	
         <!--   Subtask to run coaddDriver on each filter-->
         <task name="task_coaddDriver" type="LSST">
           <process name="run_coaddDriver" site="${JOBSITE}">
@@ -361,12 +349,26 @@
               <var name="SGE_QACCT">${SITE=="NERSC" ? "" : "-A coadd"}</var>
             </variables>
             <job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_2} ${SGE_QACCT}"
-	         executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
+		 executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
           </process>                
         </task>
+	
       </task>
+      
+      <!--   Subtask to run metacal on each patch-->
+      <task name="task_metacal" type="LSST">
+        <process name="run_metacal" site="${JOBSITE}">
+          <variables>
+            <var name="streamID">${format(pipeline.stream, "%s")}</var>
+            <var name="SGE_QACCT">${SITE=="NERSC" ? "" : "-A metacal"}</var>
+          </variables>
+          <job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_3} ${SGE_QACCT}"
+	       executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
+        </process>                
+      </task>
+      
     </task>
-
+    
     <task name="task_forced_ccd" type="LSST">
       <process name="run_forced_ccd" site="${JOBSITE}">
         <variables>
@@ -377,6 +379,6 @@
 	     executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
       </process>                
     </task>
-
+    
   </task>
 </pipeline>

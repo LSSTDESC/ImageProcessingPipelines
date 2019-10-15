@@ -1,0 +1,28 @@
+#!/bin/bash
+
+### read or build the list of patches for a given tract and launch a series of coaddDriver task
+### based on $MAX_PATCH_NB number of patches per job. 
+
+# checkpoint
+source ${SETUP_LOCATION}/checkpoint
+
+echo "tract ${TRACT}"
+echo "patch ${PATCH}"
+
+#for a given TRACT, build the series of patches to be coadded in parallel
+if [[ $PATCH = "" ]]; then
+   #only tracts were provided, so we need to build the patch distribution
+   echo "only tracks provided"
+   PATCH=`sqlite3 ${IN_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 "select DISTINCT patch from overlaps WHERE tract=${TRACT};"`
+   #remove the space inside the patch pair
+   patches="${PATCH//[\ ()]/}"
+else
+    #replace carets with spaces so that patches can be looped over
+    patches="${PATCH//^/ }"
+fi
+
+echo $patches
+for patch in $patches; do
+    echo pipelineCreateStream task_metacal -1 "DM_SETUP="\""${DM_SETUP}"\"",WORKDIR="\""${WORKDIR}"\"",TRACT="\""${TRACT}"\"",PATCH="\""${patch}"\"""
+    pipelineCreateStream task_metacal -1 "DM_SETUP="\""${DM_SETUP}"\"",WORKDIR="\""${WORKDIR}"\"",TRACT="\""${TRACT}"\"",PATCH="\""${patch}"\"""
+done

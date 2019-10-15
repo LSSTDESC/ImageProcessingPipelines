@@ -14,7 +14,7 @@ if [[ $PATCH = "" ]]; then
    #only tracts were provided, so we need to build the patch distribution
    echo "only tracks provided"
    PATCH=`sqlite3 ${IN_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 "select DISTINCT patch from overlaps WHERE tract=${TRACT};"`
-   #remove the space inside the patch pai
+   #remove the space inside the patch pair
    patches="${PATCH//[\ ()]/}"
 else
     #replace carets with spaces so that patches can be looped over
