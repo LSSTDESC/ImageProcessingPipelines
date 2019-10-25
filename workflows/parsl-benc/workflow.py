@@ -98,7 +98,7 @@ config = Config(executors=[local_executor, cori_queue_executor],
                 monitoring=MonitoringHub(
                     hub_address=address_by_hostname(),
                     hub_port=55055,
-                    logging_level=logging.INFO,
+                    monitoring_debug=False,
                     resource_monitoring_interval=10
                 ))
 
