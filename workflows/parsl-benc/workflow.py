@@ -37,6 +37,23 @@ logger.info("Parsl driver for DM pipeline")
 
 local_executor = ThreadPoolExecutor(max_threads=2, label="submit-node")
 
+
+
+# assorted configurations:
+
+ingest_source = "/global/projecta/projectdirs/lsst/production/DC2_ImSim/Run2.1.1i/sim/agn-test"
+
+# this is the butler repo to use
+in_dir = "/global/cscratch1/sd/bxc/parslTest/test0"
+
+root_softs="/global/homes/b/bxc/dm/"
+# what is ROOT_SOFTS in general? this has come from the SRS workflow, probably the path to this workflow's repo, up one level.
+
+
+
+
+
+
 cori_queue = "debug"
 max_blocks = 3 # aside from maxwalltime/discount/queue limit considerations, it is probably
                # better to increase max_blocks rather than compute_nodes to fit into schedule
@@ -104,15 +121,8 @@ config = Config(executors=[local_executor, cori_queue_executor],
 
 parsl.load(config)
 
-# assorted configurations:
 
-pipe_scripts_dir = "/global/homes/b/bxc/dm/ImageProcessingPipelines/workflows/srs/pipe_scripts/"
-ingest_source = "/global/projecta/projectdirs/lsst/production/DC2_ImSim/Run2.1.1i/sim/agn-test"
-in_dir = "/global/cscratch1/sd/bxc/parslTest/test0"
-
-root_softs="/global/homes/b/bxc/dm/"
-# what is ROOT_SOFTS in general? this has come from the SRS workflow, probably the path to this workflow's repo, up one level.
-
+pipe_scripts_dir = root_softs + "/ImageProcessingPipelines/workflows/srs/pipe_scripts/"
 @bash_app(executors=["worker-nodes"], cache=True)
 def create_ingest_file_list(pipe_scripts_dir, ingest_source, outputs=[]):
     outfile = outputs[0]
