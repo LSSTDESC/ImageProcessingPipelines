@@ -63,7 +63,7 @@ class CoriShifterSRunLauncher:
         self.srun_launcher = SrunLauncher()
 
     def __call__(self, command, tasks_per_node, nodes_per_block):
-        new_command="/global/homes/b/bxc/dm/ImageProcessingPipelines/workflows/parsl-benc/worker-wrapper {}".format(command)
+        new_command=os.getcwd() + "/worker-wrapper {}".format(command)
         return self.srun_launcher(new_command, tasks_per_node, nodes_per_block)
 
 cori_queue_executor = HighThroughputExecutor(
@@ -104,14 +104,20 @@ config = Config(executors=[local_executor, cori_queue_executor],
 
 parsl.load(config)
 
+# assorted configurations:
+
+pipe_scripts_dir = "/global/homes/b/bxc/dm/ImageProcessingPipelines/workflows/srs/pipe_scripts/"
+ingest_source = "/global/projecta/projectdirs/lsst/production/DC2_ImSim/Run2.1.1i/sim/agn-test"
+in_dir = "/global/cscratch1/sd/bxc/parslTest/test0"
+
+root_softs="/global/homes/b/bxc/dm/"
+# what is ROOT_SOFTS in general? this has come from the SRS workflow, probably the path to this workflow's repo, up one level.
 
 @bash_app(executors=["worker-nodes"], cache=True)
 def create_ingest_file_list(pipe_scripts_dir, ingest_source, outputs=[]):
     outfile = outputs[0]
     return "{pipe_scripts_dir}/createIngestFileList.py {ingest_source} --recursive --ext .fits && mv filesToIngest.txt {out_fn}".format(pipe_scripts_dir=pipe_scripts_dir, ingest_source=ingest_source, out_fn=outfile.filepath)
 
-pipe_scripts_dir = "/global/homes/b/bxc/dm/ImageProcessingPipelines/workflows/srs/pipe_scripts/"
-ingest_source = "/global/projecta/projectdirs/lsst/production/DC2_ImSim/Run2.1.1i/sim/agn-test"
 ingest_file = File("wf_files_to_ingest")
 
 
@@ -184,7 +190,6 @@ def ingest(file, in_dir, stdout=None, stderr=None):
     """
     return "ingestDriver.py --batch-type none {in_dir} @{arg1} --cores 1 --mode link --output {in_dir} -c clobber=True allowError=True register.ignore=True".format(in_dir=in_dir, arg1=file.filepath)
 
-in_dir = "/global/cscratch1/sd/bxc/parslTest/test0"
 
 #ingest_futures = [run_ingest(f, in_dir, n) for (f, n) in zip(truncated_ingest_list, range(0,len(truncated_ingest_list)))]
 ingest_futures = [run_ingest(truncatedFileList_output_future, in_dir, 0)] 
@@ -250,22 +255,20 @@ def raft_list_for_visit(in_dir, visit_id, out_filename):
     return "sqlite3 {in_dir}/registry.sqlite3 'select distinct raftName from raw where visit={visit_id}' > {out_filename}".format(in_dir = in_dir, visit_id = visit_id, out_filename = out_filename)
 
 
+
 # the parsl checkpointing for this won't detect if we ingested more stuff to do with the
 # specified visit - I'm not sure quite the right way to do it, and I think its only
 # useful in during workflow development when the original ingest list might change?
 # would need eg "files in each visit" list to generate a per-visit input "version" id/hash
 @bash_app(executors=["worker-nodes"], cache=True)
-def check_ccd_astrometry(in_dir, rerun, visit, inputs=[]):
+def check_ccd_astrometry(root_softs, in_dir, rerun, visit, inputs=[]):
     # inputs=[] ignored but used for dependency handling
-    # TODO: what is ROOT_SOFTS? probably the path to this workflow's repo.
-    root_softs="/global/homes/b/bxc/dm/"
     return "{root_softs}/ImageProcessingPipelines/python/util/checkCcdAstrometry.py {in_dir}/rerun/{rerun} --id visit={visit} --loglevel CameraMapper=warn".format(visit=visit, rerun=rerun, in_dir=in_dir, root_softs=root_softs)
 
 # the parsl checkpointing for this won't detect if we ingested more stuff to do with the
 # specified visit - see comments for check_ccd_astrometry
 @bash_app(executors=["worker-nodes"], cache=True)
-def tract2visit_mapper(in_dir, rerun, visit, inputs=[], stderr=None, stdout=None):
-    root_softs="/global/homes/b/bxc/dm/"
+def tract2visit_mapper(root_softs, in_dir, rerun, visit, inputs=[], stderr=None, stdout=None):
 
     # TODO: this seems to be how $REGISTRIES is figured out (via $WORKDIR) perhaps?
     # I'm unsure though
@@ -320,10 +323,10 @@ for (n, visit_id_unstripped) in zip(range(0,len(visit_lines)), visit_lines):
     # TODO: which of these post-processing steps need to happen in sequence rather than
     # in parallel?
 
-    fut1 = check_ccd_astrometry(in_dir, rerun, visit_id, inputs=this_visit_single_frame_futs)
+    fut1 = check_ccd_astrometry(root_softs, in_dir, rerun, visit_id, inputs=this_visit_single_frame_futs)
 
     tract2visit_mapper_stdbase = "track2visit_mapper.{}".format(visit_id)
-    fut2 = tract2visit_mapper(in_dir, rerun, visit_id, inputs=[fut1], stdout=tract2visit_mapper_stdbase+".stdout", stderr=tract2visit_mapper_stdbase+".stderr")
+    fut2 = tract2visit_mapper(root_softs, in_dir, rerun, visit_id, inputs=[fut1], stdout=tract2visit_mapper_stdbase+".stdout", stderr=tract2visit_mapper_stdbase+".stderr")
 
 
     # this is invoked in run_calexp with $OUT_DIR at the first parameter, but that's not something
