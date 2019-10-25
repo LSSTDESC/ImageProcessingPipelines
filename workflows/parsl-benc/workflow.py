@@ -25,6 +25,8 @@ from parsl.utils import get_all_checkpoints
 
 # to run the workflow, assuming above setup has been done:
 
+#  First configure the ingest_source, in_dir and root_softs variables below
+#  to match your own environment, and then:
 #   module load python/3.7-anaconda-2019.07
 #   source activate parsl-lsst-dm
 #   ./workflow.py 
