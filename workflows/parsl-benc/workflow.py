@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import concurrent.futures
 import logging
 import os
@@ -15,22 +16,18 @@ from parsl.providers import SlurmProvider
 from parsl.utils import get_all_checkpoints
 
 
-
-# assumption: this is running with the same-ish python as inside the expected
-# container:
-
-# eg. on the outside:
+# initial conda setup on cori:
 #   module load python/3.7-anaconda-2019.07
-#   source activate dm-play
-# with parsl installed in that container
+#   conda create --name=parsl-lsst-dm
+#   source activate parsl-lsst-dm
+#   conda install pip
+#   pip install 'parsl[monitoring] @ git+https://github.com/parsl/parsl@lsst-dm-201910'
 
+# to run the workflow, assuming above setup has been done:
 
-# OLD:
-# at least this much, inside a suitable container:
-#  source /opt/lsst/software/stack/loadLSST.bash
-
-#  setup lsst_distrib
-#  setup obs_lsst
+#   module load python/3.7-anaconda-2019.07
+#   source activate parsl-lsst-dm
+#   ./workflow.py 
 
 logger = logging.getLogger("parsl.dm")
 
