@@ -78,14 +78,6 @@ def id_for_memo_File(f, output_ref=False):
         return [f.url, stat_result.st_size, stat_result.st_mtime]
 
 
-# class CoriShifterSRunLauncher:
-#    def __init__(self):
-#        self.srun_launcher = SrunLauncher()
-#
-#    def __call__(self, command, tasks_per_node, nodes_per_block):
-#        new_command=os.getcwd() + "/worker-wrapper {}".format(command)
-#        return self.srun_launcher(new_command, tasks_per_node, nodes_per_block)
-
 worker_init="""
 cd {cwd}
 source setup.source
