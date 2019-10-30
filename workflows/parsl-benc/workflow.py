@@ -10,13 +10,14 @@ from parsl.monitoring import MonitoringHub
 from parsl.addresses import address_by_hostname
 from parsl.config import Config
 from parsl.data_provider.files import File # TODO: in parsl, export File from parsl.data_provider top
-from parsl.dataflow.memoization import id_for_memo
 from parsl.executors import ThreadPoolExecutor, HighThroughputExecutor
 from parsl.launchers import SrunLauncher
 from parsl.providers import SlurmProvider
 from parsl.utils import get_all_checkpoints
 
 from workflowutils import wrap_lsst_container
+
+import checkpointutil
 
 # initial conda setup on cori:
 #   module load python/3.7-anaconda-2019.07
@@ -63,20 +64,6 @@ max_blocks = 3 # aside from maxwalltime/discount/queue limit considerations, it 
                # more easily?
 compute_nodes = 1
 walltime = "00:29:30"
-
-@id_for_memo.register(File)
-def id_for_memo_File(f, output_ref=False):
-    if output_ref:
-        logger.debug("hashing File as output ref without content: {}".format(f))
-        return f.url
-    else:
-        logger.debug("hashing File as input with content: {}".format(f))
-        assert f.scheme == "file"
-        filename = f.filepath
-        stat_result = os.stat(filename)
-
-        return [f.url, stat_result.st_size, stat_result.st_mtime]
-
 
 worker_init="""
 cd {cwd}
