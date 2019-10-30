@@ -39,7 +39,6 @@ parsl.set_stream_logger()
 
 logger.info("Parsl driver for DM pipeline")
 
-local_executor = ThreadPoolExecutor(max_threads=2, label="submit-node")
 
 
 
@@ -97,6 +96,8 @@ cori_queue_executor = HighThroughputExecutor(
                 worker_init=worker_init
             ),
         )
+
+local_executor = ThreadPoolExecutor(max_threads=2, label="submit-node")
 
 config = Config(executors=[local_executor, cori_queue_executor],
                 app_cache=True, checkpoint_mode='task_exit',
