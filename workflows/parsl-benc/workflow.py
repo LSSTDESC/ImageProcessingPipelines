@@ -4,6 +4,7 @@ import logging
 import os
 
 import parsl
+
 from parsl import bash_app, python_app
 from parsl.monitoring import MonitoringHub
 from parsl.addresses import address_by_hostname
@@ -15,6 +16,7 @@ from parsl.launchers import SrunLauncher
 from parsl.providers import SlurmProvider
 from parsl.utils import get_all_checkpoints
 
+from workflowutils import wrap_lsst_container
 
 # initial conda setup on cori:
 #   module load python/3.7-anaconda-2019.07
@@ -76,13 +78,19 @@ def id_for_memo_File(f, output_ref=False):
         return [f.url, stat_result.st_size, stat_result.st_mtime]
 
 
-class CoriShifterSRunLauncher:
-    def __init__(self):
-        self.srun_launcher = SrunLauncher()
+# class CoriShifterSRunLauncher:
+#    def __init__(self):
+#        self.srun_launcher = SrunLauncher()
+#
+#    def __call__(self, command, tasks_per_node, nodes_per_block):
+#        new_command=os.getcwd() + "/worker-wrapper {}".format(command)
+#        return self.srun_launcher(new_command, tasks_per_node, nodes_per_block)
 
-    def __call__(self, command, tasks_per_node, nodes_per_block):
-        new_command=os.getcwd() + "/worker-wrapper {}".format(command)
-        return self.srun_launcher(new_command, tasks_per_node, nodes_per_block)
+worker_init="""
+cd {cwd}
+source setup.source
+export PYTHONPATH={cwd}  # to get at workflow modules on remote side
+""".format(cwd = os.getcwd())
 
 cori_queue_executor = HighThroughputExecutor(
             label='worker-nodes',
@@ -104,9 +112,10 @@ cori_queue_executor = HighThroughputExecutor(
                 min_blocks=0,
                 max_blocks=max_blocks,
                 scheduler_options="""#SBATCH --constraint=haswell""",
-                launcher=CoriShifterSRunLauncher(),
+                launcher=SrunLauncher(),
                 cmd_timeout=60,
-                walltime=walltime
+                walltime=walltime,
+                worker_init=worker_init
             ),
         )
 
@@ -122,17 +131,16 @@ config = Config(executors=[local_executor, cori_queue_executor],
 
 parsl.load(config)
 
-
 pipe_scripts_dir = root_softs + "/ImageProcessingPipelines/workflows/srs/pipe_scripts/"
 @bash_app(executors=["worker-nodes"], cache=True)
-def create_ingest_file_list(pipe_scripts_dir, ingest_source, outputs=[]):
+def create_ingest_file_list(wrap, pipe_scripts_dir, ingest_source, outputs=[]):
     outfile = outputs[0]
-    return "{pipe_scripts_dir}/createIngestFileList.py {ingest_source} --recursive --ext .fits && mv filesToIngest.txt {out_fn}".format(pipe_scripts_dir=pipe_scripts_dir, ingest_source=ingest_source, out_fn=outfile.filepath)
+    return wrap("{pipe_scripts_dir}/createIngestFileList.py {ingest_source} --recursive --ext .fits && mv filesToIngest.txt {out_fn}".format(pipe_scripts_dir=pipe_scripts_dir, ingest_source=ingest_source, out_fn=outfile.filepath))
 
 ingest_file = File("wf_files_to_ingest")
 
 
-ingest_fut = create_ingest_file_list(pipe_scripts_dir, ingest_source, outputs=[ingest_file])
+ingest_fut = create_ingest_file_list(wrap_lsst_container, pipe_scripts_dir, ingest_source, outputs=[ingest_file])
 # this gives about 45000 files listed in ingest_file
 
 ingest_file_output_file = ingest_fut.outputs[0] # same as ingest_file but with dataflow ordering
@@ -145,7 +153,8 @@ ingest_file_output_file = ingest_fut.outputs[0] # same as ingest_file but with d
 
 @bash_app(executors=["submit-node"], cache=True)
 def filter_in_place(ingest_file):
-    return "grep --invert-match 466748_R43_S21 {} > filter-filesToIngest.tmp && mv filter-filesToIngest.tmp filesToIngest.txt".format(ingest_file.filepath)
+    from workflowutils import wrap_lsst_container
+    return wrap_lsst_container("grep --invert-match 466748_R43_S21 {} > filter-filesToIngest.tmp && mv filter-filesToIngest.tmp filesToIngest.txt".format(ingest_file.filepath))
 
 filtered_ingest_list_future = filter_in_place(ingest_file_output_file)
 
@@ -190,6 +199,7 @@ def run_ingest(file, in_dir, n):
 
 @bash_app(executors=['worker-nodes'], cache=True)
 def ingest(file, in_dir, stdout=None, stderr=None):
+    from workflowutils import wrap_lsst_container
     # parsl.AUTO_LOGNAME does not work with checkpointing: see https://github.com/Parsl/parsl/issues/1293
     # def ingest(file, in_dir, stdout=parsl.AUTO_LOGNAME, stderr=parsl.AUTO_LOGNAME):
     """This comes from workflows/srs/pipe_setups/setup_ingest.
@@ -199,7 +209,7 @@ def ingest(file, in_dir, stdout=None, stderr=None):
     There SRS workflow using @{chunk_of_ingest_list}, but I'm going to specify a single filename
     directly for now.
     """
-    return "ingestDriver.py --batch-type none {in_dir} @{arg1} --cores 1 --mode link --output {in_dir} -c clobber=True allowError=True register.ignore=True".format(in_dir=in_dir, arg1=file.filepath)
+    return wrap_lsst_container("ingestDriver.py --batch-type none {in_dir} @{arg1} --cores 1 --mode link --output {in_dir} -c clobber=True allowError=True register.ignore=True".format(in_dir=in_dir, arg1=file.filepath))
 
 
 #ingest_futures = [run_ingest(f, in_dir, n) for (f, n) in zip(truncated_ingest_list, range(0,len(truncated_ingest_list)))]
@@ -229,7 +239,8 @@ logger.info("ingest(s) completed")
 # has gone into the DB potentially during ingest - for checkpointing
 @bash_app(executors=["worker-nodes"], cache=True)
 def make_sky_map(in_dir, rerun, ingest_list, stdout=None, stderr=None):
-    return "makeSkyMap.py {} --rerun {}".format(in_dir, rerun)
+    from workflowutils import wrap_lsst_container
+    return wrap_lsst_container("makeSkyMap.py {} --rerun {}".format(in_dir, rerun))
 
 logger.info("launching makeSkyMap")
 rerun = "some_rerun"
@@ -241,10 +252,11 @@ logger.info("makeSkyMap completed")
 logger.info("Making visit file from raw_visit table")
 
 @bash_app(executors=["worker-nodes"], cache=True)
-def make_visit_file(in_dir, ingest_list):
-    return 'sqlite3 {}/registry.sqlite3 "select DISTINCT visit from raw_visit;" > all_visits_from_register.list'.format(in_dir)
+def make_visit_file(in_dir, ingest_list, stdout=None, stderr=None):
+    from workflowutils import wrap_lsst_container
+    return wrap_lsst_container('sqlite3 {}/registry.sqlite3 "select DISTINCT visit from raw_visit;" > all_visits_from_register.list'.format(in_dir))
 
-visit_file_future = make_visit_file(in_dir, truncatedFileList_output_future)
+visit_file_future = make_visit_file(in_dir, truncatedFileList_output_future, stdout="make_visit_file.stdout", stderr="make_visit_file.stderr")
 visit_file_future.result()
 
 logger.info("Finished making visit file")
@@ -258,12 +270,14 @@ def single_frame_driver(in_dir, rerun, visit_id, raft_name, stdout=None, stderr=
     # this is going to be something like found in workflows/srs/pipe_setups/run_calexp
     # run_calexp uses --cores as NSLOTS+1. I'm using cores 1 because I am not sure of
     # the right parallelism here.
-    return "singleFrameDriver.py --batch-type none {in_dir} --rerun {rerun} --id visit={visit} raftName={raft_name} --cores 1 --timeout 999999999 --loglevel CameraMapper=warn".format(in_dir=in_dir, rerun=rerun, visit=visit_id, raft_name=raft_name)
+    from workflowutils import wrap_lsst_container
+    return wrap_lsst_container("singleFrameDriver.py --batch-type none {in_dir} --rerun {rerun} --id visit={visit} raftName={raft_name} --cores 1 --timeout 999999999 --loglevel CameraMapper=warn".format(in_dir=in_dir, rerun=rerun, visit=visit_id, raft_name=raft_name))
 
 
 @bash_app(executors=["worker-nodes"], cache=True)
 def raft_list_for_visit(in_dir, visit_id, out_filename):
-    return "sqlite3 {in_dir}/registry.sqlite3 'select distinct raftName from raw where visit={visit_id}' > {out_filename}".format(in_dir = in_dir, visit_id = visit_id, out_filename = out_filename)
+    from workflowutils import wrap_lsst_container
+    return wrap_lsst_container("sqlite3 {in_dir}/registry.sqlite3 'select distinct raftName from raw where visit={visit_id}' > {out_filename}".format(in_dir = in_dir, visit_id = visit_id, out_filename = out_filename))
 
 
 
@@ -274,23 +288,25 @@ def raft_list_for_visit(in_dir, visit_id, out_filename):
 @bash_app(executors=["worker-nodes"], cache=True)
 def check_ccd_astrometry(root_softs, in_dir, rerun, visit, inputs=[]):
     # inputs=[] ignored but used for dependency handling
-    return "{root_softs}/ImageProcessingPipelines/python/util/checkCcdAstrometry.py {in_dir}/rerun/{rerun} --id visit={visit} --loglevel CameraMapper=warn".format(visit=visit, rerun=rerun, in_dir=in_dir, root_softs=root_softs)
+    from workflowutils import wrap_lsst_container
+    return wrap_lsst_container("{root_softs}/ImageProcessingPipelines/python/util/checkCcdAstrometry.py {in_dir}/rerun/{rerun} --id visit={visit} --loglevel CameraMapper=warn".format(visit=visit, rerun=rerun, in_dir=in_dir, root_softs=root_softs))
 
 # the parsl checkpointing for this won't detect if we ingested more stuff to do with the
 # specified visit - see comments for check_ccd_astrometry
 @bash_app(executors=["worker-nodes"], cache=True)
 def tract2visit_mapper(root_softs, in_dir, rerun, visit, inputs=[], stderr=None, stdout=None):
-
+    from workflowutils import wrap_lsst_container
     # TODO: this seems to be how $REGISTRIES is figured out (via $WORKDIR) perhaps?
     # I'm unsure though
     registries="{in_dir}/rerun/{rerun}/registries".format(in_dir=in_dir, rerun=rerun)
 
-    return "mkdir -p {registries} && {root_softs}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir={in_dir}/rerun/{rerun} --db={registries}/tracts_mapping_{visit}.sqlite3 --visits={visit}".format(in_dir=in_dir, rerun=rerun, visit=visit, registries=registries, root_softs=root_softs)
+    return wrap_lsst_container("mkdir -p {registries} && {root_softs}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir={in_dir}/rerun/{rerun} --db={registries}/tracts_mapping_{visit}.sqlite3 --visits={visit}".format(in_dir=in_dir, rerun=rerun, visit=visit, registries=registries, root_softs=root_softs))
 
 
 @bash_app(executors=["worker-nodes"], cache=True)
 def sky_correction(in_dir, rerun, visit, inputs=[], stdout=None, stderr=None):
-    return "skyCorrection.py {in_dir}  --rerun {rerun} --id visit={visit} --batch-type none --cores 1 --timeout 999999999 --no-versions --loglevel CameraMapper=warn".format(in_dir=in_dir, rerun=rerun, visit=visit)
+    from workflowutils import wrap_lsst_container
+    return wrap_lsst_container("skyCorrection.py {in_dir}  --rerun {rerun} --id visit={visit} --batch-type none --cores 1 --timeout 999999999 --no-versions --loglevel CameraMapper=warn".format(in_dir=in_dir, rerun=rerun, visit=visit))
 
 with open("all_visits_from_register.list") as f:
     visit_lines = f.readlines()
