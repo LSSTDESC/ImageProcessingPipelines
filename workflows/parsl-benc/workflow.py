@@ -18,6 +18,7 @@ from parsl.utils import get_all_checkpoints
 from workflowutils import wrap_lsst_container
 
 import checkpointutil
+import configuration
 
 # initial conda setup on cori:
 #   module load python/3.7-anaconda-2019.07
@@ -28,8 +29,9 @@ import checkpointutil
 
 # to run the workflow, assuming above setup has been done:
 
-#  First configure the ingest_source, in_dir and root_softs variables below
-#  to match your own environment, and then:
+# First, fiddle with configuration.py to match your own environment,
+# especially the the ingest_source, in_dir and root_softs variables.
+# Then:
 #   source ./setup.source
 #   ./workflow.py 
 
@@ -39,79 +41,9 @@ parsl.set_stream_logger()
 
 logger.info("Parsl driver for DM pipeline")
 
+parsl.load(configuration.parsl_config)
 
-
-
-# assorted configurations:
-
-ingest_source = "/global/projecta/projectdirs/lsst/production/DC2_ImSim/Run2.1.1i/sim/agn-test"
-
-# this is the butler repo to use
-in_dir = "/global/cscratch1/sd/bxc/parslTest/test0"
-
-root_softs="/global/homes/b/bxc/dm/"
-# what is ROOT_SOFTS in general? this has come from the SRS workflow, probably the path to this workflow's repo, up one level.
-
-
-
-
-
-
-cori_queue = "debug"
-max_blocks = 3 # aside from maxwalltime/discount/queue limit considerations, it is probably
-               # better to increase max_blocks rather than compute_nodes to fit into schedule
-               # more easily?
-compute_nodes = 1
-walltime = "00:29:30"
-
-worker_init="""
-cd {cwd}
-source setup.source
-export PYTHONPATH={cwd}  # to get at workflow modules on remote side
-""".format(cwd = os.getcwd())
-
-cori_queue_executor = HighThroughputExecutor(
-            label='worker-nodes',
-            address=address_by_hostname(),
-            worker_debug=True,
-
-            # this overrides the default HighThroughputExecutor process workers with
-            # process workers run inside the appropriate shifter container with
-            # lsst setup commands executed. That means that everything running in
-            # those workers will inherit the correct environment.
-
-            heartbeat_period = 25,
-            heartbeat_threshold = 75,
-            provider=SlurmProvider(
-                cori_queue,
-                nodes_per_block=compute_nodes,
-                exclusive = True,
-                init_blocks=0,
-                min_blocks=0,
-                max_blocks=max_blocks,
-                scheduler_options="""#SBATCH --constraint=haswell""",
-                launcher=SrunLauncher(),
-                cmd_timeout=60,
-                walltime=walltime,
-                worker_init=worker_init
-            ),
-        )
-
-local_executor = ThreadPoolExecutor(max_threads=2, label="submit-node")
-
-config = Config(executors=[local_executor, cori_queue_executor],
-                app_cache=True, checkpoint_mode='task_exit',
-                checkpoint_files=get_all_checkpoints(),
-                monitoring=MonitoringHub(
-                    hub_address=address_by_hostname(),
-                    hub_port=55055,
-                    monitoring_debug=False,
-                    resource_monitoring_interval=10
-                ))
-
-parsl.load(config)
-
-pipe_scripts_dir = root_softs + "/ImageProcessingPipelines/workflows/srs/pipe_scripts/"
+pipe_scripts_dir = configuration.root_softs + "/ImageProcessingPipelines/workflows/srs/pipe_scripts/"
 @bash_app(executors=["worker-nodes"], cache=True)
 def create_ingest_file_list(wrap, pipe_scripts_dir, ingest_source, outputs=[]):
     outfile = outputs[0]
@@ -120,7 +52,7 @@ def create_ingest_file_list(wrap, pipe_scripts_dir, ingest_source, outputs=[]):
 ingest_file = File("wf_files_to_ingest")
 
 
-ingest_fut = create_ingest_file_list(wrap_lsst_container, pipe_scripts_dir, ingest_source, outputs=[ingest_file])
+ingest_fut = create_ingest_file_list(wrap_lsst_container, pipe_scripts_dir, configuration.ingest_source, outputs=[ingest_file])
 # this gives about 45000 files listed in ingest_file
 
 ingest_file_output_file = ingest_fut.outputs[0] # same as ingest_file but with dataflow ordering
@@ -193,7 +125,7 @@ def ingest(file, in_dir, stdout=None, stderr=None):
 
 
 #ingest_futures = [run_ingest(f, in_dir, n) for (f, n) in zip(truncated_ingest_list, range(0,len(truncated_ingest_list)))]
-ingest_futures = [run_ingest(truncatedFileList_output_future, in_dir, 0)] 
+ingest_futures = [run_ingest(truncatedFileList_output_future, configuration.in_dir, 0)] 
 
 # this will wait for all futures to complete before proceeding
 # and then any exceptions will be thrown in ingest_results
@@ -224,7 +156,7 @@ def make_sky_map(in_dir, rerun, ingest_list, stdout=None, stderr=None):
 
 logger.info("launching makeSkyMap")
 rerun = "some_rerun"
-skymap_future = make_sky_map(in_dir, rerun, truncatedFileList_output_future, stdout="make_sky_map.stdout", stderr="make_sky_map.stderr")
+skymap_future = make_sky_map(configuration.in_dir, rerun, truncatedFileList_output_future, stdout="make_sky_map.stdout", stderr="make_sky_map.stderr")
 skymap_future.result()
 logger.info("makeSkyMap completed")
 
@@ -236,7 +168,7 @@ def make_visit_file(in_dir, ingest_list, stdout=None, stderr=None):
     from workflowutils import wrap_lsst_container
     return wrap_lsst_container('sqlite3 {}/registry.sqlite3 "select DISTINCT visit from raw_visit;" > all_visits_from_register.list'.format(in_dir))
 
-visit_file_future = make_visit_file(in_dir, truncatedFileList_output_future, stdout="make_visit_file.stdout", stderr="make_visit_file.stderr")
+visit_file_future = make_visit_file(configuration.in_dir, truncatedFileList_output_future, stdout="make_visit_file.stdout", stderr="make_visit_file.stderr")
 visit_file_future.result()
 
 logger.info("Finished making visit file")
@@ -297,7 +229,7 @@ for (n, visit_id_unstripped) in zip(range(0,len(visit_lines)), visit_lines):
   
     raft_list_fn = "raft_list_for_visit.{}".format(visit_id)
 
-    raft_list_future = raft_list_for_visit(in_dir, visit_id, raft_list_fn)
+    raft_list_future = raft_list_for_visit(configuration.in_dir, visit_id, raft_list_fn)
     raft_list_future.result()
     # this wait here means that we don't get parallelisation so much
     # there are problems with launching tasks within tasks due to locking up
@@ -317,7 +249,7 @@ for (n, visit_id_unstripped) in zip(range(0,len(visit_lines)), visit_lines):
         # assume visit_id really is a visit id... workflows/srs/pipe_setups/setup_calexp has a case where the visit file has two fields per line, and this is handled differently there. I have ignored that here.
         # raft_name is the $RAFTNAME environment variable in run_calexp in the XML workflows
         sfd_output_basename="single_frame_driver.{}.{}".format(m,n)
-        this_visit_single_frame_futs.append(single_frame_driver(in_dir, rerun, visit_id, raft_name, stdout=sfd_output_basename+".stdout", stderr=sfd_output_basename+".stderr"))
+        this_visit_single_frame_futs.append(single_frame_driver(configuration.in_dir, rerun, visit_id, raft_name, stdout=sfd_output_basename+".stdout", stderr=sfd_output_basename+".stderr"))
 
     # now need to join based on all of this_visit_single_frame_futs... but not in sequential code
     # because otherwise we won't launch later visits until after we're done with this one, and
@@ -330,17 +262,17 @@ for (n, visit_id_unstripped) in zip(range(0,len(visit_lines)), visit_lines):
     # TODO: which of these post-processing steps need to happen in sequence rather than
     # in parallel?
 
-    fut1 = check_ccd_astrometry(root_softs, in_dir, rerun, visit_id, inputs=this_visit_single_frame_futs)
+    fut1 = check_ccd_astrometry(configuration.root_softs, configuration.in_dir, rerun, visit_id, inputs=this_visit_single_frame_futs)
 
     tract2visit_mapper_stdbase = "track2visit_mapper.{}".format(visit_id)
-    fut2 = tract2visit_mapper(root_softs, in_dir, rerun, visit_id, inputs=[fut1], stdout=tract2visit_mapper_stdbase+".stdout", stderr=tract2visit_mapper_stdbase+".stderr")
+    fut2 = tract2visit_mapper(configuration.root_softs, configuration.in_dir, rerun, visit_id, inputs=[fut1], stdout=tract2visit_mapper_stdbase+".stdout", stderr=tract2visit_mapper_stdbase+".stderr")
 
 
     # this is invoked in run_calexp with $OUT_DIR at the first parameter, but that's not something
     # i've used so far -- so I'm using IN_DIR as used in previous steps
     # TODO: is that the right thing to do? otherwise how does IN_DIR and OUT_DIR differ?
     sky_correction_stdbase = "sky_correction.{}".format(visit_id)
-    fut3 = sky_correction(in_dir, rerun, visit_id, inputs=[fut2], stdout=sky_correction_stdbase+".stdout", stderr=sky_correction_stdbase+".stderr")
+    fut3 = sky_correction(configuration.in_dir, rerun, visit_id, inputs=[fut2], stdout=sky_correction_stdbase+".stdout", stderr=sky_correction_stdbase+".stderr")
 
     calexp_futs.append(fut3)
 
