@@ -18,7 +18,7 @@ from parsl.utils import get_all_checkpoints
 
 # initial conda setup on cori:
 #   module load python/3.7-anaconda-2019.07
-#   conda create --name=parsl-lsst-dm
+#   conda create --name=parsl-lsst-dm  # this conda env name is used by setup.source below
 #   source activate parsl-lsst-dm
 #   conda install pip
 #   pip install 'parsl[monitoring] @ git+https://github.com/parsl/parsl@lsst-dm-201910'
@@ -27,8 +27,7 @@ from parsl.utils import get_all_checkpoints
 
 #  First configure the ingest_source, in_dir and root_softs variables below
 #  to match your own environment, and then:
-#   module load python/3.7-anaconda-2019.07
-#   source activate parsl-lsst-dm
+#   source ./setup.source
 #   ./workflow.py 
 
 logger = logging.getLogger("parsl.dm")
