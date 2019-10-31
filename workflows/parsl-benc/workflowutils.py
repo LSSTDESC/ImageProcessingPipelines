@@ -8,7 +8,6 @@ def wrap_shifter_container(cmd: str) -> str:
     """
     import os
     import platform
-    import random
     import time
     cmdfile = "./wrap-container.{}.{}.{}".format(platform.node(), os.getpid(), time.time())
     with open(cmdfile, "w") as f:

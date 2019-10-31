@@ -1,11 +1,8 @@
 import os
-import parsl
 
-from parsl import bash_app, python_app
 from parsl.monitoring import MonitoringHub
 from parsl.addresses import address_by_hostname
 from parsl.config import Config
-from parsl.data_provider.files import File # TODO: in parsl, export File from parsl.data_provider top
 from parsl.executors import ThreadPoolExecutor, HighThroughputExecutor
 from parsl.launchers import SrunLauncher
 from parsl.providers import SlurmProvider
