@@ -11,6 +11,7 @@ from parsl.launchers import SrunLauncher
 from parsl.providers import SlurmProvider
 from parsl.utils import get_all_checkpoints
 
+from workflowutils import wrap_shifter_container
 
 # assorted configurations:
 
@@ -28,6 +29,13 @@ max_blocks = 3 # aside from maxwalltime/discount/queue limit considerations, it 
                # more easily?
 compute_nodes = 1
 walltime = "00:29:30"
+
+
+# This specifies a function (str -> str) which rewrites a bash command into
+# one appropriately wrapper for whichever container/environment is being used
+# with this configuration (for example, wrap_shifter_container writes the command
+# to a temporary file and then invokes that file inside shifter)
+wrap = wrap_shifter_container
 
 worker_init="""
 cd {cwd}

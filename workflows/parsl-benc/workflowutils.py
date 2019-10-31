@@ -1,5 +1,5 @@
 
-def wrap_lsst_container(cmd: str) -> str:
+def wrap_shifter_container(cmd: str) -> str:
     """given a command, creates a new command that runs the original
     command inside an LSST application container. There is a lot of
     dancing around with cwd, because cwd is not preserved across
