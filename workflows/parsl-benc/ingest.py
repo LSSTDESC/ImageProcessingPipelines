@@ -5,10 +5,12 @@ from parsl.data_provider.files import File # TODO: in parsl, export File from pa
 
 logger = logging.getLogger("parsl.dm.ingest")
 
+
 @bash_app(executors=["worker-nodes"], cache=True)
 def create_ingest_file_list(wrap, pipe_scripts_dir, ingest_source, outputs=[]):
     outfile = outputs[0]
     return wrap("{pipe_scripts_dir}/createIngestFileList.py {ingest_source} --recursive --ext .fits && mv filesToIngest.txt {out_fn}".format(pipe_scripts_dir=pipe_scripts_dir, ingest_source=ingest_source, out_fn=outfile.filepath))
+
 
 @bash_app(executors=["submit-node"], cache=True)
 def filter_in_place(wrap, ingest_file):
@@ -24,8 +26,10 @@ def truncate_ingest_list(files_to_ingest, n, outputs=[]):
         f.writelines(l) # caution line endings - writelines needs them, apparently but unsure if readlines trims them off
     logger.info("wrote truncated list")
 
+
 def run_ingest(configuration, file, n):
     return ingest(configuration.wrap, file, configuration.in_dir, stdout="ingest.{}.stdout".format(n), stderr="ingest.{}.stderr".format(n))
+
 
 @bash_app(executors=['worker-nodes'], cache=True)
 def ingest(wrap, file, in_dir, stdout=None, stderr=None):
@@ -39,6 +43,7 @@ def ingest(wrap, file, in_dir, stdout=None, stderr=None):
     directly for now.
     """
     return wrap("ingestDriver.py --batch-type none {in_dir} @{arg1} --cores 1 --mode link --output {in_dir} -c clobber=True allowError=True register.ignore=True".format(in_dir=in_dir, arg1=file.filepath))
+
 
 def perform_ingest(configuration):
 

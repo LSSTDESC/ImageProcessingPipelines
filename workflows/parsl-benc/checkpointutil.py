@@ -6,6 +6,7 @@ from parsl.data_provider.files import File
 
 logger = logging.getLogger("parsl.dm.checkpoint")
 
+
 @id_for_memo.register(File)
 def id_for_memo_File(f, output_ref=False):
     if output_ref:

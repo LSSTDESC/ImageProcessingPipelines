@@ -53,6 +53,7 @@ logger.info("ingest(s) completed")
 def make_sky_map(wrap, in_dir, rerun, stdout=None, stderr=None):
     return wrap("makeSkyMap.py {} --rerun {}".format(in_dir, rerun))
 
+
 logger.info("launching makeSkyMap")
 rerun = "some_rerun"
 skymap_future = make_sky_map(configuration.wrap, configuration.in_dir, rerun, stdout="make_sky_map.stdout", stderr="make_sky_map.stderr")
@@ -62,9 +63,11 @@ logger.info("makeSkyMap completed")
 #  setup_calexp: use DB to make a visit file
 logger.info("Making visit file from raw_visit table")
 
+
 @bash_app(executors=["worker-nodes"], cache=True)
 def make_visit_file(wrap, in_dir, stdout=None, stderr=None):
     return wrap('sqlite3 {}/registry.sqlite3 "select DISTINCT visit from raw_visit;" > all_visits_from_register.list'.format(in_dir))
+
 
 visit_file_future = make_visit_file(configuration.wrap, configuration.in_dir, stdout="make_visit_file.stdout", stderr="make_visit_file.stderr")
 visit_file_future.result()
@@ -112,6 +115,7 @@ def tract2visit_mapper(wrap, root_softs, in_dir, rerun, visit, inputs=[], stderr
 @bash_app(executors=["worker-nodes"], cache=True)
 def sky_correction(wrap, in_dir, rerun, visit, inputs=[], stdout=None, stderr=None):
     return wrap("skyCorrection.py {in_dir}  --rerun {rerun} --id visit={visit} --batch-type none --cores 1 --timeout 999999999 --no-versions --loglevel CameraMapper=warn".format(in_dir=in_dir, rerun=rerun, visit=visit))
+
 
 with open("all_visits_from_register.list") as f:
     visit_lines = f.readlines()
