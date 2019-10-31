@@ -14,4 +14,3 @@ def wrap_shifter_container(cmd: str) -> str:
         f.write(cmd)
     
     return "shifter --image=lsstdesc/stack:w_2019_19-dc2_run2.1i {cwd}/container-inner.sh {cwd} {cmd}".format(cmd=cmdfile, cwd=os.getcwd())
-

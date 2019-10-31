@@ -78,4 +78,3 @@ parsl_config = Config(executors=[local_executor, cori_queue_executor],
                     monitoring_debug=False,
                     resource_monitoring_interval=10
                 ))
-
