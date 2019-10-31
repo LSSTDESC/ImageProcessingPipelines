@@ -1,7 +1,9 @@
 import logging
 
 from parsl import bash_app, python_app
-from parsl.data_provider.files import File # TODO: in parsl, export File from parsl.data_provider top
+
+# TODO: in parsl, export File from parsl.data_provider top
+from parsl.data_provider.files import File
 
 logger = logging.getLogger("parsl.dm.ingest")
 
@@ -23,7 +25,7 @@ def truncate_ingest_list(files_to_ingest, n, outputs=[]):
     l = files_to_ingest[0:n]
     logger.info("writing truncated list")
     with open(outputs[0].filepath, "w") as f:
-        f.writelines(l) # caution line endings - writelines needs them, apparently but unsure if readlines trims them off
+        f.writelines(l)  # caution line endings - writelines needs them, apparently but unsure if readlines trims them off
     logger.info("wrote truncated list")
 
 
@@ -51,11 +53,10 @@ def perform_ingest(configuration):
 
     ingest_file = File("wf_files_to_ingest")
 
-
     ingest_fut = create_ingest_file_list(configuration.wrap, pipe_scripts_dir, configuration.ingest_source, outputs=[ingest_file])
     # this gives about 45000 files listed in ingest_file
 
-    ingest_file_output_file = ingest_fut.outputs[0] # same as ingest_file but with dataflow ordering
+    ingest_file_output_file = ingest_fut.outputs[0]  # same as ingest_file but with dataflow ordering
 
     # heather then advises cutting out two specific files - although I only see the second at the
     # moment so I'm only filtering that out...
@@ -71,14 +72,13 @@ def perform_ingest(configuration):
         files_to_ingest = f.readlines()
 
     logger.info("There are {} entries in ingest list".format(len(files_to_ingest)))
-    truncatedFileListName= "wf_FilesToIngestTruncated.txt"
+    truncatedFileListName = "wf_FilesToIngestTruncated.txt"
     truncatedFileList = File(truncatedFileListName)
     truncated_ingest_list = truncate_ingest_list(files_to_ingest, 20, outputs=[truncatedFileList])
-    truncatedFileList_output_future = truncated_ingest_list.outputs[0] # future form of truncatedFileList
+    truncatedFileList_output_future = truncated_ingest_list.outputs[0]  # future form of truncatedFileList
     # parsl discussion: the UI is awkward that we can make a truncatedFileList
     # File but then we need to extract out the datafuture that contains "the same"
     # file to get dependency ordering.
-
 
     # we'll then have a list of files that we want to do the "step 1" ingest on
     # the implementation of this in SRS is three sets of tasks:

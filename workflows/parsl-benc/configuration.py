@@ -50,12 +50,12 @@ cori_queue_executor = HighThroughputExecutor(
             # lsst setup commands executed. That means that everything running in
             # those workers will inherit the correct environment.
 
-            heartbeat_period = 25,
-            heartbeat_threshold = 75,
+            heartbeat_period=25,
+            heartbeat_threshold=75,
             provider=SlurmProvider(
                 cori_queue,
                 nodes_per_block=compute_nodes,
-                exclusive = True,
+                exclusive=True,
                 init_blocks=0,
                 min_blocks=0,
                 max_blocks=max_blocks,

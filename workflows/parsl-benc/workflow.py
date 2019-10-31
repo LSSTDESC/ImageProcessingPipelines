@@ -3,6 +3,7 @@ import concurrent.futures
 import logging
 
 import parsl
+from parsl import bash_app
 
 import checkpointutil  # noqa: F401 - for import-time checkpoint config
 import configuration
@@ -21,7 +22,7 @@ import ingest
 # especially the the ingest_source, in_dir and root_softs variables.
 # Then:
 #   source ./setup.source
-#   ./workflow.py 
+#   ./workflow.py
 
 logger = logging.getLogger("parsl.dm")
 
@@ -88,8 +89,7 @@ def single_frame_driver(wrap, in_dir, rerun, visit_id, raft_name, stdout=None, s
 
 @bash_app(executors=["worker-nodes"], cache=True)
 def raft_list_for_visit(wrap, in_dir, visit_id, out_filename):
-    return wrap("sqlite3 {in_dir}/registry.sqlite3 'select distinct raftName from raw where visit={visit_id}' > {out_filename}".format(in_dir = in_dir, visit_id = visit_id, out_filename = out_filename))
-
+    return wrap("sqlite3 {in_dir}/registry.sqlite3 'select distinct raftName from raw where visit={visit_id}' > {out_filename}".format(in_dir=in_dir, visit_id=visit_id, out_filename=out_filename))
 
 
 # the parsl checkpointing for this won't detect if we ingested more stuff to do with the
@@ -107,7 +107,7 @@ def check_ccd_astrometry(wrap, root_softs, in_dir, rerun, visit, inputs=[]):
 def tract2visit_mapper(wrap, root_softs, in_dir, rerun, visit, inputs=[], stderr=None, stdout=None):
     # TODO: this seems to be how $REGISTRIES is figured out (via $WORKDIR) perhaps?
     # I'm unsure though
-    registries="{in_dir}/rerun/{rerun}/registries".format(in_dir=in_dir, rerun=rerun)
+    registries = "{in_dir}/rerun/{rerun}/registries".format(in_dir=in_dir, rerun=rerun)
 
     return wrap("mkdir -p {registries} && {root_softs}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir={in_dir}/rerun/{rerun} --db={registries}/tracts_mapping_{visit}.sqlite3 --visits={visit}".format(in_dir=in_dir, rerun=rerun, visit=visit, registries=registries, root_softs=root_softs))
 
@@ -121,9 +121,9 @@ with open("all_visits_from_register.list") as f:
     visit_lines = f.readlines()
 
 calexp_futs = []
-for (n, visit_id_unstripped) in zip(range(0,len(visit_lines)), visit_lines):
+for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
     visit_id = visit_id_unstripped.strip()
-  
+
     raft_list_fn = "raft_list_for_visit.{}".format(visit_id)
 
     raft_list_future = raft_list_for_visit(configuration.wrap, configuration.in_dir, visit_id, raft_list_fn)
@@ -138,7 +138,7 @@ for (n, visit_id_unstripped) in zip(range(0,len(visit_lines)), visit_lines):
 
     this_visit_single_frame_futs = []
 
-    for (m, raft_name_stripped) in zip(range(0,len(raft_lines)), raft_lines):
+    for (m, raft_name_stripped) in zip(range(0, len(raft_lines)), raft_lines):
         raft_name=raft_name_stripped.strip()
         logger.info("visit {} raft {}".format(visit_id, raft_name))
 
@@ -164,7 +164,6 @@ for (n, visit_id_unstripped) in zip(range(0,len(visit_lines)), visit_lines):
     tract2visit_mapper_stdbase = "track2visit_mapper.{}".format(visit_id)
     fut2 = tract2visit_mapper(configuration.wrap, configuration.root_softs, configuration.in_dir, rerun, visit_id, inputs=[fut1], stdout=tract2visit_mapper_stdbase+".stdout", stderr=tract2visit_mapper_stdbase+".stderr")
 
-
     # this is invoked in run_calexp with $OUT_DIR at the first parameter, but that's not something
     # i've used so far -- so I'm using IN_DIR as used in previous steps
     # TODO: is that the right thing to do? otherwise how does IN_DIR and OUT_DIR differ?
@@ -174,7 +173,6 @@ for (n, visit_id_unstripped) in zip(range(0,len(visit_lines)), visit_lines):
     calexp_futs.append(fut3)
 
     # TODO: visitAnlysis.py for stream and visit - this involves sqlite
-
 
 
 logger.info("submitted task_calexps. waiting for completion of all of them.")
