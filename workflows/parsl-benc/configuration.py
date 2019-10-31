@@ -22,11 +22,6 @@ in_dir = "/global/cscratch1/sd/bxc/parslTest/test0"
 root_softs="/global/homes/b/bxc/dm/"
 # what is ROOT_SOFTS in general? this has come from the SRS workflow, probably the path to this workflow's repo, up one level.
 
-
-
-
-
-
 cori_queue = "debug"
 max_blocks = 3 # aside from maxwalltime/discount/queue limit considerations, it is probably
                # better to increase max_blocks rather than compute_nodes to fit into schedule
