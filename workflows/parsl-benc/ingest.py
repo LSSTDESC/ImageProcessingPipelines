@@ -22,10 +22,10 @@ def filter_in_place(wrap, ingest_file):
 # for testing, truncated this list heavilty
 @python_app(executors=["submit-node"], cache=True)
 def truncate_ingest_list(files_to_ingest, n, outputs=[]):
-    l = files_to_ingest[0:n]
+    filenames = files_to_ingest[0:n]
     logger.info("writing truncated list")
     with open(outputs[0].filepath, "w") as f:
-        f.writelines(l)  # caution line endings - writelines needs them, apparently but unsure if readlines trims them off
+        f.writelines(filenames)  # caution line endings - writelines needs them, apparently but unsure if readlines trims them off
     logger.info("wrote truncated list")
 
 
