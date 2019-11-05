@@ -6,7 +6,7 @@ import parsl
 from parsl import bash_app
 
 import checkpointutil  # noqa: F401 - for import-time checkpoint config
-import configuration
+from configuration import configuration
 import ingest
 
 # initial conda setup on cori:
