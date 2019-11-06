@@ -9,8 +9,9 @@ def wrap_shifter_container(cmd: str) -> str:
     import os
     import platform
     import time
+    workflow_src_dir = os.path.dirname(os.path.abspath(__file__))
     cmdfile = "./wrap-container.{}.{}.{}".format(platform.node(), os.getpid(), time.time())
     with open(cmdfile, "w") as f:
         f.write(cmd)
 
-    return "shifter --image=lsstdesc/stack:w_2019_19-dc2_run2.1i {cwd}/container-inner.sh {cwd} {cmd}".format(cmd=cmdfile, cwd=os.getcwd())
+    return "shifter --image=lsstdesc/stack:w_2019_19-dc2_run2.1i {workflow_src_dir}/container-inner.sh {cwd} {cmd}".format(workflow_src_dir = workflow_src_dir, cmd=cmdfile, cwd=os.getcwd())

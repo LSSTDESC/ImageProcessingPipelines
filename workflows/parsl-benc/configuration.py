@@ -32,11 +32,19 @@ max_blocks = 3
 compute_nodes = 1
 walltime = "00:29:30"
 
+# this is the directory that the workflow is invoked in and is where output
+# files that don't go in the repo should be put.
+
+workflow_cwd = os.getcwd()
+
+# this is the directory that the workflow .py source code files live in
+workflow_src_dir = os.path.dirname(os.path.abspath(__file__))
+
 worker_init = """
-cd {cwd}
+cd {workflow_cwd}
 source setup.source
-export PYTHONPATH={cwd}  # to get at workflow modules on remote side
-""".format(cwd=os.getcwd())
+export PYTHONPATH={workflow_src_dir}  # to get at workflow modules on remote side
+""".format(workflow_cwd=workflow_cwd, workflow_src_dir=workflow_src_dir)
 
 cori_queue_executor = HighThroughputExecutor(
             label='worker-nodes',

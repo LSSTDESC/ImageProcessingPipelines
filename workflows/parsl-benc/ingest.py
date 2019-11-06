@@ -9,7 +9,7 @@ logger = logging.getLogger("parsl.dm.ingest")
 
 
 @bash_app(executors=["worker-nodes"], cache=True)
-def create_ingest_file_list(wrap, pipe_scripts_dir, ingest_source, outputs=[]):
+def create_ingest_file_list(wrap, pipe_scripts_dir, ingest_source, outputs=[], stdout=None, stderr=None):
     outfile = outputs[0]
     return wrap("{pipe_scripts_dir}/createIngestFileList.py {ingest_source} --recursive --ext .fits && mv filesToIngest.txt {out_fn}".format(pipe_scripts_dir=pipe_scripts_dir, ingest_source=ingest_source, out_fn=outfile.filepath))
 
@@ -49,7 +49,7 @@ def perform_ingest(configuration):
 
     ingest_file = File("wf_files_to_ingest")
 
-    ingest_fut = create_ingest_file_list(configuration.wrap, pipe_scripts_dir, configuration.ingest_source, outputs=[ingest_file])
+    ingest_fut = create_ingest_file_list(configuration.wrap, pipe_scripts_dir, configuration.ingest_source, outputs=[ingest_file], stdout="create_ingest_file_list.stdout", stderr="create_ingest_file_list.stderr")
     # on dev repo, this gives about 45000 files listed in ingest_file
 
     ingest_file_output_file = ingest_fut.outputs[0]
