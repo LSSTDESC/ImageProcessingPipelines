@@ -11,7 +11,7 @@ import ingest
 
 # initial conda setup on cori:
 #   module load python/3.7-anaconda-2019.07
-#   conda create --name=parsl-lsst-dm  # this conda env name is used by setup.source below
+#   conda create --name=parsl-lsst-dm python=3.7  # this conda env name is used by setup.source below
 #   source activate parsl-lsst-dm
 #   conda install pip
 #   pip install 'parsl[monitoring] @ git+https://github.com/parsl/parsl@lsst-dm-201910'
