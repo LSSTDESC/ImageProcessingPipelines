@@ -1,4 +1,0 @@
-#!/bin/bash
-
-shifter --image=lsstdesc/stack:w_2019_19-dc2_run2.1i bash -c "$(pwd)/worker-wrapper-inner $(pwd) $*"
-
