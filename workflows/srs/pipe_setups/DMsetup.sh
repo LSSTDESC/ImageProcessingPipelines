@@ -19,10 +19,13 @@ if [[ $SITE == "NERSC" ]]
 then
     setup -r ${ROOT_SOFTS}/obs_lsst -j
 else
-    eups undeclare obs_lsst dc2-run1.2-v3
-    eups declare -r $ROOT_SOFTS/obs_lsst obs_lsst dc2-run1.2-v3
+    eups undeclare obs_lsst w.2018.39-run1.2-v3_diff
+    eups undeclare dia_pipe bob
+    eups declare -r ${ROOT_SOFTS}/obs_lsst obs_lsst w.2018.39-run1.2-v3_diff
     eups declare -r ${ROOT_SOFTS}/pipe_tasks pipe_tasks u-rearmstr-desc-ccd-fix_w39
-    setup obs_lsst  dc2-run1.2-v3
+    eups declare -r ${ROOT_SOFTS}/dia_pipe dia_pipe rearmstr
+    setup obs_lsst  w.2018.39-run1.2-v3_diff
     setup pipe_tasks u-rearmstr-desc-ccd-fix_w39
+    setup dia_pipe rearmstr
 fi
 eups list obs_lsst
