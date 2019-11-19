@@ -5,7 +5,7 @@ from __future__ import print_function, division, absolute_import
 import sqlite3
 #import argparse
 import lsst.sphgeom
-from lsst.afw import geom
+import lsst.geom
 from lsst.daf.persistence import Butler
 import numpy as np
 import os
@@ -20,7 +20,7 @@ class SkyMapPolygons(object):
 
         Parameters:
         -----------
-        box : afw.geom.Box2I or afw.geom.Box2D
+        box : geom.Box2I or geom.Box2D
             A box in the pixel coordinate system defined by the WCS.
         wcs : afw.image.Wcs
             A mapping from a pixel coordinate system to the sky.
@@ -30,7 +30,7 @@ class SkyMapPolygons(object):
 
         Returns a sphgeom.ConvexPolygon.
         """
-        box = lsst.afw.geom.Box2D(box)
+        box = lsst.geom.Box2D(box)
         box.grow(margin)
         vertices = []
         for point in box.getCorners():
