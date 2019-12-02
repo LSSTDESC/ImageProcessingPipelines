@@ -30,14 +30,13 @@ export IN_DIR=${IN_DIR:-${OUTPUT_DATA_DIR}/data/input}
 # Setup reprocessing scripts
 export PATH=$PATH:$SCRIPT_LOCATION
 
-# Launch the setup/script
-export SCRIPT=${SETUP_LOCATION}/${PIPELINE_PROCESS:-$1}
-
 export OMP_NUM_THREADS=1
 
 source ${CHECKPOINTS}
 
 
+# Launch the setup/script
+export SCRIPT=${SETUP_LOCATION}/${PIPELINE_PROCESS:-$1}
 if [ $SITE == "NERSC" ] # NERSC when SHIFTER is not used
 then
   source ${SETUP_LOCATION}/DMsetup.sh; set -xe; export SHELLOPTS; source ${SCRIPT}
