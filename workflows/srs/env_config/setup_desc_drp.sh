@@ -7,7 +7,9 @@ then
 fi
 
 export STACKCVMFS=/cvmfs/sw.lsst.eu/linux-x86_64/lsst_distrib
-export DESC_STACK_VER=w_2019_19-dev
+export DESC_STACK_VER=v18.1.0-dev
+
+echo "${DESC_STACK_VER}" > $1/stack_version
 
 if [[ $SITE == "NERSC" ]]; then
     module unload python
@@ -47,6 +49,7 @@ cd ngmix-$DESC_ngmix_VER
 python setup.py install --prefix=$1
 cd ..
 rm $DESC_ngmix_VER_STR.tar.gz
+ln -s ngmix-$DESC_ngmix_VER ngmix
 
 export PYTHONPATH=$PYTHONPATH:$1/lib/python3.7/site-packages 
 
@@ -59,7 +62,7 @@ setup -r . -j
 scons
 cd ..
 rm $DESC_meas_extensions_ngmix_VER.tar.gz
-
+ln -s meas_extensions_ngmix-$DESC_meas_extensions_ngmix_VER meas_extensions_ngmix
 cd $curdir
 
 echo
