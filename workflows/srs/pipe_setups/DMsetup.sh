@@ -41,10 +41,11 @@ else
     # setup pipe_tasks u-rearmstr-desc-ccd-fix_w39
 
     echo "setting up local libraries"
+    export PYTHONPATH=$PYTHONPATH:${ROOT_SOFTS}/lib/python3.7/site-packages
     echo "-- checking pyarrow..."
-    export PYTHONPATH=$PYTHONPATH:${ROOT_SOFTS}/pyarrow_conda/lib/python3.7/site-packages
+    #export PYTHONPATH=$PYTHONPATH:${ROOT_SOFTS}/pyarrow_conda/lib/python3.7/site-packages
     python -c "import pyarrow;print(f'pyarrow:{pyarrow.__version__}')"
-    export PYTHONPATH=${ROOT_SOFTS}/local/lib/python3.7/site-packages:$PYTHONPATH
+    #export PYTHONPATH=${ROOT_SOFTS}/local/lib/python3.7/site-packages:$PYTHONPATH
     echo "-- checking ngmix..."
     python -c "import ngmix;print(\"NGMIX %s\"%ngmix.__version__)"
     echo "-- checking GCR..."
@@ -65,7 +66,8 @@ else
     setup meas_extensions_ngmix  dc2-run2.1
     eups list meas_extensions_ngmix
     setup meas_extensions_psfex
-    cd ${ROOT_SOFTS}/meas_extensions_ngmix;git status;cd -
+    #this does not work anymore with Heather's provenance scheme
+    #cd ${ROOT_SOFTS}/meas_extensions_ngmix-0.9.4;git status;cd -
 
     # pipe_analysis not ready for parallel execution
     # echo "setting pipe_analysis for QA"
