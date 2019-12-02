@@ -9,6 +9,8 @@
 
 BASEDIR=${IN_DIR}/work/${RERUN}/${streamID}
 
-echo "Merging registries in ${WORKDIR}/registries"
+echo "Merging registries..."
 
-merge_registries.sh "RAW2VISIT" "${BASEDIR}/task_ingestion/${streamID}/registries/registry_*.sqlite3" "${IN_DIR}/registry.sqlite3"
+echo '${ROOT_SOFTS}/ImageProcessingPipelines/workflows/srs/pipe_scripts/merge_registries.sh "RAW2VISIT" "${BASEDIR}/task_ingestion/${streamID}/registries/registry_*.sqlite3" "${IN_DIR}/registry.sqlite3"'
+
+${ROOT_SOFTS}/ImageProcessingPipelines/workflows/srs/pipe_scripts/merge_registries.sh "RAW2VISIT" "${BASEDIR}/task_ingestion/${streamID}/registries/registry_*.sqlite3" "${IN_DIR}/registry.sqlite3"

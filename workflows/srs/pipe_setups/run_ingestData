@@ -1,0 +1,21 @@
+#!/bin/bash                                                                                                                                                                                                        
+#DM_SETUP=${DM_SETUP}
+#source ${SETUP_LOCATION}/DMsetup.sh
+#export OMP_NUM_THREADS=1
+
+if [[ ${SITE} == "NERSC" ]]
+then
+  ingestDriver.py ${IN_DIR} @${CHUNKFILE} --cores 20 --mode link --output ${IN_DIR} -c clobber=True allowError=True register.ignore=True
+else
+    #setup the local directory on the worker. This is needed because the stack does not provide an api to change the location of the registry DB.
+    cd ${TMPDIR}
+    cp ${IN_DIR}/_mapper .
+    echo "ingestDriver.py . @${CHUNKFILE} --cores $((NSLOTS + 1)) --output . --mode link"
+    ingestDriver.py . @${CHUNKFILE} --cores $((NSLOTS + 1)) --output . --mode link
+    #copy the outputs back to the central directory
+    mkdir -p ${IN_DIR}/raw
+    cp -r raw/* ${IN_DIR}/raw/
+    cp -r registry.sqlite3 $REGDIR/registry_\${JOB_ID}.sqlite3
+fi
+
+echo '{"jobid":"${JOB_ID}\", "logfile":"${JOBCONTROL_LOGFILE}", "script":"${CUR_SCRIPT}", "release":"${DM_RELEASE}","run":"${RUN}","tag":"${SETUP_TAG}","infile":"${RAW_VISIT_FILE}"}' >> ${WORKDIR}/ingest_housekeeping.txt
