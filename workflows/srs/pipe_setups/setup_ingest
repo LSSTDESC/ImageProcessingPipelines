@@ -30,7 +30,6 @@ else
   cp ${IN_DIR}/_mapper .
   ingestDriver.py . @$1 --cores \$((NSLOTS + 1)) --output . --mode link
   mkdir -p ${IN_DIR}/raw
-  cp -r raw/* ${IN_DIR}/raw/
   cp -r registry.sqlite3 $REGDIR/registry_\${JOB_ID}.sqlite3
 fi
 echo "{\"jobid\":\"\${JOB_ID}\", \"logfile\":\"\${JOBCONTROL_LOGFILE}\", \"script\":\"\${CUR_SCRIPT}\",  \"release\":\"\${DM_RELEASE}\",\"run\":\"\${RUN}\",\"tag\":\"\${SETUP_TAG}\",\"infile\":\"${RAW_VISIT_FILE}\"}" >> ${WORKDIR}/ingest_housekeeping.txt
