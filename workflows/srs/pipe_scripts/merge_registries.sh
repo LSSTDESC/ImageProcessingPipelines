@@ -11,8 +11,8 @@ for db in $db_list; do
 	if [ "$check_visit" == "$db_visit" ]; then
 	    echo "$db_visit is already present in $final_db... shying away from merging!"
 	else
-	    count=`sqlite3 ${final_db} "select count(*) from overlaps;";`
-	    offset=`sqlite3 ${db} "select count(*) from overlaps;";`
+	    count=`sqlite3 ${final_db} "select count(*) from overlaps;"`
+	    offset=`sqlite3 ${db} "select count(*) from overlaps;"`
 	    echo "adding $offset to $count rows"
 	    if [ "$1" == "TRACT2VISIT" ]; then
 		sqlite3 $final_db "attach '$db' as toMerge;insert into overlaps select id+$count,tract,patch,visit,detector,filter,layer from toMerge.overlaps;"
