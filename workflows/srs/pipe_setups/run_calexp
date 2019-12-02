@@ -12,13 +12,9 @@ elif [[ $status = 1 ]]; then
     exit 1
 else
     echo "Running singleFrameDriver.py"
-    if [[ -z "${RAFTNAME}" ]]; then
-	singleFrameDriver.py ${IN_DIR} --rerun ${RERUN1} --id visit=${VISIT} --cores $((NSLOTS+1)) --timeout 999999999 --loglevel CameraMapper=warn
-	echo '{'\"pipe_step\":\"singleFrameDriver\", \"jobid\":\"${JOB_ID}\", \"stream_id\":\"${streamID}\", \"logfile:\"${JOBCONTROL_LOGFILE}\",  \"release\":\"${DM_RELEASE}\",\"run\":\"${RUN}\",\"tag\":\"${SETUP_TAG}\",\"visit\":\"${VISIT}\"'}' >> ${WORKDIR}/singleframe_housekeeping.txt
-    else
-	singleFrameDriver.py ${IN_DIR} --rerun ${RERUN1} --id visit=${VISIT} raftName=${RAFTNAME} --cores $((NSLOTS+1)) --timeout 99999999 --loglevel CameraMapper=warn
-	echo '{'\"pipe_step\":\"singleFrameDriver\",\"jobid\":\"${JOB_ID}\", \"stream_id\":\"${streamID}\", \"logfile:\"${JOBCONTROL_LOGFILE}\", \"script\":\"${CUR_SCRIPT}\",  \"release\":\"${DM_RELEASE}\",\"run\":\"${RUN}\",\"tag\":\"${SETUP_TAG}\",\"visit\":\"${VISIT}\",\"raft\":\"${RAFTNAME}\"'}' >> ${WORKDIR}/singleframe_housekeeping.txt
-    fi
+    singleFrameDriver.py ${IN_DIR} --rerun ${RERUN1} --id visit=${VISIT}  --cores $((NSLOTS+1)) --timeout 99999999 --loglevel CameraMapper=warn
+    echo '{'\"pipe_step\":\"singleFrameDriver\",\"jobid\":\"${JOB_ID}\", \"stream_id\":\"${streamID}\", \"logfile:\"${JOBCONTROL_LOGFILE}\", \"script\":\"${CUR_SCRIPT}\",  \"release\":\"${DM_RELEASE}\",\"run\":\"${RUN}\",\"tag\":\"${SETUP_TAG}\",\"visit\":\"${VISIT}\"'}' >> ${WORKDIR}/singleframe_housekeeping.txt
+
     echo "Running checCcdAstrometry.py"
     ${ROOT_SOFTS}/ImageProcessingPipelines/python/util/checkCcdAstrometry.py ${IN_DIR}/rerun/${RERUN1} --id visit=${VISIT} --loglevel CameraMapper=warn
 
