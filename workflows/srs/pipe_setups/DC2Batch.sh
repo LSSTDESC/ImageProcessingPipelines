@@ -35,6 +35,9 @@ export SCRIPT=${SETUP_LOCATION}/${PIPELINE_PROCESS:-$1}
 
 export OMP_NUM_THREADS=1
 
+source ${CHECKPOINTS}
+
+
 if [ $SITE == "NERSC" ] # NERSC when SHIFTER is not used
 then
   source ${SETUP_LOCATION}/DMsetup.sh; set -xe; export SHELLOPTS; source ${SCRIPT}

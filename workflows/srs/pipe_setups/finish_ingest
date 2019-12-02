@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # checkpoint
-source ${SETUP_LOCATION}/checkpoint
+#source ${SETUP_LOCATION}/checkpoint
 
 #WORKDIR=${IN_DIR}/rerun/${RERUN1}/scripts/ingest
 #mkdir -p $WORKDIR

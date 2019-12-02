@@ -3,7 +3,7 @@
 ### run metacalibration on the tract and set of patches provided as input
 
 # checkpoint
-source ${SETUP_LOCATION}/checkpoint
+#source ${SETUP_LOCATION}/checkpoint
 
 status=`verify_checkpoint run_metacal`
 if [[ $status = 0 ]]; then

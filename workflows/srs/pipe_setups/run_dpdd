@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # checkpoint
-source ${SETUP_LOCATION}/checkpoint
+#source ${SETUP_LOCATION}/checkpoint
 DPDD_DIR=${OUT_DIR}/dpdd/${RERUN}/object_table_summary/
 mkdir -p $DPDD_DIR
 
