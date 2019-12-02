@@ -5,7 +5,7 @@
 # checkpoint
 #source ${SETUP_LOCATION}/checkpoint
 
-status=`verify_checkpoint run_metacal`
+status=`verify_checkpoint run_deblended`
 if [[ $status = 0 ]]; then
     echo "skipping bulge-disk ngmix fit and proceeding"
 elif [[ $status = 1 ]]; then
@@ -29,3 +29,18 @@ else
 
     echo $cmd;$cmd;
 fi
+
+status=`verify_checkpoint run_metacal_dpdd`
+if [[ $status = 0 ]]; then
+    echo "skipping metacal dpdd catalog creation"
+elif [[ $status = 1 ]]; then
+    echo "halting at metacal dpdd catalog creation"
+    exit 1
+else
+    DC2PROD="${ROOT_SOFTS}/DC2-production/scripts"
+    DPDD_DIR=${OUT_DIR}/dpdd/${RERUN}/metacal_table_summary/
+    mkdir -p $DPDD_DIR
+    cmd="python ${DC2PROD}/make_metacal_catalog.py ${OUT_DIR}/rerun/${RERUN2} ${TRACT} -p ${PATCH} -o ${DPDD_DIR}"
+    echo $cmd;$cmd;
+fi
+
