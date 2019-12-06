@@ -7,7 +7,7 @@ then
 fi
 
 export STACKCVMFS=/cvmfs/sw.lsst.eu/linux-x86_64/lsst_distrib
-export DESC_STACK_VER=v18.1.0-dev
+export DESC_STACK_VER=w.2019.47
 
 echo "${DESC_STACK_VER}" > $1/stack_version
 
@@ -26,17 +26,17 @@ fi
 
 
 # Version List
-export DESC_pyarrow_VER=0.13.0
+export DESC_DC2_production_VER=v0.4.0
 export DESC_GCR_VER=0.8.8
-export DESC_GCRCatalogs_VER=v0.14.3
+export DESC_GCRCatalogs_VER=v0.14.5
+export DESC_obs_lsst_VER=dc2/run2.2
 export DESC_ngmix_VER=1.3.4
 export DESC_ngmix_VER_STR=v$DESC_ngmix_VER
-export DESC_meas_extensions_ngmix_VER=0.9.4
+export DESC_meas_extensions_ngmix_VER=0.9.5
 
 source $STACKCVMFS/$DESC_STACK_VER/loadLSST.bash
 
 # pip install what we can, using a constraints file and local root directory
-pip install -c ./dm-constraints-py3-4.5.12.txt --prefix $1 pyarrow==$DESC_pyarrow_VER
 pip install -c ./dm-constraints-py3-4.5.12.txt --prefix $1 GCR==$DESC_GCR_VER
 pip install -c ./dm-constraints-py3-4.5.12.txt --prefix $1 https://github.com/LSSTDESC/gcr-catalogs/archive/$DESC_GCRCatalogs_VER.tar.gz
 
@@ -64,6 +64,15 @@ cd ..
 rm $DESC_meas_extensions_ngmix_VER.tar.gz
 ln -s meas_extensions_ngmix-$DESC_meas_extensions_ngmix_VER meas_extensions_ngmix
 cd $curdir
+git clone https://github.com/lsst/obs_lsst
+cd obs_lsst
+git checkout $DESC_obs_lsst_VER
+setup -r . -j 
+scons
+cd..
+
+curl -LO https://github.com/LSSTDESC/DC2-production/archive/$DESC_DC2_production_VER.tar.gz
+tar xzf $DESC_DC2_production_VERS.tar.gz
 
 echo
 echo "Installation Complete"
