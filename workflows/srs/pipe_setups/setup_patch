@@ -3,9 +3,6 @@
 ### read or build the list of patches for a given tract and launch a series of coaddDriver task
 ### based on $MAX_PATCH_NB number of patches per job. 
 
-# checkpoint
-source ${SETUP_LOCATION}/checkpoint
-
 echo "tract ${TRACT}"
 echo "patch ${PATCH}"
 
@@ -19,13 +16,6 @@ if [[ $PATCH = "" ]]; then
 else
     #replace carets with spaces so that patches can be looped over
     patches="${PATCH//^/ }"
-fi
-
-#prepare for housekeeping and save into archives previous jousekeeping files
-if [ -f ${WORKDIR}/postcoadd_housekeeping.txt ]; then
-    mkdir -p ${WORKDIR}/archives
-    timestamp=$( date +"%s" )
-    mv ${WORKDIR}/postcoadd_housekeeping.txt ${WORKDIR}/archives/postcoadd_housekeeping_${timestamp}.txt
 fi
 
 patch_str=""

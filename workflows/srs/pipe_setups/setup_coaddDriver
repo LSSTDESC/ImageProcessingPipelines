@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# checkpoint
-source ${SETUP_LOCATION}/checkpoint
-
-
 FILEDIR=${WORKDIR}/${streamID}
 mkdir -p $FILEDIR
 
@@ -42,6 +38,4 @@ do
     else
 	echo "No visit match the requested tract/patch/filter"
     fi
-    # echo pipelineCreateStream task_coaddDriver "FILT="\""${FILT}"\"""
-    # pipelineCreateStream task_coaddDriver -1 "FILT="\""${FILT}"\"""
 done

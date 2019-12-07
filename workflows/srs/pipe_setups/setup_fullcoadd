@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# checkpoint
-#source ${SETUP_LOCATION}/checkpoint
-
 WORKDIR=${IN_DIR}/work/${RERUN}/${streamID}/coadd
 mkdir -p ${WORKDIR} 
 pipelineSet WORKDIR ${WORKDIR} 
@@ -13,7 +10,6 @@ if [ ! -d "$OUT_DIR/rerun/${RERUN2}/deepCoadd" ]; then
     #deepCoadd dir is created by the first execution of makeSkyMap.py
     makeSkyMap.py ${IN_DIR} --rerun ${RERUN}
     cp ${OUT_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 ${OUT_DIR}/rerun/${RERUN2}/tracts_mapping.sqlite3
-    #turn the absolute path into a relative one for the root entry in the yaml file, to ease shipping to NERSC
     #sed -i -e 's+'${IN_DIR}'+..\/..+g' ${IN_DIR}rerun/$RERUN2/repositoryCfg.yaml
     #
 fi
@@ -48,7 +44,6 @@ while read line; do
     pipelineSet TRACT ${tract}
     pipelineSet PATCH ${patch}
     pipelineCreateStream task_coadd -1 "DM_SETUP="\""${DM_SETUP}"\"",WORKDIR="\""${WORKDIR}"\"",TRACT="\""${tract}"\"",PATCH="\""${patch}"\"""
-    #pipelineCreateStream task_coadd_tract -1 "DM_SETUP="\""${DM_SETUP}"\"",WORKDIR="\""${WORKDIR}"\"",RERUN1="\""${RERUN1}"\"",RERUN2="\""${RERUN2}"\"",TRACT="\""${tract}"\"",PATCH="\""${patch}\"""
 done < ${TRACT_FILE}
 
 

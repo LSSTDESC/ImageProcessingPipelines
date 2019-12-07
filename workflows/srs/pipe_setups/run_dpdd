@@ -1,7 +1,11 @@
 #!/bin/bash
 
-# checkpoint
-#source ${SETUP_LOCATION}/checkpoint
+if [[ $SITE == "LSST-IN2P3" ]]
+then
+    echo "launching monitoring script..... output will be under $(dirname ${SGE_STDOUT_PATH})"
+    /pbs/home/d/descprod/bin/joremon.sh
+fi
+
 DPDD_DIR=${OUT_DIR}/dpdd/${RERUN}/object_table_summary/
 mkdir -p $DPDD_DIR
 

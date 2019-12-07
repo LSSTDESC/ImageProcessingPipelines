@@ -1,7 +1,10 @@
-#!/bin/bash                                                                                                                                                                                                        
-#DM_SETUP=${DM_SETUP}
-#source ${SETUP_LOCATION}/DMsetup.sh
-#export OMP_NUM_THREADS=1
+#!/bin/bash
+
+if [[ $SITE == "LSST-IN2P3" ]]
+then
+    echo "launching monitoring script..... output will be under $(dirname ${SGE_STDOUT_PATH})"
+    /pbs/home/d/descprod/bin/joremon.sh 
+fi
 
 if [[ ${SITE} == "NERSC" ]]
 then
@@ -18,4 +21,3 @@ else
     cp -r registry.sqlite3 $REGDIR/registry_\${JOB_ID}.sqlite3
 fi
 
-echo '{"jobid":"${JOB_ID}\", "logfile":"${JOBCONTROL_LOGFILE}", "script":"${CUR_SCRIPT}", "release":"${DM_RELEASE}","run":"${RUN}","tag":"${SETUP_TAG}","infile":"${RAW_VISIT_FILE}"}' >> ${WORKDIR}/ingest_housekeeping.txt

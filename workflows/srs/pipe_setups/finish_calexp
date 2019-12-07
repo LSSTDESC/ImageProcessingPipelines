@@ -1,14 +1,11 @@
 #!/bin/bash
 
-# checkpoint
-#source ${SETUP_LOCATION}/checkpoint
-
 WORKDIR=${IN_DIR}/work/${RERUN}/${streamID}/calexp
-mkdir -p ${WORKDIR}                                                                                                                                                                                                export WORKDIR 
+mkdir -p ${WORKDIR}
+export WORKDIR 
 
 
 echo "merging registries in ${WORKDIR}/registries"
 merge_registries.sh TRACT2VISIT "${WORKDIR}/registries/tracts_mapping*.sqlite3" ${OUT_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3
 
-#cp ${OUT_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 ${OUT_DIR}/rerun/${RERUN2}/tracts_mapping.sqlite3
 

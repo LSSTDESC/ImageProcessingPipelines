@@ -1,14 +1,9 @@
 #!/bin/bash
 
-# checkpoint
-#source ${SETUP_LOCATION}/checkpoint
-
 WORKDIR=${IN_DIR}/work/${RERUN}/${streamID}/calexp
 mkdir -p ${WORKDIR}
 pipelineSet WORKDIR ${WORKDIR}
 export WORKDIR
-#export SCRDIR=${WORKDIR}/scripts
-#mkdir -p ${SCRDIR}
 
 #start by building the skymap as it is needed for the tract/patch mapping DB construction
 
@@ -16,8 +11,6 @@ if [ ! -d "$IN_DIR/rerun/${RERUN1}/deepCoadd" ]; then
     #deepCoadd dir is created by the first execution of makeSkyMap.py
     echo "makeSkyMap.py ${IN_DIR} --rerun ${RERUN1}"
     makeSkyMap.py ${IN_DIR} --rerun ${RERUN1}
-    #cp -r $IN_DIR/rerun/${RERUN2}/deepCoadd $IN_DIR/rerun/${RERUN1}/
-    #turn the absolute path into a relative one for the root entry in the yaml file, to ease shipping to NERSC
     #we need to do that at the end 
     #sed -i -e 's+'${IN_DIR}'+..\/..+g' ${IN_DIR}/rerun/$RERUN2/repositoryCfg.yaml
 fi
@@ -44,7 +37,7 @@ while read id; do
       visit_cmd=$id
   fi
   export visit
-  #echo $visit
+
   if [[ $SITE == "LSST-IN2P3" ]]; then
     pipelineSet VISIT ${visit} 
     pipelineCreateStream task_calexp -1 WORKDIR=${WORKDIR},VISIT=${visit}

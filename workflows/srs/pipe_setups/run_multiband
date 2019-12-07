@@ -2,11 +2,12 @@
 
 ### run multiband on the tract and set of patches provided as input
 
-# checkpoint
-source ${SETUP_LOCATION}/checkpoint
+if [[ $SITE == "LSST-IN2P3" ]]
+then
+    echo "launching monitoring script..... output will be under $(dirname ${SGE_STDOUT_PATH})"
+    /pbs/home/d/descprod/bin/joremon.sh
+fi
 
-#DM_SETUP=${DM_SETUP}
-#source ${SETUP_LOCATION}/DMsetup.sh
-#export OMP_NUM_THREADS=1
-echo multiBandDriver.py ${OUT_DIR} --rerun ${RERUN2} --id tract=${TRACT} patch=${PATCH} filter=${FILTERS//,/^} --cores=$((NSLOTS+1)) --longlog --reuse-outputs-from  all
-multiBandDriver.py ${OUT_DIR} --rerun ${RERUN2} --id tract=${TRACT} patch=${PATCH} filter=${FILTERS//,/^} --cores=$((NSLOTS+1)) --longlog --reuse-outputs-from  all
+cmd="multiBandDriver.py ${OUT_DIR} --rerun ${RERUN2} --id tract=${TRACT} patch=${PATCH} filter=${FILTERS//,/^} --cores=$((NSLOTS+1)) --longlog --reuse-outputs-from  all"
+echo $cmd;$cmd
+

@@ -2,8 +2,11 @@
 
 ### run metacalibration on the tract and set of patches provided as input
 
-# checkpoint
-#source ${SETUP_LOCATION}/checkpoint
+if [[ $SITE == "LSST-IN2P3" ]]
+then
+    echo "launching monitoring script..... output will be under $(dirname ${SGE_STDOUT_PATH})"
+    /pbs/home/d/descprod/bin/joremon.sh
+fi
 
 status=`verify_checkpoint run_deblended`
 if [[ $status = 0 ]]; then
@@ -14,8 +17,6 @@ elif [[ $status = 1 ]]; then
 else
     cmd="processDeblendedCoaddsMetacalMax.py ${OUT_DIR} --rerun ${RERUN} --id tract=${TRACT} patch=${PATCH} filter=g^r^i^z -C ${ROOT_SOFTS}/ImageProcessingPipelines/config/mcal-filters.py -C ${ROOT_SOFTS}/ImageProcessingPipelines/config/ngmix-deblended-mcalmax.py"
     echo $cmd;$cmd;
-    
-    echo \{\"job_type\":\"metacal\", \"stream_id\":\"${streamID}\", \"jobid\":\"${JOB_ID}\", \"logfile\":\"${JOBCONTROL_LOGFILE}\", \"release\":\"${DM_RELEASE}\",\"run\":\"${RUN}\",\"tag\":\"${SETUP_TAG}\",\"tract\":\"${TRACT}\",\"patch\":\"${PATCH}\"\} >> ${WORKDIR}/postcoadd_housekeeping.txt
 fi
 
 status=`verify_checkpoint run_ngmix`
@@ -26,7 +27,6 @@ elif [[ $status = 1 ]]; then
     exit 1
 else
     cmd="processDeblendedCoaddsNGMixMax.py ${OUT_DIR} --rerun ${RERUN} --id tract=${TRACT} patch=${PATCH} filter=g^r^i^z -C ${ROOT_SOFTS}/ImageProcessingPipelines/config/mcal-filters.py -C ${ROOT_SOFTS}/ImageProcessingPipelines/config/ngmix-deblended-bd.py"
-
     echo $cmd;$cmd;
 fi
 

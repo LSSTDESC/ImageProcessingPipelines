@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# checkpoint
-#source ${SETUP_LOCATION}/checkpoint
-
 BASEDIR=${IN_DIR}/work/${RERUN}/${streamID}
 mkdir -p $BASEDIR
 export BASEDIR
