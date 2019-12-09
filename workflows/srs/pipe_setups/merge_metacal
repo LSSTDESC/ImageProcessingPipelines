@@ -6,7 +6,10 @@
 #source ${SETUP_LOCATION}/checkpoint
 
 DC2PROD=${ROOT_SOFTS}/DC2-production/scripts
-DPDD_DIR=${OUT_DIR}/dpdd/${RERUN}/metacal_table_summary
+if [[ -z ${DPDD_TAG} ]]; then
+    DPDD_TAG=${RERUN}
+fi
+DPDD_DIR=${OUT_DIR}/dpdd/${DPDD_TAG}/metacal_table_summary
 cmd="python ${DC2PROD}/merge_parquet_files.py ${DPDD_DIR}/metacal_*${TRACT}*.parquet -o ${DPDD_DIR}/metacal_tract_${TRACT}.parquet"
 echo $cmd;$cmd;
 

@@ -1,6 +1,9 @@
 #!/bin/bash
 
-DPDD_DIR=${OUT_DIR}/dpdd/${RERUN}/source_table_summary
+if [[ -z ${DPDD_TAG} ]]; then
+    DPDD_TAG=${RERUN}
+fi
+DPDD_DIR=${OUT_DIR}/dpdd/${DPDD_TAG}/source_table_summary
 mkdir -p $DPDD_DIR
 
 forcedPhotCcd.py ${IN_DIR} -j ${NSLOTS} --rerun ${RERUN} --id visit=${VISIT} --timeout 999999999 -C ${ROOT_SOFTS}/ImageProcessingPipelines/config/forcedPhotCcdConfig.py

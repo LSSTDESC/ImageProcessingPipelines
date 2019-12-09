@@ -6,7 +6,11 @@ then
     /pbs/home/d/descprod/bin/joremon.sh
 fi
 
-DPDD_DIR=${OUT_DIR}/dpdd/${RERUN}/object_table_summary/
+if [[ -z ${DPDD_TAG} ]]; then
+    DPDD_TAG=${RERUN}
+fi
+
+DPDD_DIR=${OUT_DIR}/dpdd/${DPDD_TAG}/object_table_summary/
 mkdir -p $DPDD_DIR
 
 echo "DPDD : generate files for object table in tract=${TRACT}"
