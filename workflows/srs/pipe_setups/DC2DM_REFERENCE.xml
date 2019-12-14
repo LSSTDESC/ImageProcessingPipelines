@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pipeline xmlns="http://glast-ground.slac.stanford.edu/pipeline" 
+          xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" 
+          xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
+       http://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
+  
+  <task name="DC2DM_REFERENCE" type="LSST" version="0.1">
+    <notation>Task to run the DM stack on DC2 simulated images (coadd)</notation>
+    <variables>
+      <!-- Job site and configuration-->
+      <var name="RUNID">Run1.2p</var>
+      <var name="SETUP_TAG">dev</var>
+      <var name="SITE">LSST-IN2P3</var>
+      <var name="JOBSITE">${SITE=="NERSC" ? "CORIP" : SITE}</var>
+      <var name="MAXCPU">10000</var>
+      <var name="MAXCPULONG">10000</var>
+      <var name="IN2P3_BATCH_OPTIONS"> -l sps=1,os=cl7,xrootd=0 </var>
+      <var name="IN2P3_HUGE_OPTIONS"> -q huge </var>
+      <var name="IN2P3_LONG_OPTIONS"> -q long </var>
+      <var name="IN2P3_MCLONG_OPTIONS"> -q mc_long -pe multicores 8 </var>
+      <var name="IN2P3_MCHUGE_OPTIONS"> -q mc_huge -pe multicores 8 </var>
+      <var name="NERSC_BATCH_OPTIONS"> -p MINIDRPHK | -L SCRATCH,projecta | -C haswell </var>
+      <var name="BATCH_OPTIONS">${SITE=="NERSC" ? "${NERSC_BATCH_OPTIONS}" : "${IN2P3_BATCH_OPTIONS} "}</var>
+      <var name="EXTRA_OPTIONS_0">${SITE=="NERSC" ? " " : "${IN2P3_HUGE_OPTIONS} "}</var>
+      <var name="EXTRA_OPTIONS_1">${SITE=="NERSC" ? " " : "${IN2P3_MCHUGE_OPTIONS} "}</var>
+      <var name="EXTRA_OPTIONS_2">${SITE=="NERSC" ? " " : "${IN2P3_MCLONG_OPTIONS} "}</var>
+      <var name="EXTRA_OPTIONS_3">${SITE=="NERSC" ? " " : "${IN2P3_LONG_OPTIONS} "}</var>
+      <!-- Base directory where script files will be placed -->
+      <var name="PIPE_SUBDIR">ImageProcessingPipelines/workflows/srs</var>
+      <var name="PIPE_SETUPS">${PIPE_SUBDIR}/pipe_setups</var>
+      <var name="PIPE_SCRIPTS">${PIPE_SUBDIR}/pipe_scripts</var>
+      <var name="DM_CONFIGS">${PIPE_SUBDIR}/dm_configs</var>
+      <!-- At SLAC // SHOULD BE THE SAME FOR NERSC AND IN2P3 -->
+      <var name="IN2P3_SLAC_SETUP_LOCATION">/afs/slac.stanford.edu/u/ec/nchotard/software/desc/DC2/Run1.1/${PIPE_SETUPS}</var>
+      <var name="NERSC_SLAC_SETUP_LOCATION">/nfs/farm/g/lsst/u1/users/heather/minidrp/pipe_setups</var>
+      <var name="SLAC_SETUP_LOCATION">${SITE=="NERSC" ? NERSC_SLAC_SETUP_LOCATION : IN2P3_SLAC_SETUP_LOCATION}</var>
+      <!-- Local to JOBSITE -->
+      <var name="IN2P3_ROOT_SOFTS">/sps/lsst/users/fouchez/pipeline/DC2/Run1.2p</var>
+      <var name="NERSC_ROOT_SOFTS">/global/homes/d/descdm/minidrp</var>  <!-- Is that right? -->
+      <var name="ROOT_SOFTS">${SITE=="NERSC" ? NERSC_ROOT_SOFTS : IN2P3_ROOT_SOFTS}</var>
+      <var name="IN2P3_SCRIPT_LOCATION">${IN2P3_ROOT_SOFTS}/${PIPE_SCRIPTS}</var>
+      <var name="IN2P3_SETUP_LOCATION">${IN2P3_ROOT_SOFTS}/${PIPE_SETUPS}</var>
+      <var name="IN2P3_CONFIGS_LOCATION">${IN2P3_ROOT_SOFTS}/${DM_CONFIGS}</var>
+      <var name="NERSC_SCRIPT_LOCATION">/global/homes/d/descdm/minidrp/pipe_scripts</var>
+      <var name="NERSC_SETUP_LOCATION">/global/homes/d/descdm/minidrp/pipe_setups</var>
+      <var name="NERSC_CONFIGS_LOCATION">/global/homes/d/descdm/minidrp/dm_configs</var>
+      <var name="SCRIPT_LOCATION">${SITE=="NERSC" ? NERSC_SCRIPT_LOCATION : IN2P3_SCRIPT_LOCATION}</var>
+      <var name="SETUP_LOCATION">${SITE=="NERSC" ? NERSC_SETUP_LOCATION : IN2P3_SETUP_LOCATION}</var>
+      <var name="CONFIGS_LOCATION">${SITE=="NERSC" ? NERSC_CONFIGS_LOCATION : IN2P3_CONFIGS_LOCATION}</var>
+      <!-- Log Files -->
+      <var name="IN2P3_logRoot">/sps/lsst/users/descprod/Pipeline2/Logs</var>    
+      <var name="NERSC_logRoot">/global/homes/d/descdm/minidrp/logs</var>    
+      <var name="logRoot">${SITE=="NERSC" ? NERSC_logRoot : IN2P3_logRoot}</var>
+      <!-- Script names -->
+      <var name="BATCH_NAME">DC2Batch.sh</var>
+    </variables>
+
+    <!--   setup referenceDriver-->
+    <process name="setup_reference" site="${JOBSITE}">
+      <notation>Setup for referenceDriver</notation>
+      <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_3}"
+	      executable="${SETUP_LOCATION}/${BATCH_NAME}"/>
+      <createsSubtasks>
+	<subtask>task_referenceDriver</subtask>
+      </createsSubtasks> 
+    </process>
+
+    <!--   Subtask to run referenceDriver -->
+    <task name="task_referenceDriver" type="LSST">
+      <process name="run_referenceDriver" site="${JOBSITE}">
+	<variables>
+	    <var name="streamID">${format(pipeline.stream, "%01d")}</var>
+	</variables>
+        <job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_1} -A coadd"
+	          executable="${CUR_SCRIPT}"/>
+      </process>                
+    </task>
+
+
+  </task>
+</pipeline>

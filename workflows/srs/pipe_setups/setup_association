@@ -1,0 +1,122 @@
+#!/bin/bash
+
+# checkpoint
+source ${SETUP_LOCATION}/checkpoint
+
+if [[ $RERUN = *":"* ]]; then
+    IFS=":" read RERUN1 RERUN2 <<< $RERUN
+else
+    RERUN1=$RERUN
+    RERUN2=$RERUN
+fi
+
+
+WORKDIR=${IN_DIR}/rerun/${RERUN2}/scripts/association
+mkdir -p $WORKDIR
+
+script_builder() {
+#if [[ $3 == "" ]];then id_string="$1"; else id_string="tract=$1 patch=$3";fi
+
+ cat> ${WORKDIR}/association_$1_$2.sh<<EOF
+#!/bin/bash
+DM_SETUP=${DM_SETUP}
+source ${SETUP_LOCATION}/DMsetup.sh
+export OMP_NUM_THREADS=1
+associationDriver.py $IN_DIR --rerun $RERUN2 --id tract=$1 patch=$3 filter=${FILTERS//,/^} --cores=\${NSLOTS} --longlog --clobber-config --clobber-versions
+EOF
+
+}
+
+build_association_script () {
+    tract=$1
+    patches=$2
+    #if PATCH_PROVIDED is not set, then no patch is provided in the file and we have to query the database and split the patches in several jobs
+    if [[ $patches = "" ]]; then
+	#get all the patches associated to the tract
+	patches=`sqlite3 ${IN_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 "select DISTINCT patch from overlaps WHERE tract=${tract};"`
+	#remove the space inside the patch pair
+	patches="${patches//[\ ()]/}"
+    else
+	patches="${patches//^/ }" 
+    fi
+    echo $patches
+    patch_str=""
+    count=0
+    #increment index for script naming
+    if [ -f ${WORKDIR}/association_$1_0.sh ]; then
+	idx=`ls ${WORKDIR}/association_$1_*.sh | wc -l`
+    else
+	idx=0
+    fi
+    for patch in $patches; do
+	if [ "$patch_str" = "" ]; then
+            patch_str=$patch
+	else
+            patch_str=$patch_str^$patch
+	fi
+	count=$((count + 1))
+	if [ "$count" = "4" ]; then
+	    script_builder $tract $idx $patch_str
+	    idx=$((idx + 1))
+	    count=0
+	    patch_str=""
+	fi
+    done
+    if [[ ! -z $patch_str ]]; then
+	script_builder $tract $idx $patch_str
+    fi
+# else
+#     #tract should be read from file as two columns in this case
+#     if [ -f "$WORKDIR/association_${tract}_1.sh" ]; then
+# 	num=`ls -1q $WORKDIR/association_${tract}_*.sh | wc -l`
+#     else
+# 	num=0
+#     fi
+#     num=$((num+1))
+#     script_builder $tract $num $patch
+# fi
+}
+
+
+#if tract file is not provided, create it with all the tracts in the database, or pick it up from the workdir
+if [[ -z "${TRACT_FILE}" ]]; then
+    if [[ ! -f ${WORKDIR}/all_tracts.list ]]; then
+	sqlite3 ${IN_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 "select DISTINCT tract from overlaps where tract=5063;" > ${WORKDIR}/all_tracts.list
+    fi
+    TRACT_FILE=${WORKDIR}/all_tracts.list
+fi
+
+#now read the file and process each line into a batch script
+while read line; do
+    read tract patch <<< $line
+    echo $tract $patch
+    if [[ $patch = "" ]]; then
+	#only tracts were provided, so we need to build the patch distribution
+	echo "only tracks provided"
+	build_association_script ${tract}
+	#loop over these scripts and launch the streams
+	for script in ${WORKDIR}/association_${tract}_*.sh
+	do
+	    chmod a+x $script
+	    pipelineCreateStream task_associationDriver -1 CUR_SCRIPT=$script
+	done
+    else
+	#TRACT_FILE has the tract and patch information so just loop over it
+	echo "tract and patches provided"
+	build_association_script ${tract} ${patch}
+	num=`ls -1q $WORKDIR/association_${tract}_*.sh | wc -l`
+	script=${WORKDIR}/association_${tract}_$num.sh
+	chmod a+x $script
+	pipelineCreateStream task_associationDriver -1 CUR_SCRIPT=$script
+    fi
+done < ${TRACT_FILE}
+
+# else
+#     if grep -q "patch" ${TRACT_FILE}; then export PATCH_PROVIDED=1;fi
+#     #TRACT_FILE has the tract and patch information so just loop over it
+#     while read line; do
+#         build_association_script ${tract}
+#         pipelineCreateStream task_associationDriver -1 CUR_SCRIPT=$script
+#         done
+#     done < ${TRACT_FILE}
+# fi
