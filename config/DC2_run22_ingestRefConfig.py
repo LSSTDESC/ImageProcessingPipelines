@@ -28,6 +28,15 @@ config.ra_name='ra_smeared'
 # Name of Dec column
 config.dec_name='dec_smeared'
 
+# Name of parallax column
+config.parallax_name='parallax'
+
+# Name of proper motion Dec column
+config.pm_dec_name='properMotionDec'
+
+# Name of proper motion RA column
+config.pm_ra_name='properMotionRa'
+
 # The values in the reference catalog are assumed to be in AB magnitudes. List of column names to use for photometric information.  At least one entry is required.
 config.mag_column_list=['lsst_u_smeared', 'lsst_g_smeared', 'lsst_r_smeared', 'lsst_i_smeared', 'lsst_z_smeared', 'lsst_y_smeared']
 
@@ -49,5 +58,4 @@ config.id_name='id'
 
 # Extra columns to add to the reference catalog.
 config.extra_col_names=['ra', 'dec', 'sigma_ra', 'sigma_dec', 'lsst_u', 'lsst_g', 'lsst_r', 'lsst_i', 'lsst_z', 'lsst_y', 
-                        'u_rms', 'g_rms', 'r_rms', 'i_rms', 'z_rms', 'y_rms',
-                        'properMotionRa', 'properMotionDec', 'parallax', 'radialVelocity']
+                        'u_rms', 'g_rms', 'r_rms', 'i_rms', 'z_rms', 'y_rms', 'radialVelocity']
