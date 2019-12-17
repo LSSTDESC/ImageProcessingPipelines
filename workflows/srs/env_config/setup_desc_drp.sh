@@ -7,7 +7,7 @@ then
 fi
 
 export STACKCVMFS=/cvmfs/sw.lsst.eu/linux-x86_64/lsst_distrib
-export DESC_STACK_VER=v18.1.0-dev
+export DESC_STACK_VER=v19.0.0
 
 echo "${DESC_STACK_VER}" > $1/stack_version
 
@@ -31,7 +31,8 @@ export DESC_GCR_VER=0.8.8
 export DESC_GCRCatalogs_VER=v0.14.3
 export DESC_ngmix_VER=1.3.4
 export DESC_ngmix_VER_STR=v$DESC_ngmix_VER
-export DESC_meas_extensions_ngmix_VER=0.9.4
+export DESC_meas_extensions_ngmix_VER=0.9.5
+export DESC_DC2_production_VER=0.4.0
 
 source $STACKCVMFS/$DESC_STACK_VER/loadLSST.bash
 
@@ -40,9 +41,23 @@ pip install -c ./dm-constraints-py3-4.5.12.txt --prefix $1 pyarrow==$DESC_pyarro
 pip install -c ./dm-constraints-py3-4.5.12.txt --prefix $1 GCR==$DESC_GCR_VER
 pip install -c ./dm-constraints-py3-4.5.12.txt --prefix $1 https://github.com/LSSTDESC/gcr-catalogs/archive/$DESC_GCRCatalogs_VER.tar.gz
 
-# Install ngmix, requires numba which is already included in DM env
+export PYTHONPATH=$PYTHONPATH:$1/lib/python3.7/site-packages 
 curdir=$PWD
 cd $1
+
+#DC2-production
+curl -LO https://github.com/LSSTDESC/DC2-production/archive/v$DESC_DC2_production_VER.tar.gz
+tar xvfz v$DESC_DC2_production_VER.tar.gz
+rm v$DESC_DC2_production_VER.tar.gz
+ln -s DC2-production-$DESC_DC2_production_VER DC2-production
+
+#GCRCatalogs
+git clone git@github.com:LSSTDESC/gcr-catalogs.git
+cd gcr-catalogs
+python setup.py install --prefix=$1
+cd ..
+
+# Install ngmix, requires numba which is already included in DM env
 curl -LO https://github.com/esheldon/ngmix/archive/$DESC_ngmix_VER_STR.tar.gz
 tar xzf $DESC_ngmix_VER_STR.tar.gz
 cd ngmix-$DESC_ngmix_VER
@@ -51,20 +66,27 @@ cd ..
 rm $DESC_ngmix_VER_STR.tar.gz
 ln -s ngmix-$DESC_ngmix_VER ngmix
 
-export PYTHONPATH=$PYTHONPATH:$1/lib/python3.7/site-packages 
-
 # Install meas_extensions_ngmix
 setup lsst_distrib
-curl -LO https://github.com/lsst-dm/meas_extensions_ngmix/archive/$DESC_meas_extensions_ngmix_VER.tar.gz
-tar xzf $DESC_meas_extensions_ngmix_VER.tar.gz
+curl -LO https://github.com/lsst-dm/meas_extensions_ngmix/archive/v$DESC_meas_extensions_ngmix_VER.tar.gz
+tar xzf v$DESC_meas_extensions_ngmix_VER.tar.gz
 cd meas_extensions_ngmix-$DESC_meas_extensions_ngmix_VER
 setup -r . -j
 scons
 cd ..
-rm $DESC_meas_extensions_ngmix_VER.tar.gz
+rm v$DESC_meas_extensions_ngmix_VER.tar.gz
 ln -s meas_extensions_ngmix-$DESC_meas_extensions_ngmix_VER meas_extensions_ngmix
-cd $curdir
 
+# install obs_lsst
+git clone git@github.com:lsst/obs_lsst.git
+cd obs_lsst
+git checkout dc2/run2.2
+setup -r . -j
+scons
+cd ..             
+
+
+cd $curdir
 echo
 echo "Installation Complete"
 echo
