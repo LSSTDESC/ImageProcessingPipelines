@@ -11,11 +11,22 @@ echo "Working on TRACT=${TRACT}, PATH=${PATCH}, FILT=${FILT}"
 
 visit_file=${FILEDIR}/${TRACT}_${PATCH}_${FILT}_visits.list 
 
-if [ $FILT = u ]; then
-    echo "coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-u --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog --configfile=${OBS_LSST_DIR}/config/coaddDriver_noPSF.py"
-    coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-u --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog --configfile=${OBS_LSST_DIR}/config/coaddDriver_noPSF.py
+if [[ -z $DIA_REF ]]; then
+    echo "Executing coaddDriver for DRP coaddition"
+    if [ $FILT = u ]; then
+	echo "coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-u --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog --configfile=${OBS_LSST_DIR}/config/coaddDriver_noPSF.py"
+	coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-u --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog --configfile=${OBS_LSST_DIR}/config/coaddDriver_noPSF.py
+    else
+	echo "coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog"
+	coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog
+    fi
 else
-    echo "coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog"
-    coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog
+    echo "Executing coaddDriver for DIA reference templates"
+    if [ $FILT = u ]; then
+	cmd="coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-u --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog --configfile=${DIA_PIPE_DIR}/config/coaddDriver_BestSeeing_noPSF.py"
+	echo $cmd;$cmd;
+    else
+	cmd="coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog --configfile=${DIA_PIPE_DIR}/config/coaddDriver_BestSeeing.py"
+	echo $cmd;$cmd;
+    fi
 fi
-
