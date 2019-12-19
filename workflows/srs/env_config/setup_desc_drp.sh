@@ -36,6 +36,7 @@ export DESC_meas_extensions_ngmix_VER=0.9.5
 export DESC_DC2_PRODUCTION_VER=0.4.0
 export DESC_DC2_PRODUCTION_VER_STR=v$DESC_DC2_PRODUCTION_VER_STR
 export DESC_OBS_LSST_VER=19.0.0-run2.2-v1
+export DESC_SIMS_CI_PIPE_VER=0.1.0
 
 source $STACKCVMFS/$DESC_STACK_VER/loadLSST.bash
 setup lsst_distrib
@@ -84,7 +85,9 @@ cd ..
 rm $DESC_OBS_LSST_VER.tar.gz
 
 # install sims_ci_pipe
-git clone https://github.com/LSSTDESC/sims_ci_pipe.git 
+curl -LO https://github.com/LSSTDESC/sims_ci_pipe/archive/$DESC_SIMS_CI_PIPE_VER.tar.gz
+tar xvzf $DESC_SIMS_CI_PIPE_VER.tar.gz
+ln -s sims_ci_pipe-$DESC_SIMS_CI_PIPE_VER sims_ci_pipe
 cd sims_ci_pipe
 setup -r . -j    
 scons
