@@ -69,6 +69,12 @@ else
     #this does not work anymore with Heather's provenance scheme
     #cd ${ROOT_SOFTS}/meas_extensions_ngmix-0.9.4;git status;cd -
 
+    echo "setting up dia_pipe"
+    eups undeclare dia_pipe dc2-run2.2
+    eups declare -r $ROOT_SOFTS/dia_pipe dia_pipe dc2-run2.2
+    setup dia_pipe dc2-run2.2
+    cd ${ROOT_SOFTS}/dia_pipe;git status;cd - 
+
     # pipe_analysis not ready for parallel execution
     # echo "setting pipe_analysis for QA"
     # eups undeclare pipe_analysis dc2-run2.1
