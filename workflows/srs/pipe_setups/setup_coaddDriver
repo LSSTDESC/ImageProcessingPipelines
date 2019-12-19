@@ -9,6 +9,7 @@ patch_str=${patch_str::-4}\)
 
 for FILT in $(echo ${FILTERS} | tr "," "\n")
 do
+    echo "sqlite3 ${OUT_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 \"SELECT DISTINCT visit FROM overlaps WHERE tract=${TRACT} and filter='${FILT}' and ${patch_str}\""
     visit_list=`sqlite3 ${OUT_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 "SELECT DISTINCT visit FROM overlaps WHERE tract=${TRACT} and filter='${FILT}' and ${patch_str}"`
     echo $visit_list
 

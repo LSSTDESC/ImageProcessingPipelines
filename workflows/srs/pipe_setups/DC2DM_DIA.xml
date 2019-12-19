@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pipeline xmlns="http://glast-ground.slac.stanford.edu/pipeline" 
+          xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" 
+          xs:schemaLocation="http://glast-ground.slac.stanford.edu/pipeline 
+			     https://srs.slac.stanford.edu/Pipeline-II/schemas/2.1/pipeline.xsd">
+  
+  <task name="DC2DM_DIA" type="LSST" version="0.2">
+    <notation>Task to run the DM stack on DC2 simulated images (ingestion)</notation>
+    <variables>
+      <!-- Job site and configuration-->
+      <var name="SITE">LSST-IN2P3</var>
+      <var name="JOBSITE">${SITE=="NERSC" ? "CORIP" : SITE}</var>
+      <var name="MAXCPU">10000</var>
+      <var name="MAXCPULONG">10000</var>
+      <var name="IN2P3_BATCH_OPTIONS"> -l sps=1,os=cl7,xrootd=0 </var>
+      <var name="IN2P3_LONG_OPTIONS"> -q long </var>
+      <var name="IN2P3_HUGE_OPTIONS"> -q huge </var>
+      <var name="IN2P3_MCLONG_OPTIONS"> -q mc_long -pe multicores 8 </var>
+      <var name="IN2P3_MCHUGE_OPTIONS"> -q mc_huge -pe multicores 8 </var>
+      <var name="NERSC_BATCH_OPTIONS"> -p MINIDRPHK | -L SCRATCH,projecta | -C haswell </var>
+      <var name="BATCH_OPTIONS">${SITE=="NERSC" ? "${NERSC_BATCH_OPTIONS}" : "${IN2P3_BATCH_OPTIONS} "}</var>
+      <var name="EXTRA_OPTIONS_0">${SITE=="NERSC" ? " " : "${IN2P3_HUGE_OPTIONS} "}</var>
+      <var name="EXTRA_OPTIONS_1">${SITE=="NERSC" ? " " : "${IN2P3_MCHUGE_OPTIONS} "}</var>
+      <var name="EXTRA_OPTIONS_2">${SITE=="NERSC" ? " " : "${IN2P3_MCLONG_OPTIONS} "}</var>
+      <var name="EXTRA_OPTIONS_3">${SITE=="NERSC" ? " " : "${IN2P3_LONG_OPTIONS} "}</var>
+      <!-- Log Files -->
+      <var name="IN2P3_logRoot">/sps/lsst/users/descprod/Pipeline2/Logs</var> 
+      <var name="NERSC_logRoot">/global/homes/d/descdm/minidrp/logs</var>    
+      <var name="logRoot">${SITE=="NERSC" ? NERSC_logRoot : IN2P3_logRoot}</var>
+      <!-- Batch Script Name -->
+      <var name="BATCH_NAME">${SITE=="NERSC" ? "/global/homes/d/descdm/minidrp/DC2Batch.sh" : "/pbs/throng/lsst/software/desc/DC2/DC2Batch.sh"}</var>
+    </variables>
+
+
+    <!-- ################ SETUP FOR REFERENCE COADD ################### -->
+    <process name="setup_dia_ref" site="${JOBSITE}">
+      <notation> Setup reference template building </notation>
+      <variables>
+        <var name="streamID">${format(pipeline.stream, "%s")}</var>
+      </variables>
+      <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_3}"
+	   executable="${BATCH_NAME}"/>
+      <createsSubtasks>
+	<subtask>task_ref</subtask>
+      </createsSubtasks>
+    </process>
+
+     <!-- ################ SETUP FOR IMAGE DIFFERENTIATION ################### -->
+    <process name="setup_imdiff" site="${JOBSITE}">
+      <notation> Loop over the variables </notation>
+      <variables>
+        <var name="streamID">${format(pipeline.stream, "%s")}</var>
+      </variables>
+      <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_3}"
+	   executable="${BATCH_NAME}"/>
+      <depends>
+        <after process="task_ref.finish_dia_ref"/>
+      </depends>
+      <createsSubtasks>
+	<subtask>task_imdiff</subtask>
+      </createsSubtasks>
+    </process>
+    
+    <!-- ################ SETUP FOR ASSOCIATION ################### -->
+    <process name="setup_asso" site="${JOBSITE}">
+      <notation> Setup for DIA Association </notation>
+      <variables>
+        <var name="streamID">${format(pipeline.stream, "%s")}</var>
+      </variables>
+      <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_3}"
+	   executable="${BATCH_NAME}"/>
+      <depends>
+        <after process="task_imdiff.run_imdiff"/>
+      </depends>
+      <createsSubtasks>
+	<subtask>task_asso</subtask>
+      </createsSubtasks>
+    </process>
+
+    <!-- ################ SETUP FOR FORCEDCCD ON DIA ################### -->
+    <process name="setup_forced_dia" site="${JOBSITE}">
+      <notation> Setup for Forced Photometry on DIA </notation>
+      <variables>
+        <var name="streamID">${format(pipeline.stream, "%s")}</var>
+      </variables>
+      <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_3}"
+	   executable="${BATCH_NAME}"/>
+      <depends>
+        <after process="task_asso.run_dia_asso"/>
+      </depends>
+      <createsSubtasks>
+	<subtask>task_forced_dia</subtask>
+      </createsSubtasks>
+    </process>
+
+
+    <!-- ##################### COADD FOR REFERENCE ########################## -->
+    <task name="task_ref" type="LSST">
+      <process name="setup_coaddDriver" site="${JOBSITE}">
+        <notation> set the subtask to run coaddDriver on each filter in parallel  </notation>
+        <variables>
+          <var name="streamID">${format(pipeline.stream, "%s")}</var>
+        </variables>
+        <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_3}"
+	     executable="${BATCH_NAME}"/>
+        <createsSubtasks>
+	  <subtask>task_coaddDriver</subtask>
+        </createsSubtasks> 
+      </process>
+
+        <process name="finish_dia_ref" site="${JOBSITE}">
+          <notation> note </notation>
+          <variables>
+            <var name="streamID">${format(pipeline.stream, "%s")}</var>
+            <var name="SGE_QACCT">${SITE=="NERSC" ? "" : "-A multiband"}</var>
+          </variables>
+          <job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_1} ${SGE_QACCT}"
+	       executable="${BATCH_NAME}"/>
+          <depends>
+            <after process="task_coaddDriver.run_coaddDriver"/>
+          </depends>
+        </process>
+
+        <!--   Subtask to run coaddDriver on each filter-->
+        <task name="task_coaddDriver" type="LSST">
+          <process name="run_coaddDriver" site="${JOBSITE}">
+            <variables>
+              <var name="streamID">${format(pipeline.stream, "%s")}</var>
+              <var name="SGE_QACCT">${SITE=="NERSC" ? "" : "-A dia_ref"}</var>
+              <var name="DIA_REF">${"1"}</var>
+            </variables>
+            <job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_2} ${SGE_QACCT}"
+	         executable="${BATCH_NAME}"/>
+          </process>                
+        </task>
+
+    </task>
+    
+    <!-- ##################### TASK FOR IMDIFF ########################## -->
+    <task name="task_imdiff" type="LSST">
+      <process name="run_imdiff" site="${JOBSITE}">
+        <variables>
+          <var name="DIA_IMDIFF">${"1"}</var>
+          <var name="streamID">${format(pipeline.stream, "%s")}</var>
+          <var name="SGE_QACCT">${SITE=="NERSC" ? "" : "-A imdiff"}</var>
+        </variables>
+        <job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_2} ${SGE_QACCT}"
+	     executable="${BATCH_NAME}"/>
+      </process>                
+    </task>
+    
+    <!-- ##################### TASK FOR ASSOCIATION ########################## -->
+    <task name="task_asso" type="LSST">
+      <process name="run_dia_asso" site="${JOBSITE}">
+        <notation> set the subtask to run coaddDriver on each filter in parallel  </notation>
+        <variables>
+          <var name="streamID">${format(pipeline.stream, "%s")}</var>
+        </variables>
+        <job maxCPU="${MAXCPU}" batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_3}"
+	     executable="${BATCH_NAME}"/>
+      </process>
+    </task>
+
+    <!-- ##################### TASK FOR FORCED PHOT ON DIA ########################## -->
+    <task name="task_forced_dia" type="LSST">
+      <process name="run_forced_dia" site="${JOBSITE}">
+        <variables>
+          <var name="DIA_FORCED">${"1"}</var>
+          <var name="streamID">${format(pipeline.stream, "%s")}</var>
+          <var name="SGE_QACCT">${SITE=="NERSC" ? "" : "-A imdiff"}</var>
+        </variables>
+        <job batchOptions="${BATCH_OPTIONS} ${EXTRA_OPTIONS_2} ${SGE_QACCT}"
+	     executable="${BATCH_NAME}"/>
+      </process>                
+    </task>
+    
+  </task>  
+</pipeline>
