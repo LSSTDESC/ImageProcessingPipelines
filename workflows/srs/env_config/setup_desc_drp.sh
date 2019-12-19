@@ -5,6 +5,8 @@ then
 	echo "Please provide a full path install directory"
 	exit 1
 fi
+mkdir -p $1
+export PATH=$1/bin:$PATH
 
 export STACKCVMFS=/cvmfs/sw.lsst.eu/linux-x86_64/lsst_distrib
 export DESC_STACK_VER=v19.0.0
@@ -26,18 +28,18 @@ fi
 
 
 # Version List
-export DESC_pyarrow_VER=0.13.0
 export DESC_GCR_VER=0.8.8
 export DESC_GCRCatalogs_VER=v0.14.3
 export DESC_ngmix_VER=1.3.4
 export DESC_ngmix_VER_STR=v$DESC_ngmix_VER
 export DESC_meas_extensions_ngmix_VER=0.9.5
 export DESC_DC2_production_VER=0.4.0
+export DESC_OBS_LSST_VER=19.0.0-run2.2-v1
 
 source $STACKCVMFS/$DESC_STACK_VER/loadLSST.bash
+setup lsst_distrib
 
 # pip install what we can, using a constraints file and local root directory
-pip install -c ./dm-constraints-py3-4.5.12.txt --prefix $1 pyarrow==$DESC_pyarrow_VER
 pip install -c ./dm-constraints-py3-4.5.12.txt --prefix $1 GCR==$DESC_GCR_VER
 pip install -c ./dm-constraints-py3-4.5.12.txt --prefix $1 https://github.com/LSSTDESC/gcr-catalogs/archive/$DESC_GCRCatalogs_VER.tar.gz
 
@@ -67,7 +69,6 @@ rm $DESC_ngmix_VER_STR.tar.gz
 ln -s ngmix-$DESC_ngmix_VER ngmix
 
 # Install meas_extensions_ngmix
-setup lsst_distrib
 curl -LO https://github.com/lsst-dm/meas_extensions_ngmix/archive/v$DESC_meas_extensions_ngmix_VER.tar.gz
 tar xzf v$DESC_meas_extensions_ngmix_VER.tar.gz
 cd meas_extensions_ngmix-$DESC_meas_extensions_ngmix_VER
@@ -78,13 +79,21 @@ rm v$DESC_meas_extensions_ngmix_VER.tar.gz
 ln -s meas_extensions_ngmix-$DESC_meas_extensions_ngmix_VER meas_extensions_ngmix
 
 # install obs_lsst
-git clone git@github.com:lsst/obs_lsst.git
+curl -LO https://github.com/lsst/obs_lsst/archive/$DESC_OBS_LSST_VER.tar.gz
+tar xvfz $DESC_OBS_LSST_VER.tar.gz 
+ln -s obs_lsst-$DESC_OBS_LSST_VER obs_lsst
 cd obs_lsst
-git checkout dc2/run2.2
 setup -r . -j
 scons
 cd ..             
+rm $DESC_OBS_LSST_VER.tar.gz
 
+# install sims_ci_pipe
+git clone git@github.com:LSSTDESC/sims_ci_pipe.git 
+cd sims_ci_pipe
+setup -r . -j    
+scons
+cd ..
 
 cd $curdir
 echo
