@@ -54,20 +54,24 @@ else
     python -c "import GCRCatalogs;print(f'GCRCatalogs:{GCRCatalogs.__version__}')"
     
     echo "setting obs_lsst"
-    eups undeclare obs_lsst dc2-run2.1
-    eups declare -r $ROOT_SOFTS/obs_lsst obs_lsst dc2-run2.1
-    setup obs_lsst  dc2-run2.1
+    eups undeclare obs_lsst dc2-run2.2
+    eups declare -r $ROOT_SOFTS/obs_lsst obs_lsst dc2-run2.2
+    setup obs_lsst  dc2-run2.2
     eups list obs_lsst
     cd ${ROOT_SOFTS}/obs_lsst;git status;cd -
 
     echo "setting meas_extensions_ngmix"
-    eups undeclare meas_extensions_ngmix  dc2-run2.1
-    eups declare -r $ROOT_SOFTS/meas_extensions_ngmix meas_extensions_ngmix dc2-run2.1
-    setup meas_extensions_ngmix  dc2-run2.1
+    eups undeclare meas_extensions_ngmix  dc2-run2.2
+    eups declare -r $ROOT_SOFTS/meas_extensions_ngmix meas_extensions_ngmix dc2-run2.2
+    setup meas_extensions_ngmix  dc2-run2.2
     eups list meas_extensions_ngmix
     setup meas_extensions_psfex
-    #this does not work anymore with Heather's provenance scheme
-    #cd ${ROOT_SOFTS}/meas_extensions_ngmix-0.9.4;git status;cd -
+
+    echo "setting sims_ci_pipe"
+    eups undeclare sims_ci_pipe dc2-run2.2
+    eups declare -r $ROOT_SOFTS/sims_ci_pipe sims_ci_pipe dc2-run2.2
+    setup sims_ci_pipe dc2-run2.2
+    cd ${ROOT_SOFTS}/sims_ci_pipe;git status;cd - 
 
     # pipe_analysis not ready for parallel execution
     # echo "setting pipe_analysis for QA"
