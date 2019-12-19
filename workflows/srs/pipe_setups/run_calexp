@@ -50,7 +50,16 @@ else
     echo "Running visitAnalysis.py for visit=${VISIT} et streamID=${streamID}"
     tract=`sqlite3 ${REGISTRIES}/tracts_mapping_${VISIT}.sqlite3 "select distinct tract from overlaps where visit=${VISIT} limit 1;"`
     visitAnalysis.py ${IN_DIR} --rerun ${RERUN1}:QA-${RERUN1} --id visit=$VISIT --tract=$tract -j ${NSLOTS} -c doWriteParquetTables=False
-fi                                                                                                                                                                          
-                                                                                                                                                                                                                    
-                                                                                                                                                                                                                    
-
+fi
+status=`verify_checkpoint sfp_validation`
+if [[ $status = 0 ]]; then
+    echo "skipping sfp_validation and proceeding"
+elif [[ $status = 1 ]]; then
+    echo "halting at sfp_validation"
+    exit 1
+else
+    SFPDIR=/sps/lsst/users/descprod/web/LSST/DESC/DC2/Pipeline/SFP/${RERUN1}
+    mkdir -p ${SFPDIR}
+    BASENAME="${SFPDIR}/sfp-${VISIT}"
+    make_sfp_validation_plots.py --pickle_file ${BASENAME}.pkl --outfile ${BASENAME}.png --metrics_file ${BASENAME}-metrics.pkl ${IN_DIR}/rerun/${RERUN1} ${VISIT}
+fi
