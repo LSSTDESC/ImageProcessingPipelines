@@ -18,6 +18,6 @@ else
     #copy the outputs back to the central directory
     mkdir -p ${IN_DIR}/raw
     cp -r raw/* ${IN_DIR}/raw/
-    cp -r registry.sqlite3 $REGDIR/registry_\${JOB_ID}.sqlite3
+    cp -r registry.sqlite3 $REGDIR/registry_${JOB_ID}.sqlite3
 fi
 
