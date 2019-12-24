@@ -34,9 +34,9 @@ export DESC_ngmix_VER=1.3.4
 export DESC_ngmix_VER_STR=v$DESC_ngmix_VER
 export DESC_meas_extensions_ngmix_VER=0.9.5
 export DESC_DC2_PRODUCTION_VER=0.4.0
-export DESC_DC2_PRODUCTION_VER_STR=v$DESC_DC2_PRODUCTION_VER_STR
+export DESC_DC2_PRODUCTION_VER_STR=v$DESC_DC2_PRODUCTION_VER
 export DESC_OBS_LSST_VER=19.0.0-run2.2-v1
-export DESC_SIMS_CI_PIPE_VER=0.1.0
+export DESC_SIMS_CI_PIPE_VER=0.1.1
 
 source $STACKCVMFS/$DESC_STACK_VER/loadLSST.bash
 setup lsst_distrib
