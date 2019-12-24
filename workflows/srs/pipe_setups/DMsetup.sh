@@ -50,15 +50,15 @@ else
     python -c "import ngmix;print(\"NGMIX %s\"%ngmix.__version__)"
     echo "-- checking GCR..."
     python -c "import GCR;print(f'GCR:{GCR.__version__}')"
-    echo "-- checking GCRtalogs..."
-    python -c "import GCRCatalogs;print(f'GCRCatalogs:{GCRCatalogs.__version__}')"
+    #echo "-- checking GCRtalogs..."
+    #python -c "import GCRCatalogs;print(f'GCRCatalogs:{GCRCatalogs.__version__}')"
     
     echo "setting obs_lsst"
     eups undeclare obs_lsst dc2-run2.2
     eups declare -r $ROOT_SOFTS/obs_lsst obs_lsst dc2-run2.2
     setup obs_lsst  dc2-run2.2
     eups list obs_lsst
-    cd ${ROOT_SOFTS}/obs_lsst;git status;cd -
+    #cd ${ROOT_SOFTS}/obs_lsst;git status;cd -
 
     echo "setting meas_extensions_ngmix"
     eups undeclare meas_extensions_ngmix  dc2-run2.2
