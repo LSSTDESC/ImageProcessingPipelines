@@ -58,7 +58,7 @@ else
     eups declare -r $ROOT_SOFTS/obs_lsst obs_lsst dc2-run2.2
     setup obs_lsst  dc2-run2.2
     eups list obs_lsst
-    #cd ${ROOT_SOFTS}/obs_lsst;git status;cd -
+    cd ${ROOT_SOFTS}/obs_lsst;if [ -d .git ];then git status;fi;cd -
 
     echo "setting meas_extensions_ngmix"
     eups undeclare meas_extensions_ngmix  dc2-run2.2
@@ -71,7 +71,7 @@ else
     eups undeclare sims_ci_pipe dc2-run2.2
     eups declare -r $ROOT_SOFTS/sims_ci_pipe sims_ci_pipe dc2-run2.2
     setup sims_ci_pipe dc2-run2.2
-    cd ${ROOT_SOFTS}/sims_ci_pipe;git status;cd - 
+    cd ${ROOT_SOFTS}/sims_ci_pipe;if [ -d .git ];then git status;fi;cd - 
 
     # pipe_analysis not ready for parallel execution
     # echo "setting pipe_analysis for QA"
