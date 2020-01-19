@@ -13,9 +13,9 @@ visit_file=${FILEDIR}/${TRACT}_${PATCH}_${FILT}_visits.list
 
 if [ $FILT = u ]; then
     echo "coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-u --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --longlog --configfile=${OBS_LSST_DIR}/config/coaddDriver_noPSF.py"
-    coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-u --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --longlog --configfile=${OBS_LSST_DIR}/config/coaddDriver_noPSF.py
+    coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-u --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --longlog --configfile=${OBS_LSST_DIR}/config/coaddDriver_noPSF.py --reuse-outputs-from  all
 else
     echo "coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --longlog"
-    coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --longlog
+    coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --longlog --reuse-outputs-from  all
 fi
 
