@@ -41,7 +41,7 @@ else
     if [[ -z ${DPDD_TAG} ]]; then
 	DPDD_TAG=${RERUN}
     fi
-    DPDD_DIR=${OUT_DIR}/dpdd/${RERUN}/metacal_table_summary/
+    DPDD_DIR=${OUT_DIR}/dpdd/${DPDD_TAG}/metacal_table_summary/
     mkdir -p $DPDD_DIR
     cmd="python ${DC2PROD}/make_metacal_catalog.py ${OUT_DIR}/rerun/${RERUN2} ${TRACT} -p ${PATCH} -o ${DPDD_DIR}"
     echo $cmd;$cmd;
