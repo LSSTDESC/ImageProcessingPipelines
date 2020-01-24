@@ -14,19 +14,19 @@ visit_file=${FILEDIR}/${TRACT}_${PATCH}_${FILT}_visits.list
 if [[ -z $DIA_REF ]]; then
     echo "Executing coaddDriver for DRP coaddition"
     if [ $FILT = u ]; then
-	echo "coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-u --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog --configfile=${OBS_LSST_DIR}/config/coaddDriver_noPSF.py"
-	coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-u --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog --configfile=${OBS_LSST_DIR}/config/coaddDriver_noPSF.py
+	echo "coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-u --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --longlog --configfile=${OBS_LSST_DIR}/config/coaddDriver_noPSF.py"
+	coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-u --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --longlog --configfile=${OBS_LSST_DIR}/config/coaddDriver_noPSF.py
     else
-	echo "coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog"
-	coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog
+	echo "coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --longlog"
+	coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --longlog
     fi
 else
     echo "Executing coaddDriver for DIA reference templates"
     if [ $FILT = u ]; then
-	cmd="coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-u --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog --configfile=${DIA_PIPE_DIR}/config/coaddDriver_BestSeeing_noPSF.py"
+	cmd="coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-u --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --longlog --configfile=${DIA_PIPE_DIR}/config/coaddDriver_BestSeeing_noPSF.py"
 	echo $cmd;$cmd;
     else
-	cmd="coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog --configfile=${DIA_PIPE_DIR}/config/coaddDriver_BestSeeing.py"
+	cmd="coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --longlog --configfile=${DIA_PIPE_DIR}/config/coaddDriver_BestSeeing.py"
 	echo $cmd;$cmd;
     fi
 fi
