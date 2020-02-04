@@ -15,13 +15,13 @@ def create_ingest_file_list(wrap, pipe_scripts_dir, ingest_source, outputs=[], s
 
 
 @bash_app(executors=["submit-node"], cache=True)
-def filter_in_place(wrap, ingest_file):
+def filter_in_place(wrap, ingest_file, stdout=None, stderr=None):
     return wrap("grep --invert-match 466748_R43_S21 {} > filter-filesToIngest.tmp && mv filter-filesToIngest.tmp filesToIngest.txt".format(ingest_file.filepath))
 
 
 # for testing, truncated this list heavilty
 @python_app(executors=["submit-node"], cache=True)
-def truncate_ingest_list(files_to_ingest, n, outputs=[]):
+def truncate_ingest_list(files_to_ingest, n, outputs=[], stdout=None, stderr=None):
     filenames = files_to_ingest[0:n]
     logger.info("writing truncated list")
     with open(outputs[0].filepath, "w") as f:
@@ -49,7 +49,12 @@ def perform_ingest(configuration):
 
     ingest_file = File("wf_files_to_ingest")
 
-    ingest_fut = create_ingest_file_list(configuration.wrap, pipe_scripts_dir, configuration.ingest_source, outputs=[ingest_file], stdout="create_ingest_file_list.stdout", stderr="create_ingest_file_list.stderr")
+    ingest_fut = create_ingest_file_list(configuration.wrap,
+                                         pipe_scripts_dir,
+                                         configuration.ingest_source,
+                                         outputs=[ingest_file],
+                                         stdout="logs/create_ingest_file_list.stdout",
+                                         stderr="logs/create_ingest_file_list.stderr")
     # on dev repo, this gives about 45000 files listed in ingest_file
 
     ingest_file_output_file = ingest_fut.outputs[0]
@@ -64,7 +69,10 @@ def perform_ingest(configuration):
     # will be omitted from processing:
     # 00458564 (R32 S21) and 00466748 (R43 S21)
 
-    filtered_ingest_list_future = filter_in_place(configuration.wrap, ingest_file_output_file)
+    filtered_ingest_list_future = filter_in_place(configuration.wrap,
+                                                  ingest_file_output_file,
+                                                  stdout="logs/filter_in_place.stdout",
+                                                  stderr="logs/filter_in_place.stderr")
     filtered_ingest_list_future.result()
 
     with open("filesToIngest.txt") as f:
@@ -74,15 +82,21 @@ def perform_ingest(configuration):
 
     truncatedFileList = File("ingest_list_filtered.txt")
 
-    truncated_ingest_list = truncate_ingest_list(files_to_ingest, 20, outputs=[truncatedFileList])
+    truncated_ingest_list = truncate_ingest_list(files_to_ingest,
+                                                 20,
+                                                 outputs=[truncatedFileList],
+                                                 stdout="logs/truncate_ingest_list.stdout",
+                                                 stderr="logs/truncate_ingest_list.stderr")
     truncatedFileList_output_future = truncated_ingest_list.outputs[0]
 
     # parsl discussion: the UI is awkward that we can make a truncatedFileList
     # File but then we need to extract out the datafuture that contains
     # "the same" # file to get dependency ordering.
 
-    ingest_future = ingest(configuration.wrap, truncatedFileList_output_future,
-                           configuration.in_dir, stdout="ingest.stdout",
-                           stderr="ingest.stderr")
+    ingest_future = ingest(configuration.wrap,
+                           truncatedFileList_output_future,
+                           configuration.in_dir,
+                           stdout="logs/ingest.stdout",
+                           stderr="logs/ingest.stderr")
 
     return ingest_future
