@@ -1,0 +1,8 @@
+This directory contains scripts to accomplish the one-time initialization for: the Conda environment necessary to run the workflow; and, the DM repository.
+
+configTask.sh - define env-vars
+cvmfsSetup.sh - define DM environment
+runInit.sh - set up the env then run the repo initialization script
+initRepo.sh - repo initialization script
+
+initConda.sh - define the Conda environment within which the workflow operates
