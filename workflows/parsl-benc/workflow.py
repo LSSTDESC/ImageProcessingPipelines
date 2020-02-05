@@ -117,6 +117,10 @@ def sky_correction(wrap, in_dir, rerun, visit, inputs=[], stdout=None, stderr=No
     return wrap("skyCorrection.py {in_dir}  --rerun {rerun} --id visit={visit} --batch-type none --cores 1 --timeout 999999999 --no-versions --loglevel CameraMapper=warn".format(in_dir=in_dir, rerun=rerun, visit=visit))
 
 
+##########################################################################
+##########################################################################
+
+
 with open("all_visits_from_register.list") as f:
     visit_lines = f.readlines()
 
