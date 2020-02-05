@@ -56,8 +56,8 @@ def make_sky_map(wrap, in_dir, rerun, stdout=None, stderr=None):
 
 
 logger.info("launching makeSkyMap")
-rerun = "some_rerun"
-skymap_future = make_sky_map(configuration.wrap, configuration.in_dir, rerun, stdout="make_sky_map.stdout", stderr="make_sky_map.stderr")
+rerun = configuration.rerun
+skymap_future = make_sky_map(configuration.wrap, configuration.in_dir, rerun, stdout="logs/make_sky_map.stdout", stderr="logs/make_sky_map.stderr")
 skymap_future.result()
 logger.info("makeSkyMap completed")
 
@@ -70,7 +70,12 @@ def make_visit_file(wrap, in_dir, stdout=None, stderr=None):
     return wrap('sqlite3 {}/registry.sqlite3 "select DISTINCT visit from raw_visit;" > all_visits_from_register.list'.format(in_dir))
 
 
-visit_file_future = make_visit_file(configuration.wrap, configuration.in_dir, stdout="make_visit_file.stdout", stderr="make_visit_file.stderr")
+visit_file_future = make_visit_file(
+    configuration.wrap,
+    configuration.in_dir,
+    stdout="logs/make_visit_file.stdout",
+    stderr="logs/make_visit_file.stderr")
+
 visit_file_future.result()
 
 logger.info("Finished making visit file")
@@ -84,11 +89,14 @@ def single_frame_driver(wrap, in_dir, rerun, visit_id, raft_name, stdout=None, s
     # this is going to be something like found in workflows/srs/pipe_setups/run_calexp
     # run_calexp uses --cores as NSLOTS+1. I'm using cores 1 because I am not sure of
     # the right parallelism here.
-    return wrap("singleFrameDriver.py --batch-type none {in_dir} --rerun {rerun} --id visit={visit} raftName={raft_name} --cores 1 --timeout 999999999 --loglevel CameraMapper=warn".format(in_dir=in_dir, rerun=rerun, visit=visit_id, raft_name=raft_name))
+#    return wrap("singleFrameDriver.py --batch-type none {in_dir} --rerun {rerun} --id visit={visit} raftName={raft_name} --cores 1 --timeout 999999999 --loglevel CameraMapper=warn".format(in_dir=in_dir, rerun=rerun, visit=visit_id, raft_name=raft_name))
+
+
+    return wrap("singleFrameDriver.py --batch-type none {in_dir} --rerun {rerun} --id visit={visit} raftName={raft_name} --clobber-versions --cores 1 --timeout 999999999 --loglevel CameraMapper=warn".format(in_dir=in_dir, rerun=rerun, visit=visit_id, raft_name=raft_name))
 
 
 @bash_app(executors=["worker-nodes"], cache=True)
-def raft_list_for_visit(wrap, in_dir, visit_id, out_filename):
+def raft_list_for_visit(wrap, in_dir, visit_id, out_filename, stderr=None, stdout=None):
     return wrap("sqlite3 {in_dir}/registry.sqlite3 'select distinct raftName from raw where visit={visit_id}' > {out_filename}".format(in_dir=in_dir, visit_id=visit_id, out_filename=out_filename))
 
 
@@ -97,7 +105,7 @@ def raft_list_for_visit(wrap, in_dir, visit_id, out_filename):
 # useful in during workflow development when the original ingest list might change?
 # would need eg "files in each visit" list to generate a per-visit input "version" id/hash
 @bash_app(executors=["worker-nodes"], cache=True)
-def check_ccd_astrometry(wrap, root_softs, in_dir, rerun, visit, inputs=[]):
+def check_ccd_astrometry(wrap, root_softs, in_dir, rerun, visit, inputs=[], stderr=None, stdout=None):
     # inputs=[] ignored but used for dependency handling
     return wrap("{root_softs}/ImageProcessingPipelines/python/util/checkCcdAstrometry.py {in_dir}/rerun/{rerun} --id visit={visit} --loglevel CameraMapper=warn".format(visit=visit, rerun=rerun, in_dir=in_dir, root_softs=root_softs))
 
@@ -130,7 +138,14 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
 
     raft_list_fn = "raft_list_for_visit.{}".format(visit_id)
 
-    raft_list_future = raft_list_for_visit(configuration.wrap, configuration.in_dir, visit_id, raft_list_fn)
+    raft_list_future = raft_list_for_visit(
+        configuration.wrap,
+        configuration.in_dir,
+        visit_id,
+        raft_list_fn,
+        stdout="logs/"+raft_list_fn+".stdout",
+        stderr="logs/"+raft_list_fn+".stderr")
+    
     raft_list_future.result()
     # this wait here means that we don't get parallelisation so much
     # there are problems with launching tasks within tasks due to locking up
@@ -150,7 +165,16 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
         # assume visit_id really is a visit id... workflows/srs/pipe_setups/setup_calexp has a case where the visit file has two fields per line, and this is handled differently there. I have ignored that here.
         # raft_name is the $RAFTNAME environment variable in run_calexp in the XML workflows
         sfd_output_basename = "single_frame_driver.{}.{}".format(m, n)
-        this_visit_single_frame_futs.append(single_frame_driver(configuration.wrap, configuration.in_dir, rerun, visit_id, raft_name, stdout=sfd_output_basename+".stdout", stderr=sfd_output_basename+".stderr"))
+        this_visit_single_frame_futs.append(
+            single_frame_driver(
+                configuration.wrap,
+                configuration.in_dir,
+                rerun,
+                visit_id,
+                raft_name,
+                stdout="logs/"+sfd_output_basename+".stdout",
+                stderr="logs/"+sfd_output_basename+".stderr")
+        )
 
     # now need to join based on all of this_visit_single_frame_futs... but not in sequential code
     # because otherwise we won't launch later visits until after we're done with this one, and
@@ -163,17 +187,42 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
     # TODO: which of these post-processing steps need to happen in sequence rather than
     # in parallel?
 
-    fut1 = check_ccd_astrometry(configuration.wrap, configuration.root_softs, configuration.in_dir, rerun, visit_id, inputs=this_visit_single_frame_futs)
+    check_ccd_stdbase = "check_ccd_astrometry.{}".format(visit_id)
+    fut1 = check_ccd_astrometry(
+        configuration.wrap,
+        configuration.root_softs,
+        configuration.in_dir,
+        rerun,
+        visit_id,
+        inputs=this_visit_single_frame_futs,
+        stdout="logs/"+check_ccd_stdbase+".stdout",
+        stderr="logs/"+check_ccd_stdbase+".stderr")
+
 
     tract2visit_mapper_stdbase = "track2visit_mapper.{}".format(visit_id)
-    fut2 = tract2visit_mapper(configuration.wrap, configuration.root_softs, configuration.in_dir, rerun, visit_id, inputs=[fut1], stdout=tract2visit_mapper_stdbase+".stdout", stderr=tract2visit_mapper_stdbase+".stderr")
+    fut2 = tract2visit_mapper(
+        configuration.wrap,
+        configuration.root_softs,
+        configuration.in_dir,
+        rerun,
+        visit_id,
+        inputs=[fut1],
+        stdout="logs/"+tract2visit_mapper_stdbase+".stdout",
+        stderr="logs/"+tract2visit_mapper_stdbase+".stderr")
 
     # this is invoked in run_calexp with $OUT_DIR at the first parameter, but that's not something
     # i've used so far -- so I'm using IN_DIR as used in previous steps
     # TODO: is that the right thing to do? otherwise how does IN_DIR and OUT_DIR differ?
     sky_correction_stdbase = "sky_correction.{}".format(visit_id)
-    fut3 = sky_correction(configuration.wrap, configuration.in_dir, rerun, visit_id, inputs=[fut2], stdout=sky_correction_stdbase+".stdout", stderr=sky_correction_stdbase+".stderr")
-
+    fut3 = sky_correction(
+        configuration.wrap,
+        configuration.in_dir,
+        rerun,
+        visit_id,
+        inputs=[fut2],
+        stdout="logs/"+sky_correction_stdbase+".stdout",
+        stderr="logs/"+sky_correction_stdbase+".stderr")
+    
     calexp_futs.append(fut3)
 
     # TODO: visitAnlysis.py for stream and visit - this involves sqlite

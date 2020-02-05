@@ -17,6 +17,7 @@ from workflowutils import wrap_shifter_container
 class WorkflowConfig:
     ingest_source: str
     in_dir: str
+    rerun: str
     root_softs: str
     wrap: Callable[[str], str]
     parsl_config: Config
