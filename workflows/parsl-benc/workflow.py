@@ -6,7 +6,7 @@ import parsl
 from parsl import bash_app
 
 import checkpointutil  # noqa: F401 - for import-time checkpoint config
-from configuration import configuration
+import configuration
 import ingest
 
 # initial conda setup on cori:
@@ -29,6 +29,8 @@ logger = logging.getLogger("parsl.dm")
 parsl.set_stream_logger()
 
 logger.info("Parsl driver for DM pipeline")
+
+configuration = configuration.load_configuration()
 
 parsl.load(configuration.parsl_config)
 

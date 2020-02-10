@@ -6,4 +6,4 @@ echo "source ./setup.source"
 source ./setup.source
 
 echo "./workflow.py"
-./workflow.py
+./workflow.py $@

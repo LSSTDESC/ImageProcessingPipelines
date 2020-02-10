@@ -1,7 +1,5 @@
 import dataclasses
-import importlib
 import os
-import sys
 
 from parsl.monitoring import MonitoringHub
 from parsl.addresses import address_by_hostname
@@ -12,25 +10,9 @@ from parsl.providers import SlurmProvider
 from parsl.utils import get_all_checkpoints
 from typing import Callable
 
+from configuration import WorkflowConfig
 from workflowutils import wrap_shifter_container
 
-
-@dataclasses.dataclass
-class WorkflowConfig:
-    ingest_source: str
-    in_dir: str
-    rerun: str
-    root_softs: str
-    wrap: Callable[[str], str]
-    parsl_config: Config
-
-def load_configuration():
-    if len(sys.argv) < 2:
-        raise RuntimeError("Specify configuration file as first argument")
-    spec = importlib.util.spec_from_file_location('', sys.argv[1])
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module.configuration
 
 cori_queue = "debug"
 
