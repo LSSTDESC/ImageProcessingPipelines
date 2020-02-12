@@ -10,19 +10,11 @@ import configuration
 import ingest
 
 # initial conda setup on cori:
-#   module load python/3.7-anaconda-2019.07
-#   conda create --name=parsl-lsst-dm python=3.7  # this conda env name is used by setup.source below
-#   source activate parsl-lsst-dm
-#   conda install pip
-#   pip install 'parsl[monitoring] @ git+https://github.com/parsl/parsl@lsst-dm-201910'
+# $ ./initialize/initConda.sh
 
 # to run the workflow, assuming above setup has been done:
 
-# First, fiddle with configuration.py to match your own environment,
-# especially the the ingest_source, in_dir and root_softs variables.
-# Then:
-#   source ./setup.source
-#   ./workflow.py
+# $ ./runWorkflow.sh CONFIG_FILE_NAME
 
 logger = logging.getLogger("parsl.dm")
 
