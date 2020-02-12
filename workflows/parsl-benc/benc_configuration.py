@@ -61,7 +61,8 @@ cori_queue_executor = HighThroughputExecutor(
                 launcher=SrunLauncher(),
                 cmd_timeout=60,
                 walltime=walltime,
-                worker_init=worker_init
+                worker_init=worker_init,
+                parallelism=1.0/64.0 # number of workers that will run on a node
             ),
         )
 
