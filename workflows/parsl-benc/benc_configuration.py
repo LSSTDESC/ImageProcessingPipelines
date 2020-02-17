@@ -69,6 +69,7 @@ cori_queue_executor = HighThroughputExecutor(
 local_executor = ThreadPoolExecutor(max_threads=2, label="submit-node")
 
 cori_shifter_debug_config = WorkflowConfig(
+  trim_ingest_list = 25,
   ingest_source="/global/projecta/projectdirs/lsst/production/DC2_ImSim/Run2.1.1i/sim/agn-test",
 
   # this is the butler repo to use

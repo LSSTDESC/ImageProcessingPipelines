@@ -18,6 +18,7 @@ from workflowutils import wrap_shifter_container
 @dataclasses.dataclass
 class WorkflowConfig:
     ingest_source: str
+    trim_ingest_list: int
     in_dir: str
     rerun: str
     root_softs: str
@@ -83,6 +84,7 @@ local_executor = ThreadPoolExecutor(max_threads=2, label="submit-node")
 
 cori_shifter_debug_config = WorkflowConfig(
     ingest_source="/global/projecta/projectdirs/lsst/production/DC2_ImSim/Run2.1.1i/sim/agn-test",
+    trim_ingest_list = None,
 
   # this is the butler repo to use
 #  in_dir="/global/cscratch1/sd/bxc/parslTest/test0",

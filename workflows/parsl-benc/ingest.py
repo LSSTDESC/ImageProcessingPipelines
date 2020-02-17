@@ -83,7 +83,7 @@ def perform_ingest(configuration):
     truncatedFileList = File("ingest_list_filtered.txt")
 
     truncated_ingest_list = truncate_ingest_list(files_to_ingest,
-                                                 20,
+                                                 configuration.trim_ingest_list,
                                                  outputs=[truncatedFileList],
                                                  stdout="logs/truncate_ingest_list.stdout",
                                                  stderr="logs/truncate_ingest_list.stderr")
