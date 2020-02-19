@@ -50,10 +50,10 @@ export PYTHONPATH={workflow_src_dir}  # to get at workflow modules on remote sid
 
 
 cori_queue_executor = HighThroughputExecutor(
-    label='worker-nodes',
+    label='batch-1',
     address=address_by_hostname(),
     worker_debug=True,
-    max_workers=10,               ## workers(user tasks)/node
+    max_workers=50,               ## workers(user tasks)/node
     #cores_per_worker=30,          ## threads/user task
 
     # this overrides the default HighThroughputExecutor process workers
@@ -61,20 +61,20 @@ cori_queue_executor = HighThroughputExecutor(
     # with lsst setup commands executed. That means that everything
     # running in those workers will inherit the correct environment.
 
-    heartbeat_period=600,
-    heartbeat_threshold=1200,      ## time-out betweeen batch and local nodes
+    heartbeat_period=60,
+    heartbeat_threshold=180,      ## time-out betweeen batch and local nodes
     provider=SlurmProvider(
         "None",                   ## cori queue/partition/qos
-        nodes_per_block=1,        ## nodes per batch job
+        nodes_per_block=2,        ## nodes per batch job
         exclusive=True,
         init_blocks=0,
         min_blocks=0,
         max_blocks=1,             ## max # of batch jobs
         parallelism=0,
         scheduler_options="""#SBATCH --constraint=knl\n#SBATCH --qos=premium""",
-        launcher=SrunLauncher(),
+        launcher=SrunLauncher(overrides='-K0 -k --slurmd-debug=verbose'),
         cmd_timeout=300,          ## timeout (sec) for slurm commands
-        walltime="04:00:00",
+        walltime="02:00:00",
         worker_init=worker_init
     ),
 )
@@ -90,7 +90,7 @@ cori_shifter_debug_config = WorkflowConfig(
     in_dir = "/global/cscratch1/sd/descdm/tomTest/end2endr",
 
 # The 'rerun' directory within the DM repository
-    rerun="RunF",
+    rerun="RunG",
 
 #  root_softs="/global/homes/b/bxc/dm/",
     root_softs="/global/homes/d/descdm/tomTest/DRPtest/",
@@ -113,7 +113,8 @@ cori_shifter_debug_config = WorkflowConfig(
             hub_address=address_by_hostname(),
             hub_port=55055,
             monitoring_debug=False,
-            resource_monitoring_interval=10
+            resource_monitoring_interval=10,
+            workflow_name="DRPtest"
         )
     )
 )

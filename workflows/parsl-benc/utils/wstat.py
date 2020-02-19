@@ -16,6 +16,11 @@ from tabulate import tabulate
 import datetime
 import argparse
 
+## Table format is used by 'tabulate' to select the exact output format
+## 'grid' looks nice but is non-compact
+## 'psql' looks almost as nice and is more compact
+tblfmt = 'psql'
+
 class pmon:
     ### class pmon - interpret Parsl monitoring database
     def __init__(self,dbfile='monitoring.db'):
@@ -24,7 +29,10 @@ class pmon:
         self.debug = False
 
         ## sqlite3 database connection and cursor
-        self.con = sqlite3.connect(self.dbfile)      ## connect to sqlite3 file
+        self.con = sqlite3.connect(self.dbfile,
+                                   detect_types=sqlite3.PARSE_DECLTYPES |
+                                   sqlite3.PARSE_COLNAMES)      ## connect to sqlite3 file
+#        self.con = sqlite3.connect(self.dbfile)      ## connect to sqlite3 file
         self.con.row_factory = sqlite3.Row           ## optimize output format
         self.cur = self.con.cursor()                       ## create a 'cursor'
 
@@ -176,23 +184,22 @@ class pmon:
 
         runStart = row['time_began']
         if runStart == None:
-            runStart = '---'
+            runStart = '*pending*'
         else:
             runStart = self.stripms(runStart)
-#            runStart = datetime.datetime.strptime(str(runStart),'%Y-%m-%d %H:%M:%S.%f').strftime('%Y-%m-%d %H:%M:%S')
             pass
 
         runEnd   = row['time_completed']
         #print('runEnd [',type(runEnd),'] = ',runEnd)
         if runEnd == None:
-            runEnd = '---'
+            runEnd = '*pending*'
         else:
-            runEnd   = datetime.datetime.strptime(str(runEnd),'%Y-%m-%d %H:%M:%S.%f').strftime('%Y-%m-%d %H:%M:%S')
+            runEnd = self.stripms(runEnd)
             pass
         
         duration = row['workflow_duration']
         if duration == None:
-            duration = "---"
+            duration = '*pending*'
         else:
             duration = datetime.timedelta(seconds=int(row['workflow_duration']))
             pass
@@ -202,10 +209,11 @@ class pmon:
         print('Workflow summary\n================')
         wSummaryList = []
         wSummaryList.append(['Report Date/Time ',repDate ])
+        wSummaryList.append(['workflow name',row['workflow_name']])
         wSummaryList.append(['run',runNumTxt ])
         wSummaryList.append(['user', row['user']])
         wSummaryList.append(['MonitorDB',self.dbfile])
-        wSummaryList.append(['workflow script',os.path.join(exeDir,row['workflow_name'])])
+        wSummaryList.append(['workflow rundir',exeDir])
         wSummaryList.append(['workflow node', row['host']])
         wSummaryList.append(['run start',runStart ])
         wSummaryList.append(['run end ',runEnd ])
@@ -213,14 +221,15 @@ class pmon:
         wSummaryList.append(['tasks completed',completedTasks ])
         wSummaryList.append(['tasks completed: success', row['tasks_completed_count']])
         wSummaryList.append(['tasks completed: failed',row['tasks_failed_count'] ])
-        print(tabulate(wSummaryList, tablefmt="grid"))
+        print(tabulate(wSummaryList, tablefmt=tblfmt))
         return
         
 
 
 
     def printTaskSummary(self,runnum=None,opt=None):
-        ## The task summary is a composite of values from the 'task' and 'status' tables
+        ## The task summary is a composite presentation of values from
+        ## the 'task' and 'status' tables
 
         ##  Select requested Run in workflow table
         rowindex = self.selectRunID(runnum)
@@ -232,12 +241,10 @@ class pmon:
         if runnum == int(self.runmax):header += ' [most current run]'
         print(header,'\n===========================================')
 
-        ##  Query the 'task' table
+        ##  Query the 'task' table for data to present
         runID = wrow['run_id']
-        sql = 'select task_id,hostname,task_fail_count,task_time_submitted,task_time_running,task_time_returned,task_elapsed_time,task_stdout  from task where run_id = "'+wrow['run_id']+'"'
+        sql = 'select task_id,task_func_name,hostname,task_fail_count,task_time_submitted,task_time_running,task_time_returned,task_elapsed_time,task_stdout from task where run_id = "'+wrow['run_id']+'" order by task_id asc'
         (tRowz,tTitles) = self.stdQuery(sql)
-
-
 
         
         ## Convert from sqlite3.Row to a simple 'list'
@@ -248,15 +255,40 @@ class pmon:
         if tRowz[0]['task_stdout'] != None: logDir = os.path.dirname(tRowz[0]['task_stdout'])
         stdoutIndx = tTitles.index('task_stdout')
         elapsedIndx = tTitles.index('task_elapsed_time')
+        subTimeIndx = tTitles.index('task_time_submitted')
+        startTimeIndx = tTitles.index('task_time_running')
+        endTimeIndx = tTitles.index('task_time_returned')
         
         for rw in tRowz:
             tRows.append(list(rw))
-            if tRows[-1][stdoutIndx] != None: tRows[-1][stdoutIndx] = os.path.basename(tRows[-1][stdoutIndx])  ## Remove stdout file path
+            if tRows[-1][stdoutIndx] != None:
+                tRows[-1][stdoutIndx] = os.path.basename(tRows[-1][stdoutIndx])  ## Remove stdout file path
             if tRows[-1][elapsedIndx] != None:
                 a = datetime.timedelta(seconds=int(tRows[-1][elapsedIndx]))
                 tRows[-1][elapsedIndx] = str(a)
-            pass
+                pass
 
+            for ix in [subTimeIndx,startTimeIndx,endTimeIndx]:
+                if tRows[-1][ix] != None:
+                    tRows[-1][ix] = self.stripms(tRows[-1][ix])
+                    pass
+                pass
+
+            ## Calculate run duration (wall clock time while running)
+            runDuration=''
+            startTime = tRows[-1][startTimeIndx]
+            endTime = tRows[-1][endTimeIndx]
+            startDT=None
+            endDT=None
+            if startTime != None:
+                startDT = datetime.datetime.strptime(str(tRows[-1][startTimeIndx]),'%Y-%m-%d %H:%M:%S')
+            if endTime != None:
+                endDT = datetime.datetime.strptime(str(tRows[-1][endTimeIndx]),'%Y-%m-%d %H:%M:%S')
+            if startDT != None and endDT != None: runDuration = endDT-startDT
+            #print('runDuration = ',runDuration,'   (',type(runDuration),')')
+            tRows[-1][elapsedIndx] = str(runDuration)
+            pass
+            
 
         ## Construct summary
         numTasks = len(tRows)
@@ -271,7 +303,7 @@ class pmon:
             pass
 
         ## Extract status data from 'status' table
-        tTitles.insert(1, "status")
+        tTitles.insert(2, "status")
         tStat = {'pending':0,'launched':0,'runnable':0,'running':0,'retry':0,'unsched':0,'unknown':0,'done':0,'failed':0,'dep_fail':0}
         for row in range(numTasks):
             taskID = tRows[row][0]
@@ -286,10 +318,8 @@ class pmon:
             else:
                 tStat[taskStat] += 1
                 pass
-            tRows[row].insert(1, taskStat)
+            tRows[row].insert(2, taskStat)
             pass
-
-
 
         ## Adjust titles (mostly to make them smaller)
         tTitles[tTitles.index('task_fail_count')] = '#fails'
@@ -299,16 +329,16 @@ class pmon:
         ## Pretty print task summary
 
         if opt == None:                 ## "Full" task summary
-            print(tabulate(tRows,headers=tTitles,tablefmt="grid"))
-            print('log file directory: ',logDir)
+            print(tabulate(tRows,headers=tTitles,tablefmt=tblfmt))
+            print('Task Status Summary: ',tStat)
+            print('Log file directory: ',logDir)
         elif opt == "short":            ## "Short" task summary
             sSum = []
             for stat in tStat:
                 sSum.append([stat,tStat[stat]])
             sSum.append(['total tasks',str(numTasks)])
-            print(tabulate(sSum,['State','#'],tablefmt='grid'))
+            print(tabulate(sSum,['State','#'],tablefmt=tblfmt))
             pass
-
 
         return
 
@@ -344,7 +374,7 @@ class pmon:
             row.insert(0,os.path.basename(row[8]))
             rows.append(row)
         ## Print the report
-        print(tabulate(rows,headers=wtitles, tablefmt="psql"))
+        print(tabulate(rows,headers=wtitles, tablefmt=tblfmt))
         return
 
 
