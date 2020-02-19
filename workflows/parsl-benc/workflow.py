@@ -31,7 +31,7 @@ parsl.load(configuration.parsl_config)
 logdir = parsl.dfk().run_dir + "/dm-logs/"
 logger.info("Log directory is " + logdir)
 
-ingest_future = ingest.perform_ingest(configuration)
+ingest_future = ingest.perform_ingest(configuration, logdir)
 
 logger.info("waiting for ingest(s) to complete")
 ingest_future.result()
