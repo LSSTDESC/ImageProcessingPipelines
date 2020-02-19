@@ -9,6 +9,8 @@ import checkpointutil  # noqa: F401 - for import-time checkpoint config
 import configuration
 import ingest
 
+
+
 # initial conda setup on cori:
 # $ ./initialize/initConda.sh
 
@@ -161,7 +163,7 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
         # this call is based on run_calexp shell script
         # assume visit_id really is a visit id... workflows/srs/pipe_setups/setup_calexp has a case where the visit file has two fields per line, and this is handled differently there. I have ignored that here.
         # raft_name is the $RAFTNAME environment variable in run_calexp in the XML workflows
-        sfd_output_basename = "single_frame_driver.{}.{}".format(m, n)
+        sfd_output_basename = "single_frame_driver.visit-{}.raft-{}".format(n, m)
         this_visit_single_frame_futs.append(
             single_frame_driver(
                 configuration.wrap,
@@ -196,7 +198,7 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
         stderr=logdir+check_ccd_stdbase+".stderr")
 
 
-    tract2visit_mapper_stdbase = "track2visit_mapper.{}".format(visit_id)
+    tract2visit_mapper_stdbase = "tract2visit_mapper.{}".format(visit_id)
     fut2 = tract2visit_mapper(
         configuration.wrap,
         configuration.root_softs,

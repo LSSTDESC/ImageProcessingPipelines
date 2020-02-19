@@ -14,13 +14,13 @@ def create_ingest_file_list(wrap, pipe_scripts_dir, ingest_source, outputs=[], s
     return wrap("{pipe_scripts_dir}/createIngestFileList.py {ingest_source} --recursive --ext .fits && mv filesToIngest.txt {out_fn}".format(pipe_scripts_dir=pipe_scripts_dir, ingest_source=ingest_source, out_fn=outfile.filepath))
 
 
-@bash_app(executors=["submit-node"], cache=True)
+@bash_app(executors=["worker-nodes"], cache=True)
 def filter_in_place(wrap, ingest_file, stdout=None, stderr=None):
     return wrap("grep --invert-match 466748_R43_S21 {} > filter-filesToIngest.tmp && mv filter-filesToIngest.tmp filesToIngest.txt".format(ingest_file.filepath))
 
 
 # for testing, truncated this list heavilty
-@python_app(executors=["submit-node"], cache=True)
+@python_app(executors=["worker-nodes"], cache=True)
 def truncate_ingest_list(files_to_ingest, n, outputs=[], stdout=None, stderr=None):
     filenames = files_to_ingest[0:n]
     logger.info("writing truncated list")
