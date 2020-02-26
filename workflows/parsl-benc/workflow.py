@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import concurrent.futures
+import functools
 import logging
 
 import parsl
@@ -27,6 +28,10 @@ logger.info("Parsl driver for DM pipeline")
 configuration = configuration.load_configuration()
 
 parsl.load(configuration.parsl_config)
+
+# tell wrapper about parsl run_dir which isn't decided until
+# after parsl.load()
+configuration.wrap = functools.partial(configuration.wrap, run_dir=parsl.dfk().run_dir)
 
 logdir = parsl.dfk().run_dir + "/dm-logs/"
 logger.info("Log directory is " + logdir)

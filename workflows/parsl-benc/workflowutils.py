@@ -1,5 +1,4 @@
-
-def wrap_shifter_container(cmd: str) -> str:
+def wrap_shifter_container(cmd: str, run_dir: str = "./") -> str:
     """given a command, creates a new command that runs the original
     command inside an LSST application container. There is a lot of
     dancing around with cwd, because cwd is not preserved across
@@ -10,7 +9,9 @@ def wrap_shifter_container(cmd: str) -> str:
     import platform
     import time
     workflow_src_dir = os.path.dirname(os.path.abspath(__file__))
-    cmdfile = "./wrap-container.{}.{}.{}".format(platform.node(), os.getpid(), time.time())
+    wrapper_dir = run_dir + "/wrap-container"
+    os.makedirs(wrapper_dir, exist_ok=True)
+    cmdfile = wrapper_dir + "/wrap-container.{}.{}.{}".format(platform.node(), os.getpid(), time.time())
     with open(cmdfile, "w") as f:
         f.write(cmd)
 
