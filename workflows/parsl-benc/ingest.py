@@ -8,14 +8,14 @@ from parsl.data_provider.files import File
 logger = logging.getLogger("parsl.dm.ingest")
 
 
-@bash_app(executors=["worker-nodes"], cache=True, ignore_for_checkpointing=['stdout', 'stderr'])
-def create_ingest_file_list(wrap, pipe_scripts_dir, ingest_source, outputs=[], stdout=None, stderr=None):
+@bash_app(executors=["worker-nodes"], cache=True, ignore_for_checkpointing=['stdout', 'stderr', 'wrap'])
+def create_ingest_file_list(pipe_scripts_dir, ingest_source, outputs=[], stdout=None, stderr=None, wrap=None):
     outfile = outputs[0]
     return wrap("{pipe_scripts_dir}/createIngestFileList.py {ingest_source} --recursive --ext .fits && mv filesToIngest.txt {out_fn}".format(pipe_scripts_dir=pipe_scripts_dir, ingest_source=ingest_source, out_fn=outfile.filepath))
 
 
-@bash_app(executors=["worker-nodes"], cache=True, ignore_for_checkpointing=['stdout', 'stderr'])
-def filter_in_place(wrap, ingest_file, stdout=None, stderr=None):
+@bash_app(executors=["worker-nodes"], cache=True, ignore_for_checkpointing=['stdout', 'stderr', 'wrap'])
+def filter_in_place(ingest_file, stdout=None, stderr=None, wrap=None):
     return wrap("grep --invert-match 466748_R43_S21 {} > filter-filesToIngest.tmp && mv filter-filesToIngest.tmp ingest_filelist_filtered".format(ingest_file.filepath))
 
 
@@ -29,8 +29,8 @@ def truncate_ingest_list(files_to_ingest, n, outputs=[], stdout=None, stderr=Non
     logger.info("wrote truncated list")
 
 
-@bash_app(executors=['worker-nodes'], cache=True, ignore_for_checkpointing=['stdout', 'stderr'])
-def ingest(wrap, file, in_dir, stdout=None, stderr=None):
+@bash_app(executors=['worker-nodes'], cache=True, ignore_for_checkpointing=['stdout', 'stderr', 'wrap'])
+def ingest(file, in_dir, stdout=None, stderr=None, wrap=None):
     # parsl.AUTO_LOGNAME does not work with checkpointing: see https://github.com/Parsl/parsl/issues/1293
     # def ingest(file, in_dir, stdout=parsl.AUTO_LOGNAME, stderr=parsl.AUTO_LOGNAME):
     """This comes from workflows/srs/pipe_setups/setup_ingest.
@@ -49,12 +49,12 @@ def perform_ingest(configuration, logdir):
 
     ingest_file = File("ingest_filelist")
 
-    ingest_fut = create_ingest_file_list(configuration.wrap,
-                                         pipe_scripts_dir,
+    ingest_fut = create_ingest_file_list(pipe_scripts_dir,
                                          configuration.ingest_source,
                                          outputs=[ingest_file],
                                          stdout=logdir+"/create_ingest_file_list.stdout",
-                                         stderr=logdir+"/create_ingest_file_list.stderr")
+                                         stderr=logdir+"/create_ingest_file_list.stderr",
+                                         wrap=configuration.wrap)
     # on dev repo, this gives about 45000 files listed in ingest_file
 
     ingest_file_output_file = ingest_fut.outputs[0]
@@ -69,10 +69,10 @@ def perform_ingest(configuration, logdir):
     # will be omitted from processing:
     # 00458564 (R32 S21) and 00466748 (R43 S21)
 
-    filtered_ingest_list_future = filter_in_place(configuration.wrap,
-                                                  ingest_file_output_file,
+    filtered_ingest_list_future = filter_in_place(ingest_file_output_file,
                                                   stdout=logdir+"/filter_in_place.stdout",
-                                                  stderr=logdir+"/filter_in_place.stderr")
+                                                  stderr=logdir+"/filter_in_place.stderr",
+                                                  wrap=configuration.wrap)
     filtered_ingest_list_future.result()
 
     with open("ingest_filelist_filtered") as f:
@@ -93,10 +93,10 @@ def perform_ingest(configuration, logdir):
     # File but then we need to extract out the datafuture that contains
     # "the same" # file to get dependency ordering.
 
-    ingest_future = ingest(configuration.wrap,
-                           truncatedFileList_output_future,
+    ingest_future = ingest(truncatedFileList_output_future,
                            configuration.in_dir,
                            stdout=logdir+"/ingest.stdout",
-                           stderr=logdir+"/ingest.stderr")
+                           stderr=logdir+"/ingest.stderr",
+                           wrap=configuration.wrap)
 
     return ingest_future
