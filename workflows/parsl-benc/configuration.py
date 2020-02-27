@@ -53,7 +53,7 @@ cori_queue_executor = HighThroughputExecutor(
     label='batch-1',
     address=address_by_hostname(),
     worker_debug=True,
-    max_workers=50,               ## workers(user tasks)/node
+    max_workers=15,               ## workers(user tasks)/node
     #cores_per_worker=30,          ## threads/user task
 
     # this overrides the default HighThroughputExecutor process workers
@@ -65,7 +65,7 @@ cori_queue_executor = HighThroughputExecutor(
     heartbeat_threshold=180,      ## time-out betweeen batch and local nodes
     provider=SlurmProvider(
         "None",                   ## cori queue/partition/qos
-        nodes_per_block=2,        ## nodes per batch job
+        nodes_per_block=1,        ## nodes per batch job
         exclusive=True,
         init_blocks=0,
         min_blocks=0,
@@ -74,7 +74,7 @@ cori_queue_executor = HighThroughputExecutor(
         scheduler_options="""#SBATCH --constraint=knl\n#SBATCH --qos=premium""",
         launcher=SrunLauncher(overrides='-K0 -k --slurmd-debug=verbose'),
         cmd_timeout=300,          ## timeout (sec) for slurm commands
-        walltime="02:00:00",
+        walltime="12:00:00",
         worker_init=worker_init
     ),
 )
@@ -109,6 +109,7 @@ cori_shifter_debug_config = WorkflowConfig(
         app_cache=True,
         checkpoint_mode='task_exit',
         checkpoint_files=get_all_checkpoints(),
+        retries=2,
         monitoring=MonitoringHub(
             hub_address=address_by_hostname(),
             hub_port=55055,

@@ -7,8 +7,8 @@
 ## Python dependencies: sqlite3, tabulate
 
 ## T.Glanzman - Spring 2019
-__version__ = "0.8.3"
-pVersion='0.8.0'    ## Parsl version
+__version__ = "0.8.5"
+pVersion='0.9.0'    ## Parsl version
 
 import sys,os
 import sqlite3
