@@ -125,8 +125,8 @@ def tract2visit_mapper(root_softs, in_dir, rerun, visit, inputs=[], stderr=None,
 
 
 @bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
-def sky_correction(in_dir, rerun, visit, inputs=[], stdout=None, stderr=None, wrap=None):
-    return wrap("skyCorrection.py {in_dir}  --rerun {rerun} --id visit={visit} --batch-type none --cores 1 --timeout 999999999 --no-versions --loglevel CameraMapper=warn".format(in_dir=in_dir, rerun=rerun, visit=visit))
+def sky_correction(in_dir, rerun, visit, raft_name, inputs=[], stdout=None, stderr=None, wrap=None):
+    return wrap("skyCorrection.py {in_dir}  --rerun {rerun} --id visit={visit} raftName={raft_name} --batch-type none --cores 1 --timeout 999999999 --no-versions --loglevel CameraMapper=warn".format(in_dir=in_dir, rerun=rerun, visit=visit, raft_name=raft_name))
 
 
 ##########################################################################
@@ -169,8 +169,7 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
         # assume visit_id really is a visit id... workflows/srs/pipe_setups/setup_calexp has a case where the visit file has two fields per line, and this is handled differently there. I have ignored that here.
         # raft_name is the $RAFTNAME environment variable in run_calexp in the XML workflows
         sfd_output_basename = "single_frame_driver.visit-{}.raft-{}".format(n, m)
-        this_visit_single_frame_futs.append(
-            single_frame_driver(
+        this_raft_single_frame_fut = single_frame_driver(
                 configuration.in_dir,
                 rerun,
                 visit_id,
@@ -178,8 +177,20 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
                 stdout=logdir+sfd_output_basename+".stdout",
                 stderr=logdir+sfd_output_basename+".stderr",
                 wrap=configuration.wrap)
-        )
-
+        # this is invoked in run_calexp with $OUT_DIR at the first parameter, but that's not something
+        # i've used so far -- so I'm using IN_DIR as used in previous steps
+        # TODO: is that the right thing to do? otherwise how does IN_DIR and OUT_DIR differ?
+        sky_correction_stdbase = "sky_correction.visit-{}.raft-{}".format(visit_id, raft_name)
+        this_visit_single_frame_futs.append(sky_correction(
+            configuration.in_dir,
+            rerun,
+            visit_id,
+            raft_name,
+            inputs=[this_raft_single_frame_fut],
+            stdout=logdir+sky_correction_stdbase+".stdout",
+            stderr=logdir+sky_correction_stdbase+".stderr",
+            wrap=configuration.wrap))
+    
     # now need to join based on all of this_visit_single_frame_futs... but not in sequential code
     # because otherwise we won't launch later visits until after we're done with this one, and
     # lose parallelism
@@ -214,20 +225,8 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
         stderr=logdir+tract2visit_mapper_stdbase+".stderr",
         wrap=configuration.wrap)
 
-    # this is invoked in run_calexp with $OUT_DIR at the first parameter, but that's not something
-    # i've used so far -- so I'm using IN_DIR as used in previous steps
-    # TODO: is that the right thing to do? otherwise how does IN_DIR and OUT_DIR differ?
-    sky_correction_stdbase = "sky_correction.{}".format(visit_id)
-    fut3 = sky_correction(
-        configuration.in_dir,
-        rerun,
-        visit_id,
-        inputs=[fut2],
-        stdout=logdir+sky_correction_stdbase+".stdout",
-        stderr=logdir+sky_correction_stdbase+".stderr",
-        wrap=configuration.wrap)
-    
-    calexp_futs.append(fut3)
+
+    calexp_futs.append(fut2)
 
     # TODO: visitAnlysis.py for stream and visit - this involves sqlite
 
