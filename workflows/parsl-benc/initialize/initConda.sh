@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 ## initWorkflow.sh - setup the bits needed for a workflow environment
 
 ## The following must be done *just once*
