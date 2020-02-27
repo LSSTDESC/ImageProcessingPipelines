@@ -61,13 +61,13 @@ cori_queue_executor = HighThroughputExecutor(
                 launcher=SrunLauncher(),
                 cmd_timeout=60,
                 walltime=walltime,
-                worker_init=worker_init
+                worker_init=worker_init,
+                parallelism=1.0/64.0 # number of workers that will run on a node
             ),
         )
 
-local_executor = ThreadPoolExecutor(max_threads=2, label="submit-node")
-
 cori_shifter_debug_config = WorkflowConfig(
+  trim_ingest_list = 50,
   ingest_source="/global/projecta/projectdirs/lsst/production/DC2_ImSim/Run2.1.1i/sim/agn-test",
 
   # this is the butler repo to use
@@ -85,14 +85,15 @@ cori_shifter_debug_config = WorkflowConfig(
   # command to a temporary file and then invokes that file inside shifter)
   wrap=wrap_shifter_container,
 
-  parsl_config=Config(executors=[local_executor, cori_queue_executor],
+  parsl_config=Config(executors=[cori_queue_executor],
                       app_cache=True, checkpoint_mode='task_exit',
                       checkpoint_files=get_all_checkpoints(),
                       monitoring=MonitoringHub(
                             hub_address=address_by_hostname(),
                             hub_port=55055,
-                            monitoring_debug=False,
+                            monitoring_debug=True,
                             resource_monitoring_interval=10
-                      )))
+                      )
+                      ))
 
 configuration = cori_shifter_debug_config
