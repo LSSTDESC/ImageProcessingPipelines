@@ -168,7 +168,7 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
         # this call is based on run_calexp shell script
         # assume visit_id really is a visit id... workflows/srs/pipe_setups/setup_calexp has a case where the visit file has two fields per line, and this is handled differently there. I have ignored that here.
         # raft_name is the $RAFTNAME environment variable in run_calexp in the XML workflows
-        sfd_output_basename = "single_frame_driver.visit-{}.raft-{}".format(n, m)
+        sfd_output_basename = "single_frame_driver.visit-{}.raft-{}".format(n, raft_name)
         this_raft_single_frame_fut = single_frame_driver(
                 configuration.in_dir,
                 rerun,
