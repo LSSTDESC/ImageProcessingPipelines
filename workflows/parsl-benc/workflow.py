@@ -220,12 +220,13 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
         configuration.in_dir,
         rerun,
         visit_id,
-        inputs=[fut1],
+        inputs=this_visit_single_frame_futs,
         stdout=logdir+tract2visit_mapper_stdbase+".stdout",
         stderr=logdir+tract2visit_mapper_stdbase+".stderr",
         wrap=configuration.wrap)
 
 
+    visit_futures.append(fut1)
     visit_futures.append(fut2)
 
     # TODO: visitAnlysis.py for stream and visit - this involves sqlite
