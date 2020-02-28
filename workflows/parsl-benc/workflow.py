@@ -289,6 +289,12 @@ def make_tract_list(in_dir, rerun, stdout=None, stderr=None, wrap=None):
     # this comes from srs/pipe_setups/setup_fullcoadd
     return wrap('sqlite3 {in_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "select DISTINCT tract from overlaps;" > tracts.list'.format(in_dir=in_dir, rerun=rerun))
 
+@bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+def make_patch_list_for_tract(in_dir, rerun, tract, stdout=None, stderr=None, wrap=None):
+    # this comes from srs/pipe_setups/setup_patch
+    return wrap('sqlite3 {in_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "select DISTINCT patch FROM overlaps WHERE tract={tract};" > patches-for-tract-{tract}.list'.format(in_dir=in_dir, rerun=rerun, tract=tract))
+
+
 #    sqlite3 ${OUT_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 "select DISTINCT tract from overlaps;" > ${WORKDIR}/all_tracts.list
 
 #    registries = "{in_dir}/rerun/{rerun}/registries".format(in_dir=in_dir, rerun=rerun)
@@ -304,7 +310,31 @@ tract_list_future = make_tract_list(
 
 tract_list_future.result()
 
+with open("tracts.list") as f:
+    tract_lines = f.readlines()
 
+tract_patch_futures = []
+for tract_id_unstripped in tract_lines:
+    tract_id = tract_id_unstripped.strip()
+    logger.info("process tract {}".format(tract_id))
+
+    # assemble a patch list for this tract, as in setup_patch
+    tract_patch_futures.append(make_patch_list_for_tract(
+        configuration.in_dir,
+        rerun,
+        tract_id,
+        stdout=logdir+"make_patch_list_for_tract_{}.stdout".format(tract_id),
+        stderr=logdir+"make_patch_list_for_tract_{}.stderr".format(tract_id),
+        wrap=configuration.wrap))
+
+    # for each tract, for each patch, generate a list of visits that overlap this tract/patch
+    # from the tract db - see srs/pipe_setups/?sky_corr
+    
+    # johann: setup_coaddDriver, which takes the tract and the patches provided by setup_patch, lists all the visits that intersect these patches, compare if requested to a provided set of visits (critical to only coadd a given number of years for instance), and then launch one final nested subtask for each filter. This nested subtask runs coaddDriver.py
+
+
+
+concurrent.futures.wait(tract_patch_futures)
 
 
 
