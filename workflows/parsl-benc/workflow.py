@@ -59,6 +59,7 @@ def make_sky_map(in_dir, rerun, stdout=None, stderr=None, wrap=None):
     return wrap("makeSkyMap.py {} --rerun {}".format(in_dir, rerun))
 
 
+# TODO: this can run in parallel with ingest
 logger.info("launching makeSkyMap")
 rerun = configuration.rerun
 skymap_future = make_sky_map(configuration.in_dir, rerun, stdout=logdir+"make_sky_map.stdout", stderr=logdir+"make_sky_map.stderr", wrap=configuration.wrap)
@@ -81,6 +82,13 @@ visit_file_future = make_visit_file(
     wrap=configuration.wrap)
 
 visit_file_future.result()
+# should make some comment here about how we have to explicitly wait for a
+# result here in the main workflow code, rather than using visit_file_future
+# as a dependency, because its used to generate more tasks (the
+# monadicness I've referred to elsewhere)
+# This means that it isn't, for example, captured in the dependency graph
+# for visualisation, and that there is some constraint on expressing
+# concurrency.
 
 logger.info("Finished making visit file")
 
@@ -119,9 +127,10 @@ def check_ccd_astrometry(root_softs, in_dir, rerun, visit, inputs=[], stderr=Non
 def tract2visit_mapper(root_softs, in_dir, rerun, visit, inputs=[], stderr=None, stdout=None, wrap=None):
     # TODO: this seems to be how $REGISTRIES is figured out (via $WORKDIR) perhaps?
     # I'm unsure though
-    registries = "{in_dir}/rerun/{rerun}/registries".format(in_dir=in_dir, rerun=rerun)
+    registries = "{in_dir}/rerun/{rerun}".format(in_dir=in_dir, rerun=rerun)
 
-    return wrap("mkdir -p {registries} && {root_softs}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir={in_dir}/rerun/{rerun} --db={registries}/tracts_mapping_{visit}.sqlite3 --visits={visit}".format(in_dir=in_dir, rerun=rerun, visit=visit, registries=registries, root_softs=root_softs))
+    # the srs workflow has a separate output database per visit, which is elsewhere merged into a single DB. That's awkward... there's probably a reason to do with concurrency or shared fs that needs digging into.
+    return wrap("mkdir -p {registries} && {root_softs}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir={in_dir}/rerun/{rerun} --db={registries}/tracts_mapping.sqlite3 --visits={visit}".format(in_dir=in_dir, rerun=rerun, visit=visit, registries=registries, root_softs=root_softs))
 
 
 @bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
@@ -219,6 +228,11 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
         wrap=configuration.wrap)
 
 
+    # some caution on re-running this: the DB is additive, I think, so if there
+    # is stuff for this visit already in the DB from a previous run, it will be
+    # added to here, leaving potentially wrong stuff in there if we've changed
+    # things in the wrong way. That's a general note on adding in more stuff to
+    # a run, though?
     tract2visit_mapper_stdbase = "tract2visit_mapper.{}".format(visit_id)
     fut2 = tract2visit_mapper(
         configuration.root_softs,
@@ -245,7 +259,7 @@ concurrent.futures.wait(visit_futures)
 # ... and throw exception here if any of them threw exceptions
 [future.result() for future in visit_futures]
 
-
+logger.info("Processing tracts")
 
 # now we can do coadds. This is concurrent by tract, not by visit.
 # information about tracts comes from the result of tract2visit_mapper
@@ -259,16 +273,39 @@ concurrent.futures.wait(visit_futures)
 # then after that I'd like to try getting the concurrency more fine
 # grained
 
+# from johann:
+
+# in order to follow the sequence of job spawning for coaddDriver you need to read in that order :
+
+# setup_fullcoadd, which either look at a provided list of tracts in a file, or build this list out of all the tracts referenced in the tract_visit mapper DB; the it launches one subtask per tract
+#    (benc: this workflow should generate the DB from the tract_visit mapper DB)
+
+# setup_patch, which looks in the DB for the list of patches that this tract has (some tracts can have empty patches, especially in DC2), then it subdivides into a small number of patches and launch nested subtasks for each of these subset of patches
+
+# setup_coaddDriver, which takes the tract and the patches provided by setup_patch, lists all the visits that intersect these patches, compare if requested to a provided set of visits (critical to only coadd a given number of years for instance), and then launch one final nested subtask for each filter. This nested subtask runs coaddDriver.py
+
+@bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+def make_tract_list(in_dir, rerun, stdout=None, stderr=None, wrap=None):
+    # this comes from srs/pipe_setups/setup_fullcoadd
+    return wrap('sqlite3 {in_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "select DISTINCT tract from overlaps;" > tracts.list'.format(in_dir=in_dir, rerun=rerun))
+
+#    sqlite3 ${OUT_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 "select DISTINCT tract from overlaps;" > ${WORKDIR}/all_tracts.list
+
+#    registries = "{in_dir}/rerun/{rerun}/registries".format(in_dir=in_dir, rerun=rerun)
+
+#    return wrap("mkdir -p {registries} && {root_softs}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir={in_dir}/rerun/{rerun} --db={registries}/tracts_mapping_{visit}.sqlite3
+
+tract_list_future = make_tract_list(
+    configuration.in_dir,
+    rerun,
+    stdout=logdir+"make_tract_list.stdout",
+    stderr=logdir+"make_tract_list.stderr",
+    wrap=configuration.wrap)
+
+tract_list_future.result()
 
 
-# setup_calexp:
-#   for each visit line read from visit file, create a task_calexp with that visit as para
-#   on LSST-IN2P2 ...
-#   ... or on NERSC...
-#   split that visit into rafts, and create a task_calexp per (visit,raft)
 
-
-# finish_calexp - should run after task_calexp.run_calexp
 
 
 logger.info("Reached the end of the parsl driver for DM pipeline")
