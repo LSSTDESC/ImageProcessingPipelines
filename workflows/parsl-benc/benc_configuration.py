@@ -36,6 +36,7 @@ worker_init = """
 cd {workflow_cwd}
 source setup.source
 export PYTHONPATH={workflow_src_dir}  # to get at workflow modules on remote side
+export OMP_NUM_THREADS=1
 """.format(workflow_cwd=workflow_cwd, workflow_src_dir=workflow_src_dir)
 
 cori_queue_executor = HighThroughputExecutor(
@@ -71,7 +72,7 @@ cori_shifter_debug_config = WorkflowConfig(
   ingest_source="/global/projecta/projectdirs/lsst/production/DC2_ImSim/Run2.1.1i/sim/agn-test",
 
   # this is the butler repo to use
-  in_dir="/global/cscratch1/sd/bxc/parslTest/test0",
+  in_dir="/global/cscratch1/sd/bxc/lsst-dm-repo-1",
   rerun="some_rerun",
 
   root_softs="/global/homes/b/bxc/dm/",
