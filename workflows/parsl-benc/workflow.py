@@ -140,6 +140,11 @@ visit_futures = []
 for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
     visit_id = visit_id_unstripped.strip()
 
+    # some of this stuff could probably be parallelised down tot he per-sensor
+    # level rather than per raft. finer granualarity but more overhead in
+    # starting up shifter.
+    # QUESTION: which bits can go to sensor level?
+    # QUESTION: how is efficiency here compared to losing efficiency by runs having wasted long-tail (wall and cpu) time?
     raft_list_fn = "raft_list_for_visit.{}".format(visit_id)
 
     raft_list_future = raft_list_for_visit(
@@ -239,6 +244,21 @@ concurrent.futures.wait(visit_futures)
 
 # ... and throw exception here if any of them threw exceptions
 [future.result() for future in visit_futures]
+
+
+
+# now we can do coadds. This is concurrent by tract, not by visit.
+# information about tracts comes from the result of tract2visit_mapper
+# being finished. so we need all tract2visit mappers to be finished in
+# order to figure out the parallelisation, and then we need each visit
+# that is touched by a tract to be finished in order to actually
+# coadd that tract.
+# so first lets see if I can have a single barrier here that
+# makes all of the above trivially true, to get the co-add calls
+# working
+# then after that I'd like to try getting the concurrency more fine
+# grained
+
 
 
 # setup_calexp:
