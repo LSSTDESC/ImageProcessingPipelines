@@ -136,7 +136,7 @@ def sky_correction(in_dir, rerun, visit, raft_name, inputs=[], stdout=None, stde
 with open("all_visits_from_register.list") as f:
     visit_lines = f.readlines()
 
-calexp_futs = []
+visit_futures = []
 for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
     visit_id = visit_id_unstripped.strip()
 
@@ -226,18 +226,18 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
         wrap=configuration.wrap)
 
 
-    calexp_futs.append(fut2)
+    visit_futures.append(fut2)
 
     # TODO: visitAnlysis.py for stream and visit - this involves sqlite
 
 
-logger.info("submitted task_calexps. waiting for completion of all of them.")
+logger.info("Waiting for completion of all per-visit tasks")
 
 # wait for them all to complete ...
-concurrent.futures.wait(calexp_futs)
+concurrent.futures.wait(visit_futures)
 
 # ... and throw exception here if any of them threw exceptions
-[future.result() for future in calexp_futs]
+[future.result() for future in visit_futures]
 
 
 # setup_calexp:
