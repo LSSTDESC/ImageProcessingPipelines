@@ -327,14 +327,44 @@ for tract_id_unstripped in tract_lines:
         stderr=logdir+"make_patch_list_for_tract_{}.stderr".format(tract_id),
         wrap=configuration.wrap))
 
+# instead of this wait(), make downstream depend on File objects that
+# are the patch list.
+concurrent.futures.wait(tract_patch_futures)
+
     # for each tract, for each patch, generate a list of visits that overlap this tract/patch
     # from the tract db - see srs/pipe_setups/?sky_corr
-    
+
+    # so we can generate this list once we have all the patch information, even if the final
+    # image processing steps haven't happened for a particular visit; as long as we then somehow
+    # depend on the processing for that visit completing before we do the coadd.
+
+# doing this as a separate loop from the above loop rather than doing something useful with dependencies is ugly.
+
+tract_patch_futures = []
+for tract_id_unstripped in tract_lines:
+    tract_id = tract_id_unstripped.strip()
+   
+    logger.info("generating visit list for patches in tract {}".format(tract_id))
+
+    # TODO: this filename should be coming from a File output object from
+    # the earlier futures, and not hardcoded here and in patch list generator...
+    patches_filename = "patches-for-tract-{tract}.list".format(tract=tract_id)
+
+    # TODO: this idiom of reading and stripping is used in a few places - factor it
+    # something like:   for stripped_lines_in_file("filename"):
+    # for direct reading from file - where it returns a list...
+    with open(patches_filename) as f:
+        patch_lines = f.readlines()
+
+    for patch_id_unstripped in patch_lines:
+        patch_id = patch_id_unstripped.strip()
+        logger.info("generating visit list for tract {} patch {}".format(tract_id, patch_id))
+
+
     # johann: setup_coaddDriver, which takes the tract and the patches provided by setup_patch, lists all the visits that intersect these patches, compare if requested to a provided set of visits (critical to only coadd a given number of years for instance), and then launch one final nested subtask for each filter. This nested subtask runs coaddDriver.py
+    
 
 
-
-concurrent.futures.wait(tract_patch_futures)
 
 
 
