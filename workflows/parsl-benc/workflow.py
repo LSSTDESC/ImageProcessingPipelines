@@ -292,6 +292,7 @@ def make_tract_list(in_dir, rerun, stdout=None, stderr=None, wrap=None):
 @bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
 def make_patch_list_for_tract(in_dir, rerun, tract, stdout=None, stderr=None, wrap=None):
     # this comes from srs/pipe_setups/setup_patch
+    # TODO: capitalize all SQL
     return wrap('sqlite3 {in_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "select DISTINCT patch FROM overlaps WHERE tract={tract};" > patches-for-tract-{tract}.list'.format(in_dir=in_dir, rerun=rerun, tract=tract))
 
 
@@ -340,7 +341,16 @@ concurrent.futures.wait(tract_patch_futures)
 
 # doing this as a separate loop from the above loop rather than doing something useful with dependencies is ugly.
 
-tract_patch_futures = []
+@bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+def visits_for_tract_patch_filter(in_dir, rerun, tract_id, patch_id, filter_id, stdout=None, stderr=None, wrap=None):
+    # TODO: set_coaddDriver treats filter_id differently here: it takes a *list* of filters not a
+    # single filter, and generates SQL from that somehow. Ask Johann about it? Is there some
+    # non-trivial interaction of multiple filters here?
+    filename_patch_id = patch_id.replace(" ","-").replace("(","").replace(")","") # remove shell-fussy characters for filename. this avoids shell escaping. be careful that this still generates unique filenames.
+    sql = "SELECT DISTINCT visit FROM overlaps WHERE tract={tract_id} AND filter='{filter_id}' AND patch=\'{patch_id}\';".format(in_dir=in_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id)
+    return wrap('sqlite3 {in_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "{sql}" > visits-for-tract-{tract_id}-patch-{filename_patch_id}-filter-{filter_id}.list'.format(in_dir=in_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filename_patch_id=filename_patch_id, filter_id=filter_id, sql=sql))
+
+tract_patch_visit_list_futures = []
 for tract_id_unstripped in tract_lines:
     tract_id = tract_id_unstripped.strip()
    
@@ -360,12 +370,27 @@ for tract_id_unstripped in tract_lines:
         patch_id = patch_id_unstripped.strip()
         logger.info("generating visit list for tract {} patch {}".format(tract_id, patch_id))
 
+        for filter_id in ["g", "r", "i", "z", "y", "u"]:
+            logger.info("generating visit list for tract {} patch {} filter {}".format(tract_id, patch_id, filter_id))
 
+            fut = visits_for_tract_patch_filter(configuration.in_dir, rerun, tract_id, patch_id, filter_id,
+                    stdout=logdir+"visit_for_tract_{}_patch_{}_filter_{}.stdout".format(tract_id, patch_id, filter_id),
+                    stderr=logdir+"visit_for_tract_{}_patch_{}_filter_{}.stderr".format(tract_id, patch_id, filter_id),
+                    wrap=configuration.wrap)
+            tract_patch_visit_list_futures.append(fut)
+
+
+        # this query is *per filter* which is another dimension of concurrency but also perhaps
+        # another dimension of presence of data?
+
+        # from setup coadd:
+        #    visit_list=`sqlite3 ${OUT_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 "SELECT DISTINCT visit FROM overlaps WHERE tract=${TRACT} and filter='${FILT}' and ${patch_str}"`
+
+         
     # johann: setup_coaddDriver, which takes the tract and the patches provided by setup_patch, lists all the visits that intersect these patches, compare if requested to a provided set of visits (critical to only coadd a given number of years for instance), and then launch one final nested subtask for each filter. This nested subtask runs coaddDriver.py
     
 
-
-
+concurrent.futures.wait(tract_patch_visit_list_futures)
 
 
 logger.info("Reached the end of the parsl driver for DM pipeline")
