@@ -15,7 +15,4 @@ def wrap_shifter_container(cmd: str, run_dir: str = "./") -> str:
     with open(cmdfile, "w") as f:
         f.write(cmd)
 
-##    return "shifter --image=lsstdesc/stack:w_2019_19-dc2_run2.1i {workflow_src_dir}/container-inner.sh {cwd} {cmd}".format(workflow_src_dir = workflow_src_dir, cmd=cmdfile, cwd=os.getcwd())
-
-## New shifter image 11/20/2019 with new astropy v3.2.3
     return "shifter --image=lsstdesc/stack:w_2019_19-dc2_run2.1i-v1 {workflow_src_dir}/container-inner.sh {cwd} {cmd}".format(workflow_src_dir = workflow_src_dir, cmd=cmdfile, cwd=os.getcwd())
