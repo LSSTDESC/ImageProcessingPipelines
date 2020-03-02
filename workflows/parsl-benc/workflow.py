@@ -387,7 +387,7 @@ for tract_id_unstripped in tract_lines:
             logger.info("generating visit list for tract {} patch {} filter {}".format(tract_id, patch_id, filter_id))
 
             filename_patch_id = patch_id.replace(" ","-").replace("(","").replace(")","") # remove shell-fussy characters for filename. this avoids shell escaping. be careful that this still generates unique filenames.
-            visit_file = "visits-for-tract-{tract_id}-patch-{filename_patch_id}-filter-{filter_id}.list".format(repo_dir=configuration.repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filename_patch_id=filename_patch_id, filter_id=filter_id)
+            visit_file = "{repo_dir}/rerun/{rerun}/visits-for-tract-{tract_id}-patch-{filename_patch_id}-filter-{filter_id}.list".format(repo_dir=configuration.repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filename_patch_id=filename_patch_id, filter_id=filter_id)
             fut = visits_for_tract_patch_filter(configuration.repo_dir, rerun, tract_id, patch_id, filter_id,
                     visit_file,
                     stdout=logdir+"visit_for_tract_{}_patch_{}_filter_{}.stdout".format(tract_id, patch_id, filter_id),
