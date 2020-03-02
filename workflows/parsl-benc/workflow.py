@@ -158,7 +158,7 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
     # starting up shifter.
     # QUESTION: which bits can go to sensor level?
     # QUESTION: how is efficiency here compared to losing efficiency by runs having wasted long-tail (wall and cpu) time?
-    raft_list_fn = "raft_list_for_visit.{}".format(visit_id)
+    raft_list_fn = "{repo_dir}/rerun/{rerun}/raft_list_for_visit.{visit_id}".format(repo_dir=configuration.repo_dir, rerun=rerun, visit_id=visit_id)
 
     raft_list_future = raft_list_for_visit(
         configuration.repo_dir,
