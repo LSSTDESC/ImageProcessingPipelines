@@ -294,10 +294,10 @@ def make_tract_list(repo_dir, rerun, stdout=None, stderr=None, wrap=None):
     return wrap('sqlite3 {repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "select DISTINCT tract from overlaps;" > tracts.list'.format(repo_dir=repo_dir, rerun=rerun))
 
 @bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
-def make_patch_list_for_tract(repo_dir, rerun, tract, stdout=None, stderr=None, wrap=None):
+def make_patch_list_for_tract(repo_dir, rerun, tract, patches_file, stdout=None, stderr=None, wrap=None):
     # this comes from srs/pipe_setups/setup_patch
     # TODO: capitalize all SQL
-    return wrap('sqlite3 {repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "select DISTINCT patch FROM overlaps WHERE tract={tract};" > patches-for-tract-{tract}.list'.format(repo_dir=repo_dir, rerun=rerun, tract=tract))
+    return wrap('sqlite3 {repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "select DISTINCT patch FROM overlaps WHERE tract={tract};" > {patches_file}'.format(repo_dir=repo_dir, rerun=rerun, tract=tract, patches_file=patches_file))
 
 
 #    sqlite3 ${OUT_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 "select DISTINCT tract from overlaps;" > ${WORKDIR}/all_tracts.list
@@ -324,10 +324,12 @@ for tract_id_unstripped in tract_lines:
     logger.info("process tract {}".format(tract_id))
 
     # assemble a patch list for this tract, as in setup_patch
+    patches_file = "{repo_dir}/rerun/{rerun}/patches-for-tract-{tract}.list".format(tract=tract_id, repo_dir=configuration.repo_dir, rerun=rerun)
     tract_patch_futures.append(make_patch_list_for_tract(
         configuration.repo_dir,
         rerun,
         tract_id,
+        patches_file,
         stdout=logdir+"make_patch_list_for_tract_{}.stdout".format(tract_id),
         stderr=logdir+"make_patch_list_for_tract_{}.stderr".format(tract_id),
         wrap=configuration.wrap))
@@ -371,12 +373,12 @@ for tract_id_unstripped in tract_lines:
 
     # TODO: this filename should be coming from a File output object from
     # the earlier futures, and not hardcoded here and in patch list generator...
-    patches_filename = "patches-for-tract-{tract}.list".format(tract=tract_id)
+    patches_file = "{repo_dir}/rerun/{rerun}/patches-for-tract-{tract}.list".format(tract=tract_id, repo_dir=configuration.repo_dir, rerun=rerun)
 
     # TODO: this idiom of reading and stripping is used in a few places - factor it
     # something like:   for stripped_lines_in_file("filename"):
     # for direct reading from file - where it returns a list...
-    with open(patches_filename) as f:
+    with open(patches_file) as f:
         patch_lines = f.readlines()
 
     for patch_id_unstripped in patch_lines:
