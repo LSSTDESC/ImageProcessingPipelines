@@ -19,7 +19,7 @@ from workflowutils import wrap_shifter_container
 class WorkflowConfig:
     ingest_source: str
     trim_ingest_list: int
-    in_dir: str
+    repo_dir: str
     rerun: str
     root_softs: str
     wrap: Callable[[str], str]
@@ -87,9 +87,9 @@ cori_shifter_debug_config = WorkflowConfig(
     trim_ingest_list = None,
 
   # this is the butler repo to use
-#  in_dir="/global/cscratch1/sd/bxc/parslTest/test0",
-#    in_dir = "/global/cscratch1/sd/descdm/tomTest/DRPtest1",
-    in_dir = "/global/cscratch1/sd/descdm/tomTest/end2endr",
+#  repo_dir="/global/cscratch1/sd/bxc/parslTest/test0",
+#    repo_dir = "/global/cscratch1/sd/descdm/tomTest/DRPtest1",
+    repo_dir = "/global/cscratch1/sd/descdm/tomTest/end2endr",
 
 # The 'rerun' directory within the DM repository
     rerun="RunF",

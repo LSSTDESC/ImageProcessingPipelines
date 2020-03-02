@@ -30,9 +30,9 @@ def truncate_ingest_list(files_to_ingest, n, outputs=[], stdout=None, stderr=Non
 
 
 @bash_app(executors=['worker-nodes'], cache=True, ignore_for_checkpointing=['stdout', 'stderr', 'wrap'])
-def ingest(file, in_dir, stdout=None, stderr=None, wrap=None):
+def ingest(file, repo_dir, stdout=None, stderr=None, wrap=None):
     # parsl.AUTO_LOGNAME does not work with checkpointing: see https://github.com/Parsl/parsl/issues/1293
-    # def ingest(file, in_dir, stdout=parsl.AUTO_LOGNAME, stderr=parsl.AUTO_LOGNAME):
+    # def ingest(file, repo_dir, stdout=parsl.AUTO_LOGNAME, stderr=parsl.AUTO_LOGNAME):
     """This comes from workflows/srs/pipe_setups/setup_ingest.
     The NERSC version runs just command; otherwise a bunch of other stuff
     happens - which I'm not implementing here at the moment.
@@ -40,7 +40,7 @@ def ingest(file, in_dir, stdout=None, stderr=None, wrap=None):
     There SRS workflow using @{chunk_of_ingest_list}, but I'm going to
     specify a single filename directly for now.
     """
-    return wrap("ingestDriver.py --batch-type none {in_dir} @{arg1} --clobber-versions --cores 1 --mode link --output {in_dir} -c clobber=True allowError=True register.ignore=True".format(in_dir=in_dir, arg1=file.filepath))
+    return wrap("ingestDriver.py --batch-type none {repo_dir} @{arg1} --clobber-versions --cores 1 --mode link --output {repo_dir} -c clobber=True allowError=True register.ignore=True".format(repo_dir=repo_dir, arg1=file.filepath))
 
 
 def perform_ingest(configuration, logdir):
@@ -94,7 +94,7 @@ def perform_ingest(configuration, logdir):
     # "the same" # file to get dependency ordering.
 
     ingest_future = ingest(truncatedFileList_output_future,
-                           configuration.in_dir,
+                           configuration.repo_dir,
                            stdout=logdir+"/ingest.stdout",
                            stderr=logdir+"/ingest.stderr",
                            wrap=configuration.wrap)

@@ -73,7 +73,7 @@ cori_shifter_debug_config = WorkflowConfig(
 
   # this is the butler repo to use
   # TODO: rename to repo_dir
-  in_dir="/global/cscratch1/sd/bxc/lsst-dm-repo-1",
+  repo_dir="/global/cscratch1/sd/bxc/lsst-dm-repo-1",
   rerun="some_rerun",
 
   root_softs="/global/homes/b/bxc/dm/",
