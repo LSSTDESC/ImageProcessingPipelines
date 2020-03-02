@@ -54,6 +54,10 @@ logger.info("ingest(s) completed")
 
 # ingest list is passed in but not used explicity because it represents that some stuff
 # has gone into the DB potentially during ingest - for checkpointing
+
+# QUESTION: makeDiscreteSkyMap mentioned in https://pipelines.lsst.io/getting-started/coaddition.html
+# sounds like it needs images to have been imported first so that the sky map covers the right
+# amount of the sky. Is that the case here? is so, there needs to be a new dependency added.
 @bash_app(executors=["worker-nodes"], cache=True, ignore_for_checkpointing=["stdout", "stderr", "wrap"])
 def make_sky_map(in_dir, rerun, stdout=None, stderr=None, wrap=None):
     return wrap("makeSkyMap.py {} --rerun {}".format(in_dir, rerun))
