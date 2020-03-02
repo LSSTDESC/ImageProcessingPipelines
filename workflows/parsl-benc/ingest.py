@@ -16,7 +16,7 @@ def create_ingest_file_list(pipe_scripts_dir, ingest_source, outputs=[], stdout=
 
 @bash_app(executors=["worker-nodes"], cache=True, ignore_for_checkpointing=['stdout', 'stderr', 'wrap'])
 def filter_in_place(ingest_file, stdout=None, stderr=None, wrap=None):
-    return wrap("grep --invert-match 466748_R43_S21 {} > filter-filesToIngest.tmp && mv filter-filesToIngest.tmp ingest_filelist_filtered".format(ingest_file.filepath))
+    return wrap("grep --invert-match 466748_R43_S21 {} > filter-filesToIngest.tmp && mv filter-filesToIngest.tmp ingest_filtered.list".format(ingest_file.filepath))
 
 
 # for testing, truncated this list heavilty
@@ -47,7 +47,7 @@ def perform_ingest(configuration, logdir):
 
     pipe_scripts_dir = configuration.root_softs + "/ImageProcessingPipelines/workflows/srs/pipe_scripts/"
 
-    ingest_file = File("ingest_filelist")
+    ingest_file = File("ingest.list")
 
     ingest_fut = create_ingest_file_list(pipe_scripts_dir,
                                          configuration.ingest_source,
@@ -75,12 +75,12 @@ def perform_ingest(configuration, logdir):
                                                   wrap=configuration.wrap)
     filtered_ingest_list_future.result()
 
-    with open("ingest_filelist_filtered") as f:
+    with open("ingest_filtered.list") as f:
         files_to_ingest = f.readlines()
 
     logger.info("Now, there are {} entries in ingest list".format(len(files_to_ingest)))
 
-    truncatedFileList = File("ingest_filelist_filtered_truncated")
+    truncatedFileList = File("ingest_filtered_truncated.list")
 
     truncated_ingest_list = truncate_ingest_list(files_to_ingest,
                                                  configuration.trim_ingest_list,
