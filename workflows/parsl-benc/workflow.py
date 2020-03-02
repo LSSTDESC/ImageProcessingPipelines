@@ -75,12 +75,14 @@ logger.info("Making visit file from raw_visit table")
 
 
 @bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
-def make_visit_file(repo_dir, stdout=None, stderr=None, wrap=None):
-    return wrap('sqlite3 {}/registry.sqlite3 "select DISTINCT visit from raw_visit;" > all_visits_from_register.list'.format(repo_dir))
+def make_visit_file(repo_dir, visit_file, stdout=None, stderr=None, wrap=None):
+    return wrap('sqlite3 {repo_dir}/registry.sqlite3 "select DISTINCT visit from raw_visit;" > {visit_file}'.format(repo_dir=repo_dir, visit_file=visit_file))
 
 
+visit_file="{repo_dir}/rerun/{rerun}/all_visits_from_registry.list".format(repo_dir=configuration.repo_dir, rerun=rerun)
 visit_file_future = make_visit_file(
     configuration.repo_dir,
+    visit_file,
     stdout=logdir+"make_visit_file.stdout",
     stderr=logdir+"make_visit_file.stderr",
     wrap=configuration.wrap)
@@ -146,7 +148,7 @@ def sky_correction(repo_dir, rerun, visit, raft_name, inputs=[], stdout=None, st
 ##########################################################################
 
 
-with open("all_visits_from_register.list") as f:
+with open(visit_file) as f:
     visit_lines = f.readlines()
 
 visit_futures = []
