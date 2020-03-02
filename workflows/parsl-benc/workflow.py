@@ -342,15 +342,24 @@ concurrent.futures.wait(tract_patch_futures)
 # doing this as a separate loop from the above loop rather than doing something useful with dependencies is ugly.
 
 @bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
-def visits_for_tract_patch_filter(in_dir, rerun, tract_id, patch_id, filter_id, stdout=None, stderr=None, wrap=None):
+def visits_for_tract_patch_filter(in_dir, rerun, tract_id, patch_id, filter_id, visit_file, stdout=None, stderr=None, wrap=None):
     # TODO: set_coaddDriver treats filter_id differently here: it takes a *list* of filters not a
     # single filter, and generates SQL from that somehow. Ask Johann about it? Is there some
     # non-trivial interaction of multiple filters here?
-    filename_patch_id = patch_id.replace(" ","-").replace("(","").replace(")","") # remove shell-fussy characters for filename. this avoids shell escaping. be careful that this still generates unique filenames.
     sql = "SELECT DISTINCT visit FROM overlaps WHERE tract={tract_id} AND filter='{filter_id}' AND patch=\'{patch_id}\';".format(in_dir=in_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id)
-    return wrap('sqlite3 {in_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "{sql}" > visits-for-tract-{tract_id}-patch-{filename_patch_id}-filter-{filter_id}.list'.format(in_dir=in_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filename_patch_id=filename_patch_id, filter_id=filter_id, sql=sql))
+    return wrap('sqlite3 {in_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "{sql}" > {visit_file}'.format(in_dir=in_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, sql=sql, visit_file=visit_file))
 
-tract_patch_visit_list_futures = []
+     
+
+
+
+@bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+def coadd_driver(in_dir, rerun, tract_id, patch_id, filter_id, visit_file, inputs=None, stdout=None, stderr=None, wrap=None):
+    # TODO: what does --doraise mean?
+    return wrap("coaddDriver.py {in_dir} --rerun {rerun} --id tract={tract_id} patch='{patch_id}' filter={filter_id} @{visit_file} --cores 1 --batch-type none --doraise --longlog".format(in_dir=in_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, visit_file=visit_file))
+            #    coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog
+
+tract_patch_visit_futures = []
 for tract_id_unstripped in tract_lines:
     tract_id = tract_id_unstripped.strip()
    
@@ -373,11 +382,28 @@ for tract_id_unstripped in tract_lines:
         for filter_id in ["g", "r", "i", "z", "y", "u"]:
             logger.info("generating visit list for tract {} patch {} filter {}".format(tract_id, patch_id, filter_id))
 
+            filename_patch_id = patch_id.replace(" ","-").replace("(","").replace(")","") # remove shell-fussy characters for filename. this avoids shell escaping. be careful that this still generates unique filenames.
+            visit_file = "visits-for-tract-{tract_id}-patch-{filename_patch_id}-filter-{filter_id}.list".format(in_dir=configuration.in_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filename_patch_id=filename_patch_id, filter_id=filter_id)
             fut = visits_for_tract_patch_filter(configuration.in_dir, rerun, tract_id, patch_id, filter_id,
+                    visit_file,
                     stdout=logdir+"visit_for_tract_{}_patch_{}_filter_{}.stdout".format(tract_id, patch_id, filter_id),
                     stderr=logdir+"visit_for_tract_{}_patch_{}_filter_{}.stderr".format(tract_id, patch_id, filter_id),
                     wrap=configuration.wrap)
-            tract_patch_visit_list_futures.append(fut)
+            # TODO: this visit_file should become an input/output File object to give the dependency instead of relying on 'fut'
+
+            # the visit_file is sometimes empty - we could optimise away a singularity+coadd driver launch by only submitting that task if the file isn't empty (see monadic behaviour: but Maybe style do/don't, rather than []-style "how many?")
+            fut2 = coadd_driver(configuration.in_dir, rerun, tract_id, patch_id, filter_id, visit_file, inputs=[fut],
+                    stdout=logdir+"coadd_for_tract_{}_patch_{}_filter_{}.stdout".format(tract_id, patch_id, filter_id),
+                    stderr=logdir+"coadd_for_tract_{}_patch_{}_filter_{}.stderr".format(tract_id, patch_id, filter_id),
+                    wrap=configuration.wrap)
+            # now we have a load of files like this: visits-for-tract-4232-patch-6,-4-filter-g.list 
+            # so for each of those files, launch coadd for this tract/patch/filter
+            
+            # filt=u has different processing here that i'm not sure why... looks like stuff goes into a different rerun out directory. in workflows/srs/pipe_setups/run_coaddDrive - TODO: ask johann what the reasoning for that is.  I want to try do different stuff with rerun directories anyway.
+
+            #    coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog
+
+            tract_patch_visit_futures.append(fut2)
 
 
         # this query is *per filter* which is another dimension of concurrency but also perhaps
@@ -390,7 +416,8 @@ for tract_id_unstripped in tract_lines:
     # johann: setup_coaddDriver, which takes the tract and the patches provided by setup_patch, lists all the visits that intersect these patches, compare if requested to a provided set of visits (critical to only coadd a given number of years for instance), and then launch one final nested subtask for each filter. This nested subtask runs coaddDriver.py
     
 
-concurrent.futures.wait(tract_patch_visit_list_futures)
+concurrent.futures.wait(tract_patch_visit_futures)
+
 
 
 logger.info("Reached the end of the parsl driver for DM pipeline")
