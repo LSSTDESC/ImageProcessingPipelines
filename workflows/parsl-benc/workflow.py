@@ -289,9 +289,9 @@ logger.info("Processing tracts")
 # setup_coaddDriver, which takes the tract and the patches provided by setup_patch, lists all the visits that intersect these patches, compare if requested to a provided set of visits (critical to only coadd a given number of years for instance), and then launch one final nested subtask for each filter. This nested subtask runs coaddDriver.py
 
 @bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
-def make_tract_list(repo_dir, rerun, stdout=None, stderr=None, wrap=None):
+def make_tract_list(repo_dir, rerun, tracts_file, stdout=None, stderr=None, wrap=None):
     # this comes from srs/pipe_setups/setup_fullcoadd
-    return wrap('sqlite3 {repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "select DISTINCT tract from overlaps;" > tracts.list'.format(repo_dir=repo_dir, rerun=rerun))
+    return wrap('sqlite3 {repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "select DISTINCT tract from overlaps;" > {tracts_file}'.format(repo_dir=repo_dir, rerun=rerun, tracts_file=tracts_file))
 
 @bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
 def make_patch_list_for_tract(repo_dir, rerun, tract, patches_file, stdout=None, stderr=None, wrap=None):
@@ -306,16 +306,19 @@ def make_patch_list_for_tract(repo_dir, rerun, tract, patches_file, stdout=None,
 
 #    return wrap("mkdir -p {registries} && {root_softs}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir={repo_dir}/rerun/{rerun} --db={registries}/tracts_mapping_{visit}.sqlite3
 
+tracts_file = "{repo_dir}/rerun/{rerun}/tracts.list".format(repo_dir=configuration.repo_dir, rerun=rerun)
+
 tract_list_future = make_tract_list(
     configuration.repo_dir,
     rerun,
+    tracts_file,
     stdout=logdir+"make_tract_list.stdout",
     stderr=logdir+"make_tract_list.stderr",
     wrap=configuration.wrap)
 
 tract_list_future.result()
 
-with open("tracts.list") as f:
+with open(tracts_file) as f:
     tract_lines = f.readlines()
 
 tract_patch_futures = []
