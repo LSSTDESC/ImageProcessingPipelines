@@ -1,5 +1,6 @@
 #!/bin/bash
 
+echo $(date) wrap-shifter: just inside shifter
 cd $1
 shift
 
