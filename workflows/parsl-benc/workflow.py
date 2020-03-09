@@ -36,11 +36,11 @@ configuration.wrap = functools.partial(configuration.wrap, run_dir=parsl.dfk().r
 logdir = parsl.dfk().run_dir + "/dm-logs/"
 logger.info("Log directory is " + logdir)
 
-ingest_future = ingest.perform_ingest(configuration, logdir)
 
 
 ## INGEST
-# ingest_future = ingest.perform_ingest(configuration)
+# (old) ingest_future = ingest.perform_ingest(configuration)
+# (new) ingest_future = ingest.perform_ingest(configuration, logdir)
 # logger.info("waiting for ingest(s) to complete")
 # ingest_future.result()
 # logger.info("ingest(s) completed")
@@ -156,6 +156,8 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
     ################################################################
 
     visit_id = visit_id_unstripped.strip()
+    logger.info("=> Begin processing visit "+str(visit_id))
+
 
     # some of this stuff could probably be parallelised down tot he per-sensor
     # level rather than per raft. finer granualarity but more overhead in
@@ -180,6 +182,10 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
 
     with open(raft_list_fn) as f:
         raft_lines = f.readlines()
+        pass
+    rlist = [x.strip() for x in raft_lines]
+    logger.info("=> There are "+str(len(rlist))+ " rafts to process:")
+    logger.info(str(rlist))
 
     this_visit_single_frame_futs = []
 
@@ -292,12 +298,12 @@ logger.info("Processing tracts")
 
 # setup_coaddDriver, which takes the tract and the patches provided by setup_patch, lists all the visits that intersect these patches, compare if requested to a provided set of visits (critical to only coadd a given number of years for instance), and then launch one final nested subtask for each filter. This nested subtask runs coaddDriver.py
 
-@bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+@bash_app(executors=["batch-1"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
 def make_tract_list(in_dir, rerun, stdout=None, stderr=None, wrap=None):
     # this comes from srs/pipe_setups/setup_fullcoadd
     return wrap('sqlite3 {in_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "select DISTINCT tract from overlaps;" > tracts.list'.format(in_dir=in_dir, rerun=rerun))
 
-@bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+@bash_app(executors=["batch-1"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
 def make_patch_list_for_tract(in_dir, rerun, tract, stdout=None, stderr=None, wrap=None):
     # this comes from srs/pipe_setups/setup_patch
     return wrap('sqlite3 {in_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "select DISTINCT patch FROM overlaps WHERE tract={tract};" > patches-for-tract-{tract}.list'.format(in_dir=in_dir, rerun=rerun, tract=tract))
