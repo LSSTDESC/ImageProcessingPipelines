@@ -10,13 +10,19 @@ fi
 
 status=`verify_checkpoint run_deblended`
 if [[ $status = 0 ]]; then
-    echo "skipping bulge-disk ngmix fit and proceeding"
+    echo "skipping metacal and proceeding"
 elif [[ $status = 1 ]]; then
-    echo "halting at bulge-disk ngmix computation"
+    echo "halting metacal computation"
     exit 1
 else
     cmd="processDeblendedCoaddsMetacalMax.py ${OUT_DIR} --rerun ${RERUN} --id tract=${TRACT} patch=${PATCH} filter=g^r^i^z -C ${ROOT_SOFTS}/ImageProcessingPipelines/config/mcal-filters.py -C ${ROOT_SOFTS}/ImageProcessingPipelines/config/ngmix-deblended-mcalmax.py"
     echo $cmd;$cmd;
+    if [ $? -eq 0 ]; then
+	echo "successful execution of ${cmd}"
+    else
+	echo "failure in execution of ${cmd}"
+	exit 1
+    fi
 fi
 
 status=`verify_checkpoint run_ngmix`
@@ -28,6 +34,12 @@ elif [[ $status = 1 ]]; then
 else
     cmd="processDeblendedCoaddsNGMixMax.py ${OUT_DIR} --rerun ${RERUN} --id tract=${TRACT} patch=${PATCH} filter=g^r^i^z -C ${ROOT_SOFTS}/ImageProcessingPipelines/config/mcal-filters.py -C ${ROOT_SOFTS}/ImageProcessingPipelines/config/ngmix-deblended-bd.py"
     echo $cmd;$cmd;
+    if [ $? -eq 0 ]; then
+        echo "successful execution of ${cmd}"
+    else
+        echo "failure in execution of ${cmd}"
+        exit 1
+    fi
 fi
 
 status=`verify_checkpoint run_metacal_dpdd`
