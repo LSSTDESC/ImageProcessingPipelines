@@ -10,6 +10,13 @@ if [[ -z ${DPDD_TAG} ]]; then
     DPDD_TAG=${RERUN}
 fi
 DPDD_DIR=${OUT_DIR}/dpdd/${DPDD_TAG}/metacal_table_summary
-cmd="python ${DC2PROD}/merge_parquet_files.py ${DPDD_DIR}/metacal_*${TRACT}*.parquet -o ${DPDD_DIR}/metacal_tract_${TRACT}.parquet"
-echo $cmd;$cmd;
 
+if ls ${DPDD_DIR}/metacal_*${TRACT}*.parquet 1> /dev/null 2>&1; then
+    if [ -f ${DPDD_DIR}/metacal_tract_${TRACT}.parquet ]; then
+	rm ${DPDD_DIR}/metacal_tract_${TRACT}.parquet
+    fi
+    cmd="python ${DC2PROD}/merge_parquet_files.py ${DPDD_DIR}/metacal_${TRACT}*.parquet -o ${DPDD_DIR}/metacal_tract_${TRACT}.parquet"
+    echo $cmd;$cmd;
+else
+    echo "No files ${DC2PROD}/merge_parquet_files.py ${DPDD_DIR}/metacal_${TRACT}*.parquet found"
+fi

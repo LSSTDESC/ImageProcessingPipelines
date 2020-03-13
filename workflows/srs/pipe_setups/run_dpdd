@@ -21,6 +21,12 @@ cmd="python ${DC2PROD}/make_object_catalog.py ${OUT_DIR}/rerun/${RERUN2} ${TRACT
 echo $cmd;$cmd;
 
 #merge
-cmd="python ${DC2PROD}/merge_parquet_files.py ${DPDD_DIR}/object_${TRACT}_*.parquet -o ${DPDD_DIR}/object_tract_${TRACT}.parquet --assume-consistent-schema"
-echo $cmd;$cmd;
-
+if ls ${DPDD_DIR}/object_${TRACT}*.parquet 1> /dev/null 2>&1; then
+    if [ -f ${DPDD_DIR}/object_tract_${TRACT}.parquet ]; then
+	rm ${DPDD_DIR}/object_tract_${TRACT}.parquet
+    fi
+    cmd="python ${DC2PROD}/merge_parquet_files.py ${DPDD_DIR}/object_${TRACT}_*.parquet -o ${DPDD_DIR}/object_tract_${TRACT}.parquet --assume-consistent-schema"
+    echo $cmd;$cmd;
+else
+    echo "No files ${DC2PROD}/merge_parquet_files.py ${DPDD_DIR}/object_${TRACT}*.parquet found" 
+fi
