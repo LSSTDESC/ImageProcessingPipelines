@@ -7,15 +7,21 @@ then
     /pbs/home/d/descprod/bin/joremon.sh
 fi
 
-echo "Working on TRACT=${TRACT}, PATH=${PATCH}, FILT=${FILT}"
+echo "Working on TRACT=${TRACT}, PATCH=${PATCH}, FILT=${FILT}"
 
 visit_file=${FILEDIR}/${TRACT}_${PATCH}_${FILT}_visits.list 
 
 if [ $FILT = u ]; then
-    echo "coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-u --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --longlog --configfile=${OBS_LSST_DIR}/config/coaddDriver_noPSF.py"
+    echo "coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-u --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --longlog --configfile=${OBS_LSST_DIR}/config/coaddDriver_noPSF.py --reuse-outputs-from  all"
     coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-u --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --longlog --configfile=${OBS_LSST_DIR}/config/coaddDriver_noPSF.py --reuse-outputs-from  all
 else
-    echo "coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --longlog"
+    echo "coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --longlog --reuse-outputs-from  all"
     coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --longlog --reuse-outputs-from  all
 fi
 
+echo "grep \"Caught FitsError while coadding DataId\"  ${JOBCONTROL_LOGFILE}"
+out=`grep  "Caught FitsError while coadding DataId" ${JOBCONTROL_LOGFILE}`
+if [[ ! -z $out ]];then 
+    echo "Traceback detected... exiting with error"
+    exit 1
+fi
