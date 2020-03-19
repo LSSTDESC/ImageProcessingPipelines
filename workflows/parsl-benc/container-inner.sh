@@ -1,5 +1,6 @@
 #!/bin/bash
 
+echo $(date) wrap-shifter: just inside shifter
 cd $1
 shift
 
@@ -10,3 +11,6 @@ setup obs_lsst
 export OMP_NUM_THREADS=1
 
 bash $*
+R=$?
+echo $(date) wrap-shifter: executable finished with return code $R
+exit $R

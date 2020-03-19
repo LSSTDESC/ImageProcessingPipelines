@@ -16,7 +16,7 @@ def create_ingest_file_list(pipe_scripts_dir, ingest_source, outputs=[], stdout=
 
 @bash_app(executors=["worker-nodes"], cache=True, ignore_for_checkpointing=['stdout', 'stderr', 'wrap'])
 def filter_in_place(ingest_file, stdout=None, stderr=None, wrap=None):
-    return wrap("grep --invert-match 466748_R43_S21 {} > filter-filesToIngest.tmp && mv filter-filesToIngest.tmp ingest_filelist_filtered".format(ingest_file.filepath))
+    return wrap("grep --invert-match 466748_R43_S21 {} > filter-filesToIngest.tmp && mv filter-filesToIngest.tmp ingest_filtered.list".format(ingest_file.filepath))
 
 
 # for testing, truncated this list heavilty
@@ -30,9 +30,9 @@ def truncate_ingest_list(files_to_ingest, n, outputs=[], stdout=None, stderr=Non
 
 
 @bash_app(executors=['worker-nodes'], cache=True, ignore_for_checkpointing=['stdout', 'stderr', 'wrap'])
-def ingest(file, in_dir, stdout=None, stderr=None, wrap=None):
+def ingest(file, repo_dir, stdout=None, stderr=None, wrap=None):
     # parsl.AUTO_LOGNAME does not work with checkpointing: see https://github.com/Parsl/parsl/issues/1293
-    # def ingest(file, in_dir, stdout=parsl.AUTO_LOGNAME, stderr=parsl.AUTO_LOGNAME):
+    # def ingest(file, repo_dir, stdout=parsl.AUTO_LOGNAME, stderr=parsl.AUTO_LOGNAME):
     """This comes from workflows/srs/pipe_setups/setup_ingest.
     The NERSC version runs just command; otherwise a bunch of other stuff
     happens - which I'm not implementing here at the moment.
@@ -40,14 +40,14 @@ def ingest(file, in_dir, stdout=None, stderr=None, wrap=None):
     There SRS workflow using @{chunk_of_ingest_list}, but I'm going to
     specify a single filename directly for now.
     """
-    return wrap("ingestDriver.py --batch-type none {in_dir} @{arg1} --clobber-versions --cores 1 --mode link --output {in_dir} -c clobber=True allowError=True register.ignore=True".format(in_dir=in_dir, arg1=file.filepath))
+    return wrap("ingestDriver.py --batch-type none {repo_dir} @{arg1} --clobber-versions --cores 1 --mode link --output {repo_dir} -c clobber=True allowError=True register.ignore=True".format(repo_dir=repo_dir, arg1=file.filepath))
 
 
 def perform_ingest(configuration, logdir):
 
     pipe_scripts_dir = configuration.root_softs + "/ImageProcessingPipelines/workflows/srs/pipe_scripts/"
 
-    ingest_file = File("ingest_filelist")
+    ingest_file = File("ingest.list")
 
     ingest_fut = create_ingest_file_list(pipe_scripts_dir,
                                          configuration.ingest_source,
@@ -75,12 +75,12 @@ def perform_ingest(configuration, logdir):
                                                   wrap=configuration.wrap)
     filtered_ingest_list_future.result()
 
-    with open("ingest_filelist_filtered") as f:
+    with open("ingest_filtered.list") as f:
         files_to_ingest = f.readlines()
 
     logger.info("Now, there are {} entries in ingest list".format(len(files_to_ingest)))
 
-    truncatedFileList = File("ingest_filelist_filtered_truncated")
+    truncatedFileList = File("ingest_filtered_truncated.list")
 
     truncated_ingest_list = truncate_ingest_list(files_to_ingest,
                                                  configuration.trim_ingest_list,
@@ -94,7 +94,7 @@ def perform_ingest(configuration, logdir):
     # "the same" # file to get dependency ordering.
 
     ingest_future = ingest(truncatedFileList_output_future,
-                           configuration.in_dir,
+                           configuration.repo_dir,
                            stdout=logdir+"/ingest.stdout",
                            stderr=logdir+"/ingest.stderr",
                            wrap=configuration.wrap)

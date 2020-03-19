@@ -21,7 +21,7 @@ cori_queue = "debug"
 # more easily?
 max_blocks = 3
 
-compute_nodes = 1
+compute_nodes = 8
 walltime = "00:29:30"
 
 # this is the directory that the workflow is invoked in and is where output
@@ -48,7 +48,7 @@ cori_queue_executor = HighThroughputExecutor(
             # with process workers run inside the appropriate shifter container
             # with lsst setup commands executed. That means that everything
             # running in those workers will inherit the correct environment.
-
+            max_workers=1,
             heartbeat_period=25,
             heartbeat_threshold=75,
             provider=SlurmProvider(
@@ -63,16 +63,19 @@ cori_queue_executor = HighThroughputExecutor(
                 cmd_timeout=60,
                 walltime=walltime,
                 worker_init=worker_init,
-                parallelism=1.0/64.0 # number of workers that will run on a node
+                parallelism=1.0/(64.0 * compute_nodes) # number of workers that will run in a block
             ),
         )
 
+def wrap_no_op(s):
+    return s
+
 cori_shifter_debug_config = WorkflowConfig(
-  trim_ingest_list = 50,
+  trim_ingest_list = 600,
   ingest_source="/global/projecta/projectdirs/lsst/production/DC2_ImSim/Run2.1.1i/sim/agn-test",
 
   # this is the butler repo to use
-  in_dir="/global/cscratch1/sd/bxc/lsst-dm-repo-1",
+  repo_dir="/global/cscratch1/sd/bxc/lsst-dm-repo-1",
   rerun="some_rerun",
 
   root_softs="/global/homes/b/bxc/dm/",
@@ -85,6 +88,7 @@ cori_shifter_debug_config = WorkflowConfig(
   # with this configuration (for example, wrap_shifter_container writes the
   # command to a temporary file and then invokes that file inside shifter)
   wrap=wrap_shifter_container,
+  wrap_sql=wrap_no_op,
 
   parsl_config=Config(executors=[cori_queue_executor],
                       app_cache=True, checkpoint_mode='task_exit',

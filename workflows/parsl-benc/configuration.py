@@ -19,10 +19,11 @@ from workflowutils import wrap_shifter_container
 class WorkflowConfig:
     ingest_source: str
     trim_ingest_list: int
-    in_dir: str
+    repo_dir: str
     rerun: str
     root_softs: str
     wrap: Callable[[str], str]
+    wrap_sql: Callable[[str], str]
     parsl_config: Config
     
 def load_configuration():
@@ -88,9 +89,9 @@ cori_shifter_debug_config = WorkflowConfig(
     trim_ingest_list = None,
 
   # this is the butler repo to use
-#  in_dir="/global/cscratch1/sd/bxc/parslTest/test0",
-#    in_dir = "/global/cscratch1/sd/descdm/tomTest/DRPtest1",
-    in_dir = "/global/cscratch1/sd/descdm/tomTest/end2endr",
+#  repo_dir="/global/cscratch1/sd/bxc/parslTest/test0",
+#    repo_dir = "/global/cscratch1/sd/descdm/tomTest/DRPtest1",
+    repo_dir = "/global/cscratch1/sd/descdm/tomTest/end2endr",
 
 # The 'rerun' directory within the DM repository
     rerun="RunH",
@@ -106,6 +107,7 @@ cori_shifter_debug_config = WorkflowConfig(
   # with this configuration (for example, wrap_shifter_container writes the
   # command to a temporary file and then invokes that file inside shifter)
     wrap=wrap_shifter_container,
+    wrap_sql=wrap_shifter_container,
 
     parsl_config=Config(
         executors=[local_executor, cori_queue_executor],
