@@ -337,7 +337,7 @@ for tract_id_unstripped in tract_lines:
         patches_file,
         stdout=logdir+"make_patch_list_for_tract_{}.stdout".format(tract_id),
         stderr=logdir+"make_patch_list_for_tract_{}.stderr".format(tract_id),
-        wrap=configuration.wrap))
+        wrap=configuration.wrap_sql))
 
 # instead of this wait(), make downstream depend on File objects that
 # are the patch list.
@@ -399,7 +399,7 @@ for tract_id_unstripped in tract_lines:
                     visit_file,
                     stdout=logdir+"visit_for_tract_{}_patch_{}_filter_{}.stdout".format(tract_id, patch_id, filter_id),
                     stderr=logdir+"visit_for_tract_{}_patch_{}_filter_{}.stderr".format(tract_id, patch_id, filter_id),
-                    wrap=configuration.wrap)
+                    wrap=configuration.wrap_sql)
             # TODO: this visit_file should become an input/output File object to give the dependency instead of relying on 'fut'
 
             # the visit_file is sometimes empty - we could optimise away a singularity+coadd driver launch by only submitting that task if the file isn't empty (see monadic behaviour: but Maybe style do/don't, rather than []-style "how many?")

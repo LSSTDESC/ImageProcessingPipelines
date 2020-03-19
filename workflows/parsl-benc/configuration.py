@@ -23,6 +23,7 @@ class WorkflowConfig:
     rerun: str
     root_softs: str
     wrap: Callable[[str], str]
+    wrap_sql: Callable[[str], str]
     parsl_config: Config
     
 def load_configuration():
@@ -105,6 +106,7 @@ cori_shifter_debug_config = WorkflowConfig(
   # with this configuration (for example, wrap_shifter_container writes the
   # command to a temporary file and then invokes that file inside shifter)
     wrap=wrap_shifter_container,
+    wrap_sql=wrap_shifter_container,
 
     parsl_config=Config(
         executors=[local_executor, cori_queue_executor],
