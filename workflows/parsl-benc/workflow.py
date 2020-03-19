@@ -370,6 +370,11 @@ def coadd_driver(repo_dir, rerun, tract_id, patch_id, filter_id, visit_file, inp
     return wrap("coaddDriver.py {repo_dir} --rerun {rerun} --id tract={tract_id} patch='{patch_id}' filter={filter_id} @{visit_file} --cores 1 --batch-type none --doraise --longlog".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, visit_file=visit_file))
             #    coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog
 
+
+@bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+def multiBand_driver(repo_dir, rerun, tract_id, patch_id, inputs=[], stdout=None, stderr=None, wrap=None):
+    return wrap("multiBandDriver.py {repo_dir} --rerun {rerun} --id tract={tract_id} patch='{patch_id}' filter=u,g,r,i,z,y --cores 1 --batch-type none --doraise --longlog".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id))
+
 tract_patch_visit_futures = []
 for tract_id_unstripped in tract_lines:
     tract_id = tract_id_unstripped.strip()
@@ -389,6 +394,8 @@ for tract_id_unstripped in tract_lines:
     for patch_id_unstripped in patch_lines:
         patch_id = patch_id_unstripped.strip()
         logger.info("generating visit list for tract {} patch {}".format(tract_id, patch_id))
+
+        this_patch_futures = []
 
         for filter_id in ["g", "r", "i", "z", "y", "u"]:
             logger.info("generating visit list for tract {} patch {} filter {}".format(tract_id, patch_id, filter_id))
@@ -414,8 +421,14 @@ for tract_id_unstripped in tract_lines:
 
             #    coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog
 
-            tract_patch_visit_futures.append(fut2)
+            this_patch_futures.append(fut2)
 
+        fut3 = multiBand_driver(configuration.repo_dir, rerun, tract_id, patch_id, inputs=this_patch_futures,
+                    stdout=logdir+"multiband_for_tract_{}_patch_{}.stdout".format(tract_id, patch_id),
+                    stderr=logdir+"multiband_for_tract_{}_patch_{}.stderr".format(tract_id, patch_id),
+                    wrap=configuration.wrap)
+
+        tract_patch_visit_futures.append(fut3)
 
         # this query is *per filter* which is another dimension of concurrency but also perhaps
         # another dimension of presence of data?
