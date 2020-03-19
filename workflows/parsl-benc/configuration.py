@@ -74,10 +74,10 @@ cori_queue_executor = HighThroughputExecutor(
         min_blocks=0,
         max_blocks=1,             ## max # of batch jobs
         parallelism=0,
-        scheduler_options="""#SBATCH --constraint=knl\n#SBATCH --qos=premium""",
+        scheduler_options="""#SBATCH --constraint=knl\n#SBATCH --qos=premium""",  ## cori queue
         launcher=SrunLauncher(overrides='-K0 -k --slurmd-debug=verbose'),
         cmd_timeout=300,          ## timeout (sec) for slurm commands
-        walltime="2:00:00",
+        walltime="4:00:00",
         worker_init=worker_init
     ),
 )
@@ -94,7 +94,7 @@ cori_shifter_debug_config = WorkflowConfig(
     repo_dir = "/global/cscratch1/sd/descdm/tomTest/end2endr",
 
 # The 'rerun' directory within the DM repository
-    rerun="RunH",
+    rerun="RunJ",
 
 #  root_softs="/global/homes/b/bxc/dm/",
     root_softs="/global/homes/d/descdm/tomTest/DRPtest/",

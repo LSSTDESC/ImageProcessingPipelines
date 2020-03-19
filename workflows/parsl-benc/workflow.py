@@ -321,8 +321,8 @@ def make_patch_list_for_tract(repo_dir, rerun, tract, patches_file, stdout=None,
 
 #    return wrap("mkdir -p {registries} && {root_softs}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir={repo_dir}/rerun/{rerun} --db={registries}/tracts_mapping_{visit}.sqlite3
 
+logger.info("Create tract list")
 tracts_file = "{repo_dir}/rerun/{rerun}/tracts.list".format(repo_dir=configuration.repo_dir, rerun=rerun)
-
 tract_list_future = make_tract_list(
     configuration.repo_dir,
     rerun,

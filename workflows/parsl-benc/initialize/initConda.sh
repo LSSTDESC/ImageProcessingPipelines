@@ -8,3 +8,12 @@ source activate parsl-lsst-dm
 conda install pip
 pip install 'parsl[monitoring] @ git+https://github.com/parsl/parsl@lsst-dm-202002'
 
+## Primarily for wstat
+conda install matplotlib
+conda install tabulate
+
+## Note that to *only* update Parsl (with a given branch), one can
+## omit the above and simply:
+##
+## 1. Obtain the proper workflow environment
+## 2. $ pip install --upgrade 'parsl[monitoring] @ git+https://github.com/parsl/parsl@lsst-dm-202002'
