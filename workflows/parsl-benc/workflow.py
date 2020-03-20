@@ -111,8 +111,6 @@ def single_frame_driver(repo_dir, rerun, visit_id, raft_name, stdout=None, stder
     # this is going to be something like found in workflows/srs/pipe_setups/run_calexp
     # run_calexp uses --cores as NSLOTS+1. I'm using cores 1 because I am not sure of
     # the right parallelism here.
-#    return wrap("singleFrameDriver.py --batch-type none {repo_dir} --rerun {rerun} --id visit={visit} raftName={raft_name} --cores 1 --timeout 999999999 --loglevel CameraMapper=warn".format(repo_dir=repo_dir, rerun=rerun, visit=visit_id, raft_name=raft_name))
-
 
     return wrap("singleFrameDriver.py --batch-type none {repo_dir} --rerun {rerun} --id visit={visit} raftName={raft_name} --clobber-versions --cores 1 --timeout 999999999 --loglevel CameraMapper=warn".format(repo_dir=repo_dir, rerun=rerun, visit=visit_id, raft_name=raft_name))
 
@@ -305,12 +303,6 @@ def make_patch_list_for_tract(repo_dir, rerun, tract, patches_file, stdout=None,
     # TODO: capitalize all SQL
     return wrap('sqlite3 {repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "select DISTINCT patch FROM overlaps WHERE tract={tract};" > {patches_file}'.format(repo_dir=repo_dir, rerun=rerun, tract=tract, patches_file=patches_file))
 
-
-#    sqlite3 ${OUT_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 "select DISTINCT tract from overlaps;" > ${WORKDIR}/all_tracts.list
-
-#    registries = "{repo_dir}/rerun/{rerun}/registries".format(repo_dir=repo_dir, rerun=rerun)
-
-#    return wrap("mkdir -p {registries} && {root_softs}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir={repo_dir}/rerun/{rerun} --db={registries}/tracts_mapping_{visit}.sqlite3
 
 tracts_file = "{repo_dir}/rerun/{rerun}/tracts.list".format(repo_dir=configuration.repo_dir, rerun=rerun)
 
