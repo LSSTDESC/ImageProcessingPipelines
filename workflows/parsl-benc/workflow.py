@@ -80,7 +80,7 @@ logger.info("Making visit file from raw_visit table")
 # TODO: this is sql so should use the sqlwrapper
 @bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
 def make_visit_file(repo_dir, visit_file, stdout=None, stderr=None, wrap=None):
-    return wrap('sqlite3 {repo_dir}/registry.sqlite3 "select DISTINCT visit from raw_visit;" > {visit_file}'.format(repo_dir=repo_dir, visit_file=visit_file))
+    return wrap('sqlite3 {repo_dir}/registry.sqlite3 "SELECT DISTINCT visit FROM raw_visit;" > {visit_file}'.format(repo_dir=repo_dir, visit_file=visit_file))
 
 
 visit_file="{repo_dir}/rerun/{rerun}/all_visits_from_registry.list".format(repo_dir=configuration.repo_dir, rerun=rerun)
@@ -117,7 +117,7 @@ def single_frame_driver(repo_dir, rerun, visit_id, raft_name, stdout=None, stder
 
 @bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
 def raft_list_for_visit(repo_dir, visit_id, out_filename, stderr=None, stdout=None, wrap=None):
-    return wrap("sqlite3 {repo_dir}/registry.sqlite3 'select distinct raftName from raw where visit={visit_id}' > {out_filename}".format(repo_dir=repo_dir, visit_id=visit_id, out_filename=out_filename))
+    return wrap("sqlite3 {repo_dir}/registry.sqlite3 'SELECT DISTINCT raftName FROM raw WHERE visit={visit_id}' > {out_filename}".format(repo_dir=repo_dir, visit_id=visit_id, out_filename=out_filename))
 
 
 # the parsl checkpointing for this won't detect if we ingested more stuff to do with the
@@ -295,13 +295,12 @@ logger.info("Processing tracts")
 @bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
 def make_tract_list(repo_dir, rerun, tracts_file, stdout=None, stderr=None, wrap=None):
     # this comes from srs/pipe_setups/setup_fullcoadd
-    return wrap('sqlite3 {repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "select DISTINCT tract from overlaps;" > {tracts_file}'.format(repo_dir=repo_dir, rerun=rerun, tracts_file=tracts_file))
+    return wrap('sqlite3 {repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "SELECT DISTINCT tract FROM overlaps;" > {tracts_file}'.format(repo_dir=repo_dir, rerun=rerun, tracts_file=tracts_file))
 
 @bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
 def make_patch_list_for_tract(repo_dir, rerun, tract, patches_file, stdout=None, stderr=None, wrap=None):
     # this comes from srs/pipe_setups/setup_patch
-    # TODO: capitalize all SQL
-    return wrap('sqlite3 {repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "select DISTINCT patch FROM overlaps WHERE tract={tract};" > {patches_file}'.format(repo_dir=repo_dir, rerun=rerun, tract=tract, patches_file=patches_file))
+    return wrap('sqlite3 {repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "SELECT DISTINCT patch FROM overlaps WHERE tract={tract};" > {patches_file}'.format(repo_dir=repo_dir, rerun=rerun, tract=tract, patches_file=patches_file))
 
 
 tracts_file = "{repo_dir}/rerun/{rerun}/tracts.list".format(repo_dir=configuration.repo_dir, rerun=rerun)
