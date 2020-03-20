@@ -42,6 +42,9 @@ logger.info("waiting for ingest(s) to complete")
 ingest_future.result()
 logger.info("ingest(s) completed")
 
+# This defines a decorator lsst_app which captures the options that
+# most of the core application code will need
+lsst_app = bash_app(executors=["worker-nodes"], cache=True, ignore_for_checkpointing=["stdout", "stderr", "wrap"])
 
 # now equivalent of DC2DM_2_SINGLEFRAME_NERSC.xml
 
@@ -58,7 +61,7 @@ logger.info("ingest(s) completed")
 # QUESTION: makeDiscreteSkyMap mentioned in https://pipelines.lsst.io/getting-started/coaddition.html
 # sounds like it needs images to have been imported first so that the sky map covers the right
 # amount of the sky. Is that the case here? is so, there needs to be a new dependency added.
-@bash_app(executors=["worker-nodes"], cache=True, ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+@lsst_app
 def make_sky_map(repo_dir, rerun, stdout=None, stderr=None, wrap=None):
     return wrap("makeSkyMap.py {} --rerun {}".format(repo_dir, rerun))
 
@@ -74,6 +77,7 @@ logger.info("makeSkyMap completed")
 logger.info("Making visit file from raw_visit table")
 
 
+# TODO: this is sql so should use the sqlwrapper
 @bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
 def make_visit_file(repo_dir, visit_file, stdout=None, stderr=None, wrap=None):
     return wrap('sqlite3 {repo_dir}/registry.sqlite3 "select DISTINCT visit from raw_visit;" > {visit_file}'.format(repo_dir=repo_dir, visit_file=visit_file))
@@ -101,7 +105,7 @@ logger.info("Finished making visit file")
 logger.info("submitting task_calexps")
 
 
-@bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+@lsst_app
 def single_frame_driver(repo_dir, rerun, visit_id, raft_name, stdout=None, stderr=None, wrap=None):
     # params for stream are WORKDIR=workdir, VISIT=visit_id
     # this is going to be something like found in workflows/srs/pipe_setups/run_calexp
@@ -122,14 +126,14 @@ def raft_list_for_visit(repo_dir, visit_id, out_filename, stderr=None, stdout=No
 # specified visit - I'm not sure quite the right way to do it, and I think its only
 # useful in during workflow development when the original ingest list might change?
 # would need eg "files in each visit" list to generate a per-visit input "version" id/hash
-@bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+@lsst_app
 def check_ccd_astrometry(root_softs, repo_dir, rerun, visit, inputs=[], stderr=None, stdout=None, wrap=None):
     # inputs=[] ignored but used for dependency handling
     return wrap("{root_softs}/ImageProcessingPipelines/python/util/checkCcdAstrometry.py {repo_dir}/rerun/{rerun} --id visit={visit} --loglevel CameraMapper=warn".format(visit=visit, rerun=rerun, repo_dir=repo_dir, root_softs=root_softs))
 
 # the parsl checkpointing for this won't detect if we ingested more stuff to do with the
 # specified visit - see comments for check_ccd_astrometry
-@bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+@lsst_app
 def tract2visit_mapper(root_softs, repo_dir, rerun, visit, inputs=[], stderr=None, stdout=None, wrap=None):
     # TODO: this seems to be how $REGISTRIES is figured out (via $WORKDIR) perhaps?
     # I'm unsure though
@@ -139,7 +143,7 @@ def tract2visit_mapper(root_softs, repo_dir, rerun, visit, inputs=[], stderr=Non
     return wrap("mkdir -p {registries} && {root_softs}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir={repo_dir}/rerun/{rerun} --db={registries}/tracts_mapping.sqlite3 --visits={visit}".format(repo_dir=repo_dir, rerun=rerun, visit=visit, registries=registries, root_softs=root_softs))
 
 
-@bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+@lsst_app
 def sky_correction(repo_dir, rerun, visit, raft_name, inputs=[], stdout=None, stderr=None, wrap=None):
     return wrap("skyCorrection.py {repo_dir}  --rerun {rerun} --id visit={visit} raftName={raft_name} --batch-type none --cores 1 --timeout 999999999 --no-versions --loglevel CameraMapper=warn".format(repo_dir=repo_dir, rerun=rerun, visit=visit, raft_name=raft_name))
 
@@ -364,14 +368,14 @@ def visits_for_tract_patch_filter(repo_dir, rerun, tract_id, patch_id, filter_id
 
 
 
-@bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+@lsst_app
 def coadd_driver(repo_dir, rerun, tract_id, patch_id, filter_id, visit_file, inputs=None, stdout=None, stderr=None, wrap=None):
     # TODO: what does --doraise mean?
     return wrap("coaddDriver.py {repo_dir} --rerun {rerun} --id tract={tract_id} patch='{patch_id}' filter={filter_id} @{visit_file} --cores 1 --batch-type none --doraise --longlog".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, visit_file=visit_file))
             #    coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog
 
 
-@bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+@lsst_app
 def multiBand_driver(repo_dir, rerun, tract_id, patch_id, inputs=[], stdout=None, stderr=None, wrap=None):
     return wrap("multiBandDriver.py {repo_dir} --rerun {rerun} --id tract={tract_id} patch='{patch_id}' filter=u,g,r,i,z,y --cores 1 --batch-type none --doraise --longlog".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id))
 
