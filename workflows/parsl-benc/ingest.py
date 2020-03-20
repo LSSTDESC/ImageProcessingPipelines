@@ -15,13 +15,16 @@ def create_ingest_file_list(pipe_scripts_dir, ingest_source, outputs=[], stdout=
 
 
 @bash_app(executors=["worker-nodes"], cache=True, ignore_for_checkpointing=['stdout', 'stderr', 'wrap'])
-def filter_in_place(ingest_file, stdout=None, stderr=None, wrap=None):
-    return wrap("grep --invert-match 466748_R43_S21 {} > filter-filesToIngest.tmp && mv filter-filesToIngest.tmp ingest_filtered.list".format(ingest_file.filepath))
+def filter_in_place(ingest_file, outputs=[], stdout=None, stderr=None, wrap=None):
+    return wrap("grep --invert-match 466748_R43_S21 {} > filter-filesToIngest.tmp && mv filter-filesToIngest.tmp {}".format(ingest_file.filepath, outputs[0].filepath))
 
 
 # for testing, truncated this list heavilty
 @python_app(executors=["worker-nodes"], cache=True, ignore_for_checkpointing=['stdout', 'stderr'])
-def truncate_ingest_list(files_to_ingest, n, outputs=[], stdout=None, stderr=None):
+def truncate_ingest_list(file_of_files_to_ingest, n, outputs=[], stdout=None, stderr=None):
+    with open(file_of_files_to_ingest.filepath) as f:
+        files_to_ingest = f.readlines()
+
     filenames = files_to_ingest[0:n]
     logger.info("writing truncated list")
     with open(outputs[0].filepath, "w") as f:
@@ -48,6 +51,8 @@ def perform_ingest(configuration, logdir):
     pipe_scripts_dir = configuration.root_softs + "/ImageProcessingPipelines/workflows/srs/pipe_scripts/"
 
     ingest_file = File("ingest.list")
+    ingest_filtered_file = File("ingest_filtered.list")
+    truncatedFileList = File("ingest_filtered_truncated.list")
 
     ingest_fut = create_ingest_file_list(pipe_scripts_dir,
                                          configuration.ingest_source,
@@ -70,19 +75,15 @@ def perform_ingest(configuration, logdir):
     # 00458564 (R32 S21) and 00466748 (R43 S21)
 
     filtered_ingest_list_future = filter_in_place(ingest_file_output_file,
+                                                  outputs=[ingest_filtered_file],
                                                   stdout=logdir+"/filter_in_place.stdout",
                                                   stderr=logdir+"/filter_in_place.stderr",
                                                   wrap=configuration.wrap)
-    filtered_ingest_list_future.result()
 
-    with open("ingest_filtered.list") as f:
-        files_to_ingest = f.readlines()
+    filtered_ingest_file_output_file = ingest_fut.outputs[0]
 
-    logger.info("Now, there are {} entries in ingest list".format(len(files_to_ingest)))
 
-    truncatedFileList = File("ingest_filtered_truncated.list")
-
-    truncated_ingest_list = truncate_ingest_list(files_to_ingest,
+    truncated_ingest_list = truncate_ingest_list(filtered_ingest_file_output_file,
                                                  configuration.trim_ingest_list,
                                                  outputs=[truncatedFileList],
                                                  stdout=logdir+"/truncate_ingest_list.stdout",

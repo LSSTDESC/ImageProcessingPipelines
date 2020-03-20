@@ -38,9 +38,6 @@ logger.info("Log directory is " + logdir)
 
 ingest_future = ingest.perform_ingest(configuration, logdir)
 
-logger.info("waiting for ingest(s) to complete")
-ingest_future.result()
-logger.info("ingest(s) completed")
 
 # This defines a decorator lsst_app which captures the options that
 # most of the core application code will need
@@ -70,8 +67,11 @@ def make_sky_map(repo_dir, rerun, stdout=None, stderr=None, wrap=None):
 logger.info("launching makeSkyMap")
 rerun = configuration.rerun
 skymap_future = make_sky_map(configuration.repo_dir, rerun, stdout=logdir+"make_sky_map.stdout", stderr=logdir+"make_sky_map.stderr", wrap=configuration.wrap)
-skymap_future.result()
-logger.info("makeSkyMap completed")
+
+
+logger.info("waiting for ingest(s) to complete")
+ingest_future.result()
+logger.info("ingest(s) completed")
 
 #  setup_calexp: use DB to make a visit file
 logger.info("Making visit file from raw_visit table")
@@ -91,7 +91,9 @@ visit_file_future = make_visit_file(
     stderr=logdir+"make_visit_file.stderr",
     wrap=configuration.wrap)
 
+logger.info("Waiting for visit list generation to complete")
 visit_file_future.result()
+logger.info("Visit list generation completed")
 # should make some comment here about how we have to explicitly wait for a
 # result here in the main workflow code, rather than using visit_file_future
 # as a dependency, because its used to generate more tasks (the
@@ -100,7 +102,9 @@ visit_file_future.result()
 # for visualisation, and that there is some constraint on expressing
 # concurrency.
 
-logger.info("Finished making visit file")
+logger.info("waiting for makeSkyMap to complete")
+skymap_future.result()
+logger.info("makeSkyMap completed")
 
 logger.info("submitting task_calexps")
 
