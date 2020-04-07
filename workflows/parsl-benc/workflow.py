@@ -169,7 +169,7 @@ def single_frame_driver(repo_dir, rerun, visit_id, raft_name,
     return wrap(("singleFrameDriver.py --batch-type none {repo_dir} "
                  "--rerun {rerun} "
                  "--id visit={visit} raftName={raft_name} "
-                 "--calib /global/cscratch1/sd/bxc/lsst-dm-repo-1/CALIB/ "
+                 "--calib {repo_dir}/CALIB/ "
                  "--clobber-versions --cores 1 --timeout 999999999 "
                  "--loglevel CameraMapper=warn").format(repo_dir=repo_dir,
                                                         rerun=rerun,
@@ -217,7 +217,7 @@ def tract2visit_mapper(root_softs, repo_dir, rerun, visit, inputs=[],
 
 @lsst_app
 def sky_correction(repo_dir, rerun, visit, raft_name, inputs=[], stdout=None, stderr=None, wrap=None):
-    return wrap("skyCorrection.py {repo_dir}  --rerun {rerun} --id visit={visit} raftName={raft_name} --batch-type none --cores 1  --calib /global/cscratch1/sd/bxc/lsst-dm-repo-1/CALIB/ --timeout 999999999 --no-versions --loglevel CameraMapper=warn".format(repo_dir=repo_dir, rerun=rerun, visit=visit, raft_name=raft_name))
+    return wrap("skyCorrection.py {repo_dir}  --rerun {rerun} --id visit={visit} raftName={raft_name} --batch-type none --cores 1  --calib {repo_dir}/CALIB/ --timeout 999999999 --no-versions --loglevel CameraMapper=warn".format(repo_dir=repo_dir, rerun=rerun, visit=visit, raft_name=raft_name))
 
 
 ##########################################################################
