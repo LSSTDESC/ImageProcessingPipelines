@@ -388,7 +388,8 @@ def make_tract_list(repo_dir, rerun, tracts_file,
     return wrap('sqlite3 {repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "SELECT DISTINCT tract FROM overlaps;" > {tracts_file}'.format(repo_dir=repo_dir, rerun=rerun, tracts_file=tracts_file))
 
 
-@bash_app(executors=["worker-nodes"], cache=True, ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+@bash_app(executors=["worker-nodes"], cache=True,
+          ignore_for_checkpointing=["stdout", "stderr", "wrap"])
 def make_patch_list_for_tract(repo_dir, rerun, tract, patches_file, stdout=None, stderr=None, wrap=None):
     # this comes from srs/pipe_setups/setup_patch
     return wrap('sqlite3 {repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "SELECT DISTINCT patch FROM overlaps WHERE tract={tract};" > {patches_file}'.format(repo_dir=repo_dir, rerun=rerun, tract=tract, patches_file=patches_file))
@@ -440,8 +441,11 @@ concurrent.futures.wait(tract_patch_futures)
 # doing this as a separate loop from the above loop rather than doing something useful with dependencies is ugly.
 
 
-@bash_app(executors=["worker-nodes"], cache=True, ignore_for_checkpointing=["stdout", "stderr", "wrap"])
-def visits_for_tract_patch_filter(repo_dir, rerun, tract_id, patch_id, filter_id, visit_file, stdout=None, stderr=None, wrap=None):
+@bash_app(executors=["worker-nodes"], cache=True,
+          ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+def visits_for_tract_patch_filter(repo_dir, rerun, tract_id, patch_id,
+                                  filter_id, visit_file,
+                                  stdout=None, stderr=None, wrap=None):
     # TODO: set_coaddDriver treats filter_id differently here:
     # it takes a *list* of filters not a single filter, and generates
     # SQL from that somehow. Ask Johann about it? Is there some
@@ -451,13 +455,15 @@ def visits_for_tract_patch_filter(repo_dir, rerun, tract_id, patch_id, filter_id
 
 
 @lsst_app
-def coadd_driver(repo_dir, rerun, tract_id, patch_id, filter_id, visit_file, inputs=None, stdout=None, stderr=None, wrap=None):
+def coadd_driver(repo_dir, rerun, tract_id, patch_id, filter_id, visit_file,
+                 inputs=None, stdout=None, stderr=None, wrap=None):
     # TODO: what does --doraise mean?
     return wrap("coaddDriver.py {repo_dir} --rerun {rerun} --id tract={tract_id} patch='{patch_id}' filter={filter_id} @{visit_file} --cores 1 --batch-type none --doraise --longlog".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, visit_file=visit_file))
 
 
 @lsst_app
-def multiBand_driver(repo_dir, rerun, tract_id, patch_id, inputs=[], stdout=None, stderr=None, wrap=None):
+def multiBand_driver(repo_dir, rerun, tract_id, patch_id, inputs=[],
+                     stdout=None, stderr=None, wrap=None):
     return wrap("multiBandDriver.py {repo_dir} --rerun {rerun} --id tract={tract_id} patch='{patch_id}' filter=u,g,r,i,z,y --cores 1 --batch-type none --doraise --longlog".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id))
 
 
