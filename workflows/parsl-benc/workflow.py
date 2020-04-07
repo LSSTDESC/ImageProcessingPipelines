@@ -359,14 +359,24 @@ logger.info("Processing tracts")
 
 # from johann:
 
-# in order to follow the sequence of job spawning for coaddDriver you need to read in that order :
+# in order to follow the sequence of job spawning for coaddDriver you need
+# to read in that order:
 
-# setup_fullcoadd, which either look at a provided list of tracts in a file, or build this list out of all the tracts referenced in the tract_visit mapper DB; the it launches one subtask per tract
-#   (benc: this workflow should generate the DB from the tract_visit mapper DB)
+# setup_fullcoadd, which either look at a provided list of tracts in a file,
+# or build this list out of all the tracts referenced in the tract_visit
+# mapper DB; the it launches one subtask per tract
+# (benc: this workflow should generate the DB from the tract_visit mapper DB)
 
-# setup_patch, which looks in the DB for the list of patches that this tract has (some tracts can have empty patches, especially in DC2), then it subdivides into a small number of patches and launch nested subtasks for each of these subset of patches
+# setup_patch, which looks in the DB for the list of patches that this tract
+# has (some tracts can have empty patches, especially in DC2), then it
+# subdivides into a small number of patches and launch nested subtasks for
+# each of these subset of patches
 
-# setup_coaddDriver, which takes the tract and the patches provided by setup_patch, lists all the visits that intersect these patches, compare if requested to a provided set of visits (critical to only coadd a given number of years for instance), and then launch one final nested subtask for each filter. This nested subtask runs coaddDriver.py
+# setup_coaddDriver, which takes the tract and the patches provided by
+# setup_patch, lists all the visits that intersect these patches, compare if
+# requested to a provided set of visits (critical to only coadd a given number
+# of years for instance), and then launch one final nested subtask for each
+# filter. This nested subtask runs coaddDriver.py
 
 
 @bash_app(executors=["worker-nodes"],
