@@ -26,7 +26,8 @@ import ingest
 # rerun directory in the repo.
 
 # however because some are in parallel, they can't be entirely separate
-# because they need to be linear (unless there is interesting rerun-merging magic)
+# because they need to be linear (unless there is interesting rerun-merging
+# magic)
 # This approach then limits concurrency, perhaps?
 
 # The rerun name for each step should include the previous steps, automaticaaly
@@ -60,7 +61,8 @@ parsl.load(configuration.parsl_config)
 
 # tell wrapper about parsl run_dir which isn't decided until
 # after parsl.load()
-configuration.wrap = functools.partial(configuration.wrap, run_dir=parsl.dfk().run_dir)
+configuration.wrap = functools.partial(configuration.wrap,
+                                       run_dir=parsl.dfk().run_dir)
 
 logdir = parsl.dfk().run_dir + "/dm-logs/"
 logger.info("Log directory is " + logdir)
@@ -70,23 +72,33 @@ ingest_future = ingest.perform_ingest(configuration, logdir, rerun1)
 
 # This defines a decorator lsst_app which captures the options that
 # most of the core application code will need
-lsst_app = bash_app(executors=["worker-nodes"], cache=True, ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+lsst_app = bash_app(executors=["worker-nodes"],
+                    cache=True,
+                    ignore_for_checkpointing=["stdout", "stderr", "wrap"])
 
 # now equivalent of DC2DM_2_SINGLEFRAME_NERSC.xml
 
 # setup_calexp .... eg workflows/srs/pipe_setups/setup_calexp
 
 #   makeSkyMap.py
-#   QUESTION: in xml, this does copying of files out of one rerun dir into another, neither of which is the rerun dir passed to makeSkyMap... what is going on there? I'm going to ignore reruns entirely here if i can...
+#   QUESTION: in xml, this does copying of files out of one rerun dir into
+#   another, neither of which is the rerun dir passed to makeSkyMap...
+#   what is going on there? I'm going to ignore reruns entirely here if
+#   i can...
 
-# QUESTION: what is the concurrency between make_sky_map and the raw visit list? can they run concurrently or must make_sky_map run before generating the raw visit list?
+# QUESTION: what is the concurrency between make_sky_map and the raw visit
+# list? can they run concurrently or must make_sky_map run before generating
+# the raw visit list?
 
-# ingest list is passed in but not used explicity because it represents that some stuff
-# has gone into the DB potentially during ingest - for checkpointing
+# ingest list is passed in but not used explicity because it represents
+# that some stuff # has gone into the DB potentially during ingest
+# - for checkpointing
 
-# QUESTION: makeDiscreteSkyMap mentioned in https://pipelines.lsst.io/getting-started/coaddition.html
-# sounds like it needs images to have been imported first so that the sky map covers the right
-# amount of the sky. Is that the case here? is so, there needs to be a new dependency added.
+# QUESTION: makeDiscreteSkyMap mentioned in
+# https://pipelines.lsst.io/getting-started/coaddition.html
+# sounds like it needs images to have been imported first so that the sky
+# map covers the right amount of the sky. Is that the case here? is so,
+# there needs to be a new dependency added.
 @lsst_app
 def make_sky_map(repo_dir, rerun, stdout=None, stderr=None, wrap=None):
     return wrap("makeSkyMap.py {} --rerun {}".format(repo_dir, rerun))
@@ -94,7 +106,10 @@ def make_sky_map(repo_dir, rerun, stdout=None, stderr=None, wrap=None):
 
 # TODO: this can run in parallel with ingest
 logger.info("launching makeSkyMap")
-skymap_future = make_sky_map(configuration.repo_dir, rerun1, stdout=logdir+"make_sky_map.stdout", stderr=logdir+"make_sky_map.stderr", wrap=configuration.wrap)
+skymap_future = make_sky_map(configuration.repo_dir, rerun1,
+                             stdout=logdir+"make_sky_map.stdout",
+                             stderr=logdir+"make_sky_map.stderr",
+                             wrap=configuration.wrap)
 
 
 logger.info("waiting for ingest(s) to complete")
@@ -106,12 +121,17 @@ logger.info("Making visit file from raw_visit table")
 
 
 # TODO: this is sql so should use the sqlwrapper
-@bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+@bash_app(executors=["worker-nodes"], cache=True,
+          ignore_for_checkpointing=["stdout", "stderr", "wrap"])
 def make_visit_file(repo_dir, visit_file, stdout=None, stderr=None, wrap=None):
-    return wrap('sqlite3 {repo_dir}/registry.sqlite3 "SELECT DISTINCT visit FROM raw_visit;" > {visit_file}'.format(repo_dir=repo_dir, visit_file=visit_file))
+    return wrap(('sqlite3 {repo_dir}/registry.sqlite3 '
+                 '"SELECT DISTINCT visit FROM raw_visit;" '
+                 '> {visit_file}').format(repo_dir=repo_dir,
+                                          visit_file=visit_file))
 
 
-visit_file = "{repo_dir}/rerun/{rerun}/all_visits_from_registry.list".format(repo_dir=configuration.repo_dir, rerun=rerun1)
+visit_file = "{repo_dir}/rerun/{rerun}/all_visits_from_registry.list".format(
+        repo_dir=configuration.repo_dir, rerun=rerun1)
 visit_file_future = make_visit_file(
     configuration.repo_dir,
     visit_file,
@@ -138,38 +158,60 @@ logger.info("submitting task_calexps")
 
 
 @lsst_app
-def single_frame_driver(repo_dir, rerun, visit_id, raft_name, stdout=None, stderr=None, wrap=None):
+def single_frame_driver(repo_dir, rerun, visit_id, raft_name,
+                        stdout=None, stderr=None, wrap=None):
     # params for stream are WORKDIR=workdir, VISIT=visit_id
-    # this is going to be something like found in workflows/srs/pipe_setups/run_calexp
-    # run_calexp uses --cores as NSLOTS+1. I'm using cores 1 because I am not sure of
-    # the right parallelism here.
+    # this is going to be something like found in
+    # workflows/srs/pipe_setups/run_calexp
+    # run_calexp uses --cores as NSLOTS+1. I'm using cores 1 because I
+    # am not sure of the right parallelism here.
 
-    return wrap("singleFrameDriver.py --batch-type none {repo_dir} --rerun {rerun} --id visit={visit} raftName={raft_name} --calib /global/cscratch1/sd/bxc/lsst-dm-repo-1/CALIB/ --clobber-versions --cores 1 --timeout 999999999 --loglevel CameraMapper=warn".format(repo_dir=repo_dir, rerun=rerun, visit=visit_id, raft_name=raft_name))
+    return wrap(("singleFrameDriver.py --batch-type none {repo_dir} "
+                 "--rerun {rerun} "
+                 "--id visit={visit} raftName={raft_name} "
+                 "--calib /global/cscratch1/sd/bxc/lsst-dm-repo-1/CALIB/ "
+                 "--clobber-versions --cores 1 --timeout 999999999 "
+                 "--loglevel CameraMapper=warn").format(repo_dir=repo_dir,
+                                                        rerun=rerun,
+                                                        visit=visit_id,
+                                                        raft_name=raft_name))
 
 
-@bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
-def raft_list_for_visit(repo_dir, visit_id, out_filename, stderr=None, stdout=None, wrap=None):
-    return wrap("sqlite3 {repo_dir}/registry.sqlite3 'SELECT DISTINCT raftName FROM raw WHERE visit={visit_id}' > {out_filename}".format(repo_dir=repo_dir, visit_id=visit_id, out_filename=out_filename))
+@bash_app(executors=["worker-nodes"], cache=True,
+          ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+def raft_list_for_visit(repo_dir, visit_id, out_filename,
+                        stderr=None, stdout=None, wrap=None):
+    return wrap(("sqlite3 {repo_dir}/registry.sqlite3 "
+                 "'SELECT DISTINCT raftName FROM raw WHERE visit={visit_id}' "
+                 "> {out_filename}").format(repo_dir=repo_dir,
+                                            visit_id=visit_id,
+                                            out_filename=out_filename))
 
 
-# the parsl checkpointing for this won't detect if we ingested more stuff to do with the
-# specified visit - I'm not sure quite the right way to do it, and I think its only
-# useful in during workflow development when the original ingest list might change?
-# would need eg "files in each visit" list to generate a per-visit input "version" id/hash
+# the parsl checkpointing for this won't detect if we ingested more stuff
+# to do with the specified visit - I'm not sure quite the right way to do
+# it, and I think its only useful in during workflow development when the
+# original ingest list might change? would need eg "files in each visit"
+# list to generate a per-visit input "version" id/hash
 @lsst_app
-def check_ccd_astrometry(root_softs, repo_dir, rerun, visit, inputs=[], stderr=None, stdout=None, wrap=None):
+def check_ccd_astrometry(root_softs, repo_dir, rerun, visit, inputs=[],
+                         stderr=None, stdout=None, wrap=None):
     # inputs=[] ignored but used for dependency handling
     return wrap("{root_softs}/ImageProcessingPipelines/python/util/checkCcdAstrometry.py {repo_dir}/rerun/{rerun} --id visit={visit} --loglevel CameraMapper=warn".format(visit=visit, rerun=rerun, repo_dir=repo_dir, root_softs=root_softs))
 
-# the parsl checkpointing for this won't detect if we ingested more stuff to do with the
-# specified visit - see comments for check_ccd_astrometry
+# the parsl checkpointing for this won't detect if we ingested more stuff
+# to do with the specified visit - see comments for check_ccd_astrometry
 @lsst_app
-def tract2visit_mapper(root_softs, repo_dir, rerun, visit, inputs=[], stderr=None, stdout=None, wrap=None):
-    # TODO: this seems to be how $REGISTRIES is figured out (via $WORKDIR) perhaps?
-    # I'm unsure though
-    registries = "{repo_dir}/rerun/{rerun}".format(repo_dir=repo_dir, rerun=rerun)
+def tract2visit_mapper(root_softs, repo_dir, rerun, visit, inputs=[],
+                       stderr=None, stdout=None, wrap=None):
+    # TODO: this seems to be how $REGISTRIES is figured out (via $WORKDIR)
+    # perhaps? I'm unsure though
+    registries = "{repo_dir}/rerun/{rerun}".format(repo_dir=repo_dir,
+                                                   rerun=rerun)
 
-    # the srs workflow has a separate output database per visit, which is elsewhere merged into a single DB. That's awkward... there's probably a reason to do with concurrency or shared fs that needs digging into.
+    # the srs workflow has a separate output database per visit, which is
+    # elsewhere merged into a single DB. That's awkward... there's probably
+    # a reason to do with concurrency or shared fs that needs digging into.
     return wrap("mkdir -p {registries} && {root_softs}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir={repo_dir}/rerun/{rerun} --db={registries}/tracts_mapping.sqlite3 --visits={visit}".format(repo_dir=repo_dir, rerun=rerun, visit=visit, registries=registries, root_softs=root_softs))
 
 
@@ -220,8 +262,12 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
         logger.info("visit {} raft {}".format(visit_id, raft_name))
 
         # this call is based on run_calexp shell script
-        # assume visit_id really is a visit id... workflows/srs/pipe_setups/setup_calexp has a case where the visit file has two fields per line, and this is handled differently there. I have ignored that here.
-        # raft_name is the $RAFTNAME environment variable in run_calexp in the XML workflows
+        # assume visit_id really is a visit id...
+        # workflows/srs/pipe_setups/setup_calexp has a case where the visit
+        # file has two fields per line, and this is handled differently
+        # there. I have ignored that here.
+        # raft_name is the $RAFTNAME environment variable in run_calexp in
+        # the XML workflows
         sfd_output_basename = "single_frame_driver.visit-{}.raft-{}".format(n, raft_name)
         this_raft_single_frame_fut = single_frame_driver(
                 configuration.repo_dir,
@@ -249,12 +295,14 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
     # because otherwise we won't launch later visits until after we're done with this one, and
     # lose parallelism
     # question here: should these be done per-raft or per-visit?
-    # the workflow looks like you can rnu with a single vist-raft but then the subsequent
+    # the workflow looks like you can rnu with a single vist-raft but
+    # then the subsequent
     # steps don't take raft as a parameter? so what's the deal there?
-    # TODO: assume for now we need to wait for all rafts to be done, and process per visit
+    # TODO: assume for now we need to wait for all rafts to be done,
+    # and process per visit
 
-    # TODO: which of these post-processing steps need to happen in sequence rather than
-    # in parallel?
+    # TODO: which of these post-processing steps need to happen in
+    # sequence rather than in parallel?
 
     check_ccd_stdbase = "check_ccd_astrometry.{}".format(visit_id)
     fut_check_ccd = check_ccd_astrometry(
@@ -316,20 +364,23 @@ logger.info("Processing tracts")
 # in order to follow the sequence of job spawning for coaddDriver you need to read in that order :
 
 # setup_fullcoadd, which either look at a provided list of tracts in a file, or build this list out of all the tracts referenced in the tract_visit mapper DB; the it launches one subtask per tract
-#    (benc: this workflow should generate the DB from the tract_visit mapper DB)
+#   (benc: this workflow should generate the DB from the tract_visit mapper DB)
 
 # setup_patch, which looks in the DB for the list of patches that this tract has (some tracts can have empty patches, especially in DC2), then it subdivides into a small number of patches and launch nested subtasks for each of these subset of patches
 
 # setup_coaddDriver, which takes the tract and the patches provided by setup_patch, lists all the visits that intersect these patches, compare if requested to a provided set of visits (critical to only coadd a given number of years for instance), and then launch one final nested subtask for each filter. This nested subtask runs coaddDriver.py
 
 
-@bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
-def make_tract_list(repo_dir, rerun, tracts_file, stdout=None, stderr=None, wrap=None):
+@bash_app(executors=["worker-nodes"],
+          cache=True,
+          ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+def make_tract_list(repo_dir, rerun, tracts_file,
+                    stdout=None, stderr=None, wrap=None):
     # this comes from srs/pipe_setups/setup_fullcoadd
     return wrap('sqlite3 {repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "SELECT DISTINCT tract FROM overlaps;" > {tracts_file}'.format(repo_dir=repo_dir, rerun=rerun, tracts_file=tracts_file))
 
 
-@bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+@bash_app(executors=["worker-nodes"], cache=True, ignore_for_checkpointing=["stdout", "stderr", "wrap"])
 def make_patch_list_for_tract(repo_dir, rerun, tract, patches_file, stdout=None, stderr=None, wrap=None):
     # this comes from srs/pipe_setups/setup_patch
     return wrap('sqlite3 {repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "SELECT DISTINCT patch FROM overlaps WHERE tract={tract};" > {patches_file}'.format(repo_dir=repo_dir, rerun=rerun, tract=tract, patches_file=patches_file))
@@ -370,20 +421,22 @@ for tract_id_unstripped in tract_lines:
 # are the patch list.
 concurrent.futures.wait(tract_patch_futures)
 
-# for each tract, for each patch, generate a list of visits that overlap this tract/patch
-# from the tract db - see srs/pipe_setups/?sky_corr
+# for each tract, for each patch, generate a list of visits that
+# overlap this tract/patch from the tract db - see srs/pipe_setups/?sky_corr
 
-# so we can generate this list once we have all the patch information, even if the final
-# image processing steps haven't happened for a particular visit; as long as we then somehow
-# depend on the processing for that visit completing before we do the coadd.
+# so we can generate this list once we have all the patch information, even
+# if the final image processing steps haven't happened for a particular visit;
+# as long as we then somehow # depend on the processing for that visit
+# completing before we do the coadd.
 
 # doing this as a separate loop from the above loop rather than doing something useful with dependencies is ugly.
 
 
-@bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+@bash_app(executors=["worker-nodes"], cache=True, ignore_for_checkpointing=["stdout", "stderr", "wrap"])
 def visits_for_tract_patch_filter(repo_dir, rerun, tract_id, patch_id, filter_id, visit_file, stdout=None, stderr=None, wrap=None):
-    # TODO: set_coaddDriver treats filter_id differently here: it takes a *list* of filters not a
-    # single filter, and generates SQL from that somehow. Ask Johann about it? Is there some
+    # TODO: set_coaddDriver treats filter_id differently here:
+    # it takes a *list* of filters not a single filter, and generates
+    # SQL from that somehow. Ask Johann about it? Is there some
     # non-trivial interaction of multiple filters here?
     sql = "SELECT DISTINCT visit FROM overlaps WHERE tract={tract_id} AND filter='{filter_id}' AND patch=\'{patch_id}\';".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id)
     return wrap('sqlite3 {repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "{sql}" > {visit_file}'.format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, sql=sql, visit_file=visit_file))
@@ -407,10 +460,11 @@ for tract_id_unstripped in tract_lines:
     logger.info("generating visit list for patches in tract {}".format(tract_id))
 
     # TODO: this filename should be coming from a File output object from
-    # the earlier futures, and not hardcoded here and in patch list generator...
+    # the earlier futures, and not hardcoded here and in patch list generator.
     patches_file = "{repo_dir}/rerun/{rerun}/patches-for-tract-{tract}.list".format(tract=tract_id, repo_dir=configuration.repo_dir, rerun=rerun3)
 
-    # TODO: this idiom of reading and stripping is used in a few places - factor it
+    # TODO: this idiom of reading and stripping is used in a few places
+    #   - factor it
     # something like:   for stripped_lines_in_file("filename"):
     # for direct reading from file - where it returns a list...
     with open(patches_file) as f:
@@ -439,8 +493,10 @@ for tract_id_unstripped in tract_lines:
                                 stdout=logdir+"coadd_for_tract_{}_patch_{}_filter_{}.stdout".format(tract_id, patch_id, filter_id),
                                 stderr=logdir+"coadd_for_tract_{}_patch_{}_filter_{}.stderr".format(tract_id, patch_id, filter_id),
                                 wrap=configuration.wrap)
-            # now we have a load of files like this: visits-for-tract-4232-patch-6,-4-filter-g.list
-            # so for each of those files, launch coadd for this tract/patch/filter
+            # now we have a load of files like this:
+            #   visits-for-tract-4232-patch-6,-4-filter-g.list
+            # so for each of those files, launch coadd for this
+            # tract/patch/filter
 
             # filt=u has different processing here that i'm not sure why... looks like stuff goes into a different rerun out directory. in workflows/srs/pipe_setups/run_coaddDrive - TODO: ask johann what the reasoning for that is.  I want to try do different stuff with rerun directories anyway.
 
@@ -455,13 +511,20 @@ for tract_id_unstripped in tract_lines:
 
         tract_patch_visit_futures.append(fut3)
 
-        # this query is *per filter* which is another dimension of concurrency but also perhaps
-        # another dimension of presence of data?
+        # this query is *per filter* which is another dimension of
+        # concurrency but also perhaps another dimension of presence of data?
 
         # from setup coadd:
-        #    visit_list=`sqlite3 ${OUT_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 "SELECT DISTINCT visit FROM overlaps WHERE tract=${TRACT} and filter='${FILT}' and ${patch_str}"`
+        # visit_list=`sqlite3 ${OUT_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3
+        # "SELECT DISTINCT visit FROM overlaps WHERE tract=${TRACT} and
+        #     filter='${FILT}' and ${patch_str}"`
 
-    # johann: setup_coaddDriver, which takes the tract and the patches provided by setup_patch, lists all the visits that intersect these patches, compare if requested to a provided set of visits (critical to only coadd a given number of years for instance), and then launch one final nested subtask for each filter. This nested subtask runs coaddDriver.py
+    # johann: setup_coaddDriver, which takes the tract and the patches
+    # provided by setup_patch, lists all the visits that intersect these
+    # patches, compare if requested to a provided set of visits
+    # (critical to only coadd a given number of years for instance),
+    # and then launch one final nested subtask for each filter.
+    # This nested subtask runs coaddDriver.py
 
 concurrent.futures.wait(tract_patch_visit_futures)
 
