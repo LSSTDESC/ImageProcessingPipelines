@@ -10,14 +10,44 @@ import checkpointutil  # noqa: F401 - for import-time checkpoint config
 import configuration
 import ingest
 
-
-
 # initial conda setup on cori:
 # $ ./initialize/initConda.sh
 
 # to run the workflow, assuming above setup has been done:
 
 # $ ./runWorkflow.sh CONFIG_FILE_NAME
+
+
+# TODO:
+# restarts by reruns
+# this should go into the user config file but I'll prototype it here
+
+# some of groups of steps of the broad workflow should have their own
+# rerun directory in the repo.
+
+# however because some are in parallel, they can't be entirely separate
+# because they need to be linear (unless there is interesting rerun-merging magic)
+# This approach then limits concurrency, perhaps?
+
+# The rerun name for each step should include the previous steps, automaticaaly
+# so the step 6 rerun will be long.
+
+
+rerun1_name = "R1-1"  # contains outputs of: ingest and skymap
+rerun2_name = "R2-1"  # contains outputs of: singleFrameDriver
+rerun3_name = "R3-1"  # contains outputs of: 
+rerun4_name = "R4-1"
+rerun5_name = "R5-1"
+rerun6_name = "R6-1"
+
+rerun1 = rerun1_name
+rerun2 = rerun1 + "." + rerun2_name
+rerun3 = rerun2 + "." + rerun3_name
+rerun4 = rerun3 + "." + rerun4_name
+rerun5 = rerun4 + "." + rerun5_name
+rerun6 = rerun5 + "." + rerun6_name
+
+
 
 logger = logging.getLogger("parsl.dm")
 
@@ -36,7 +66,7 @@ configuration.wrap = functools.partial(configuration.wrap, run_dir=parsl.dfk().r
 logdir = parsl.dfk().run_dir + "/dm-logs/"
 logger.info("Log directory is " + logdir)
 
-ingest_future = ingest.perform_ingest(configuration, logdir)
+ingest_future = ingest.perform_ingest(configuration, logdir, rerun1)
 
 
 # This defines a decorator lsst_app which captures the options that
@@ -65,8 +95,7 @@ def make_sky_map(repo_dir, rerun, stdout=None, stderr=None, wrap=None):
 
 # TODO: this can run in parallel with ingest
 logger.info("launching makeSkyMap")
-rerun = configuration.rerun
-skymap_future = make_sky_map(configuration.repo_dir, rerun, stdout=logdir+"make_sky_map.stdout", stderr=logdir+"make_sky_map.stderr", wrap=configuration.wrap)
+skymap_future = make_sky_map(configuration.repo_dir, rerun1, stdout=logdir+"make_sky_map.stdout", stderr=logdir+"make_sky_map.stderr", wrap=configuration.wrap)
 
 
 logger.info("waiting for ingest(s) to complete")
@@ -83,7 +112,7 @@ def make_visit_file(repo_dir, visit_file, stdout=None, stderr=None, wrap=None):
     return wrap('sqlite3 {repo_dir}/registry.sqlite3 "SELECT DISTINCT visit FROM raw_visit;" > {visit_file}'.format(repo_dir=repo_dir, visit_file=visit_file))
 
 
-visit_file="{repo_dir}/rerun/{rerun}/all_visits_from_registry.list".format(repo_dir=configuration.repo_dir, rerun=rerun)
+visit_file="{repo_dir}/rerun/{rerun}/all_visits_from_registry.list".format(repo_dir=configuration.repo_dir, rerun=rerun1)
 visit_file_future = make_visit_file(
     configuration.repo_dir,
     visit_file,
@@ -116,7 +145,7 @@ def single_frame_driver(repo_dir, rerun, visit_id, raft_name, stdout=None, stder
     # run_calexp uses --cores as NSLOTS+1. I'm using cores 1 because I am not sure of
     # the right parallelism here.
 
-    return wrap("singleFrameDriver.py --batch-type none {repo_dir} --rerun {rerun} --id visit={visit} raftName={raft_name} --clobber-versions --cores 1 --timeout 999999999 --loglevel CameraMapper=warn".format(repo_dir=repo_dir, rerun=rerun, visit=visit_id, raft_name=raft_name))
+    return wrap("singleFrameDriver.py --batch-type none {repo_dir} --rerun {rerun} --id visit={visit} raftName={raft_name} --calib /global/cscratch1/sd/bxc/lsst-dm-repo-1/CALIB/ --clobber-versions --cores 1 --timeout 999999999 --loglevel CameraMapper=warn".format(repo_dir=repo_dir, rerun=rerun, visit=visit_id, raft_name=raft_name))
 
 
 @bash_app(executors=["worker-nodes"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
@@ -147,7 +176,7 @@ def tract2visit_mapper(root_softs, repo_dir, rerun, visit, inputs=[], stderr=Non
 
 @lsst_app
 def sky_correction(repo_dir, rerun, visit, raft_name, inputs=[], stdout=None, stderr=None, wrap=None):
-    return wrap("skyCorrection.py {repo_dir}  --rerun {rerun} --id visit={visit} raftName={raft_name} --batch-type none --cores 1 --timeout 999999999 --no-versions --loglevel CameraMapper=warn".format(repo_dir=repo_dir, rerun=rerun, visit=visit, raft_name=raft_name))
+    return wrap("skyCorrection.py {repo_dir}  --rerun {rerun} --id visit={visit} raftName={raft_name} --batch-type none --cores 1  --calib /global/cscratch1/sd/bxc/lsst-dm-repo-1/CALIB/ --timeout 999999999 --no-versions --loglevel CameraMapper=warn".format(repo_dir=repo_dir, rerun=rerun, visit=visit, raft_name=raft_name))
 
 
 ##########################################################################
@@ -166,7 +195,7 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
     # starting up shifter.
     # QUESTION: which bits can go to sensor level?
     # QUESTION: how is efficiency here compared to losing efficiency by runs having wasted long-tail (wall and cpu) time?
-    raft_list_fn = "{repo_dir}/rerun/{rerun}/raft_list_for_visit.{visit_id}".format(repo_dir=configuration.repo_dir, rerun=rerun, visit_id=visit_id)
+    raft_list_fn = "{repo_dir}/rerun/{rerun}/raft_list_for_visit.{visit_id}".format(repo_dir=configuration.repo_dir, rerun=rerun1, visit_id=visit_id)
 
     raft_list_future = raft_list_for_visit(
         configuration.repo_dir,
@@ -197,7 +226,7 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
         sfd_output_basename = "single_frame_driver.visit-{}.raft-{}".format(n, raft_name)
         this_raft_single_frame_fut = single_frame_driver(
                 configuration.repo_dir,
-                rerun,
+                rerun1 + ":" + rerun2,
                 visit_id,
                 raft_name,
                 stdout=logdir+sfd_output_basename+".stdout",
@@ -209,7 +238,7 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
         sky_correction_stdbase = "sky_correction.visit-{}.raft-{}".format(visit_id, raft_name)
         this_visit_single_frame_futs.append(sky_correction(
             configuration.repo_dir,
-            rerun,
+            rerun2 + ":" + rerun3,
             visit_id,
             raft_name,
             inputs=[this_raft_single_frame_fut],
@@ -229,10 +258,10 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
     # in parallel?
 
     check_ccd_stdbase = "check_ccd_astrometry.{}".format(visit_id)
-    fut1 = check_ccd_astrometry(
+    fut_check_ccd = check_ccd_astrometry(
         configuration.root_softs,
         configuration.repo_dir,
-        rerun,
+        rerun3,
         visit_id,
         inputs=this_visit_single_frame_futs,
         stdout=logdir+check_ccd_stdbase+".stdout",
@@ -246,10 +275,10 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
     # things in the wrong way. That's a general note on adding in more stuff to
     # a run, though?
     tract2visit_mapper_stdbase = "tract2visit_mapper.{}".format(visit_id)
-    fut2 = tract2visit_mapper(
+    fut_tract2visit = tract2visit_mapper(
         configuration.root_softs,
         configuration.repo_dir,
-        rerun,
+        rerun3,
         visit_id,
         inputs=this_visit_single_frame_futs,
         stdout=logdir+tract2visit_mapper_stdbase+".stdout",
@@ -257,8 +286,8 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
         wrap=configuration.wrap)
 
 
-    visit_futures.append(fut1)
-    visit_futures.append(fut2)
+    visit_futures.append(fut_check_ccd)
+    visit_futures.append(fut_tract2visit)
 
     # TODO: visitAnlysis.py for stream and visit - this involves sqlite
 
@@ -307,11 +336,11 @@ def make_patch_list_for_tract(repo_dir, rerun, tract, patches_file, stdout=None,
     return wrap('sqlite3 {repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "SELECT DISTINCT patch FROM overlaps WHERE tract={tract};" > {patches_file}'.format(repo_dir=repo_dir, rerun=rerun, tract=tract, patches_file=patches_file))
 
 
-tracts_file = "{repo_dir}/rerun/{rerun}/tracts.list".format(repo_dir=configuration.repo_dir, rerun=rerun)
+tracts_file = "{repo_dir}/rerun/{rerun}/tracts.list".format(repo_dir=configuration.repo_dir, rerun=rerun3)
 
 tract_list_future = make_tract_list(
     configuration.repo_dir,
-    rerun,
+    rerun3,
     tracts_file,
     stdout=logdir+"make_tract_list.stdout",
     stderr=logdir+"make_tract_list.stderr",
@@ -328,10 +357,10 @@ for tract_id_unstripped in tract_lines:
     logger.info("process tract {}".format(tract_id))
 
     # assemble a patch list for this tract, as in setup_patch
-    patches_file = "{repo_dir}/rerun/{rerun}/patches-for-tract-{tract}.list".format(tract=tract_id, repo_dir=configuration.repo_dir, rerun=rerun)
+    patches_file = "{repo_dir}/rerun/{rerun}/patches-for-tract-{tract}.list".format(tract=tract_id, repo_dir=configuration.repo_dir, rerun=rerun3)
     tract_patch_futures.append(make_patch_list_for_tract(
         configuration.repo_dir,
-        rerun,
+        rerun3,
         tract_id,
         patches_file,
         stdout=logdir+"make_patch_list_for_tract_{}.stdout".format(tract_id),
@@ -382,7 +411,7 @@ for tract_id_unstripped in tract_lines:
 
     # TODO: this filename should be coming from a File output object from
     # the earlier futures, and not hardcoded here and in patch list generator...
-    patches_file = "{repo_dir}/rerun/{rerun}/patches-for-tract-{tract}.list".format(tract=tract_id, repo_dir=configuration.repo_dir, rerun=rerun)
+    patches_file = "{repo_dir}/rerun/{rerun}/patches-for-tract-{tract}.list".format(tract=tract_id, repo_dir=configuration.repo_dir, rerun=rerun3)
 
     # TODO: this idiom of reading and stripping is used in a few places - factor it
     # something like:   for stripped_lines_in_file("filename"):
@@ -400,8 +429,8 @@ for tract_id_unstripped in tract_lines:
             logger.info("generating visit list for tract {} patch {} filter {}".format(tract_id, patch_id, filter_id))
 
             filename_patch_id = patch_id.replace(" ","-").replace("(","").replace(")","") # remove shell-fussy characters for filename. this avoids shell escaping. be careful that this still generates unique filenames.
-            visit_file = "{repo_dir}/rerun/{rerun}/visits-for-tract-{tract_id}-patch-{filename_patch_id}-filter-{filter_id}.list".format(repo_dir=configuration.repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filename_patch_id=filename_patch_id, filter_id=filter_id)
-            fut = visits_for_tract_patch_filter(configuration.repo_dir, rerun, tract_id, patch_id, filter_id,
+            visit_file = "{repo_dir}/rerun/{rerun}/visits-for-tract-{tract_id}-patch-{filename_patch_id}-filter-{filter_id}.list".format(repo_dir=configuration.repo_dir, rerun=rerun3, tract_id=tract_id, patch_id=patch_id, filename_patch_id=filename_patch_id, filter_id=filter_id)
+            fut = visits_for_tract_patch_filter(configuration.repo_dir, rerun3, tract_id, patch_id, filter_id,
                     visit_file,
                     stdout=logdir+"visit_for_tract_{}_patch_{}_filter_{}.stdout".format(tract_id, patch_id, filter_id),
                     stderr=logdir+"visit_for_tract_{}_patch_{}_filter_{}.stderr".format(tract_id, patch_id, filter_id),
@@ -409,7 +438,7 @@ for tract_id_unstripped in tract_lines:
             # TODO: this visit_file should become an input/output File object to give the dependency instead of relying on 'fut'
 
             # the visit_file is sometimes empty - we could optimise away a singularity+coadd driver launch by only submitting that task if the file isn't empty (see monadic behaviour: but Maybe style do/don't, rather than []-style "how many?")
-            fut2 = coadd_driver(configuration.repo_dir, rerun, tract_id, patch_id, filter_id, visit_file, inputs=[fut],
+            fut2 = coadd_driver(configuration.repo_dir, rerun3 + ":" + rerun4, tract_id, patch_id, filter_id, visit_file, inputs=[fut],
                     stdout=logdir+"coadd_for_tract_{}_patch_{}_filter_{}.stdout".format(tract_id, patch_id, filter_id),
                     stderr=logdir+"coadd_for_tract_{}_patch_{}_filter_{}.stderr".format(tract_id, patch_id, filter_id),
                     wrap=configuration.wrap)
@@ -422,7 +451,7 @@ for tract_id_unstripped in tract_lines:
 
             this_patch_futures.append(fut2)
 
-        fut3 = multiBand_driver(configuration.repo_dir, rerun, tract_id, patch_id, inputs=this_patch_futures,
+        fut3 = multiBand_driver(configuration.repo_dir, rerun4 + ":" + rerun5, tract_id, patch_id, inputs=this_patch_futures,
                     stdout=logdir+"multiband_for_tract_{}_patch_{}.stdout".format(tract_id, patch_id),
                     stderr=logdir+"multiband_for_tract_{}_patch_{}.stderr".format(tract_id, patch_id),
                     wrap=configuration.wrap)

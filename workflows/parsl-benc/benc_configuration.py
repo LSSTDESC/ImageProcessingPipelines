@@ -48,7 +48,7 @@ cori_queue_executor = HighThroughputExecutor(
             # with process workers run inside the appropriate shifter container
             # with lsst setup commands executed. That means that everything
             # running in those workers will inherit the correct environment.
-            max_workers=1,
+            max_workers=8,
             heartbeat_period=25,
             heartbeat_threshold=75,
             provider=SlurmProvider(
@@ -76,7 +76,6 @@ cori_shifter_debug_config = WorkflowConfig(
 
   # this is the butler repo to use
   repo_dir="/global/cscratch1/sd/bxc/lsst-dm-repo-1",
-  rerun="some_rerun",
 
   root_softs="/global/homes/b/bxc/dm/",
   # what is ROOT_SOFTS in general? this has come from the SRS workflow,

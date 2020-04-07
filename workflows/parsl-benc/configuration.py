@@ -20,7 +20,6 @@ class WorkflowConfig:
     ingest_source: str
     trim_ingest_list: int
     repo_dir: str
-    rerun: str
     root_softs: str
     wrap: Callable[[str], str]
     wrap_sql: Callable[[str], str]
@@ -91,9 +90,6 @@ cori_shifter_debug_config = WorkflowConfig(
 #  repo_dir="/global/cscratch1/sd/bxc/parslTest/test0",
 #    repo_dir = "/global/cscratch1/sd/descdm/tomTest/DRPtest1",
     repo_dir = "/global/cscratch1/sd/descdm/tomTest/end2endr",
-
-# The 'rerun' directory within the DM repository
-    rerun="RunF",
 
 #  root_softs="/global/homes/b/bxc/dm/",
     root_softs="/global/homes/d/descdm/tomTest/DRPtest/",
