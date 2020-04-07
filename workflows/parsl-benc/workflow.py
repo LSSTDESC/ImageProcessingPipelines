@@ -39,14 +39,12 @@ rerun2_name = "R2-1"  # contains outputs of: singleFrameDriver
 rerun3_name = "R3-1"  # ... etc
 rerun4_name = "R4-1"
 rerun5_name = "R5-1"
-rerun6_name = "R6-1"
 
 rerun1 = rerun1_name
 rerun2 = rerun1 + "." + rerun2_name
 rerun3 = rerun2 + "." + rerun3_name
 rerun4 = rerun3 + "." + rerun4_name
 rerun5 = rerun4 + "." + rerun5_name
-rerun6 = rerun5 + "." + rerun6_name
 
 
 logger = logging.getLogger("parsl.dm")
