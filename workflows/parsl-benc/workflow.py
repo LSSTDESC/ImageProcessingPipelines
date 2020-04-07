@@ -36,7 +36,7 @@ import ingest
 
 rerun1_name = "R1-1"  # contains outputs of: ingest and skymap
 rerun2_name = "R2-1"  # contains outputs of: singleFrameDriver
-rerun3_name = "R3-1"  # ... etc
+rerun3_name = "R3-3"  # ... etc
 rerun4_name = "R4-1"
 rerun5_name = "R5-1"
 
@@ -64,6 +64,13 @@ configuration.wrap = functools.partial(configuration.wrap,
 
 logdir = parsl.dfk().run_dir + "/dm-logs/"
 logger.info("Log directory is " + logdir)
+
+
+# This is a list of futures which should be waited on at the end
+# of the workflow before exiting (rather than being intermediate
+# results used by subsequent steps)
+terminal_futures = []
+
 
 ingest_future = ingest.perform_ingest(configuration, logdir, rerun1)
 
@@ -329,7 +336,14 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
         stderr=logdir+tract2visit_mapper_stdbase+".stderr",
         wrap=configuration.wrap)
 
-    visit_futures.append(fut_check_ccd)
+    # This could go into terminal futures or we could explicitly wait for it
+    # here. By waiting for it here, we ensure that the check has passed
+    # before doing anything with the information.
+    # By not waiting for it, we increase parallelism, but we might encounter
+    # a downstream problem of some kind before discovering check_ccd is
+    # broken?
+    terminal_futures.append(fut_check_ccd)
+
     visit_futures.append(fut_tract2visit)
 
     # TODO: visitAnlysis.py for stream and visit - this involves sqlite
@@ -540,7 +554,8 @@ for tract_id_unstripped in tract_lines:
     # and then launch one final nested subtask for each filter.
     # This nested subtask runs coaddDriver.py
 
-concurrent.futures.wait(tract_patch_visit_futures)
+terminal_futures += tract_patch_visit_futures
+concurrent.futures.wait(terminal_futures)
 
 
 logger.info("Reached the end of the parsl driver for DM pipeline")
