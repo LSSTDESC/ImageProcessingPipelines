@@ -278,7 +278,7 @@ concurrent.futures.wait(visit_futures)
 # ... and throw exception here if any of them threw exceptions
 [future.result() for future in visit_futures]
 
-logger.info("Processing tracts")
+logger.info("Begin processing tracts")
 
 # now we can do coadds. This is concurrent by tract, not by visit.
 # information about tracts comes from the result of tract2visit_mapper
