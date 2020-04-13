@@ -556,6 +556,7 @@ for tract_id_unstripped in tract_lines:
 
 terminal_futures += tract_patch_visit_futures
 concurrent.futures.wait(terminal_futures)
+[future.result() for future in terminal_futures]
 
 
 logger.info("Reached the end of the parsl driver for DM pipeline")
