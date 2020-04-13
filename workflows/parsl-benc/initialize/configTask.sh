@@ -24,7 +24,7 @@ export PATH="'${PATH}:${HOME}'"/.local/bin
 ##     PT_WORKFLOWROOT is where the workflow scripts live (must be same dir as this config script)
 export PT_WORKFLOWROOT="$(realpath $(dirname $BASH_SOURCE))"
 
-export PT_SCRATCH='/global/cscratch1/sd/descdm'
+export PT_SCRATCH='/global/cscratch1/sd/bxc'
 
 ##     PT_OUTPUTDIR is the general area where the output goes, e.g., $SCRATCH or projecta
 export PT_OUTPUTDIR=$PT_SCRATCH
@@ -33,7 +33,7 @@ export PT_OUTPUTDIR=$PT_SCRATCH
 export PT_DEBUG=False
 
 ##     PT_REPODIR is the location of DM data repository
-export PT_REPODIR=${PT_OUTPUTDIR}'/tomTest/DRPtest1'
+export PT_REPODIR=${PT_OUTPUTDIR}'/lsst-dm-repo-1'
 
 #####################################################
 ###########  One-time Setup
