@@ -69,13 +69,13 @@ cori_queue_executor = HighThroughputExecutor(
         "None",                   ## cori queue/partition/qos
         nodes_per_block=2,        ## nodes per batch job
         exclusive=True,
-        init_blocks=0,
+        init_blocks=0,            ## blocks (batch jobs) to start with (on spec)
         min_blocks=0,
         max_blocks=1,             ## max # of batch jobs
-        parallelism=0,
+        parallelism=0,            ## >0 causes multiple batch jobs, even for simple WFs
         scheduler_options="""#SBATCH --constraint=knl\n#SBATCH --qos=premium""",  ## cori queue
         launcher=SrunLauncher(overrides='-K0 -k --slurmd-debug=verbose'),
-        cmd_timeout=300,          ## timeout (sec) for slurm commands
+        cmd_timeout=300,          ## timeout (sec) for slurm commands (NERSC can be slow)
         walltime="4:00:00",
         worker_init=worker_init
     ),
@@ -113,12 +113,13 @@ cori_shifter_debug_config = WorkflowConfig(
         app_cache=True,
         checkpoint_mode='task_exit',
         checkpoint_files=get_all_checkpoints(),
-        retries=2,
+        retries=2,  # plus the original attempt
         monitoring=MonitoringHub(
             hub_address=address_by_hostname(),
             hub_port=55055,
             monitoring_debug=False,
-            resource_monitoring_interval=10,
+            resource_monitoring_enabled=True,
+            resource_monitoring_interval=100,  # seconds
             workflow_name="DRPtest"
         )
     )

@@ -1,4 +1,13 @@
 #!/usr/bin/env python
+## workflow.py - Main Parsl script for DESC DRP workflow
+
+## To run:
+# initial conda setup on cori:
+# $ ./initialize/initConda.sh
+
+# to run the workflow, assuming above setup has been done:
+# $ ./runWorkflow.sh CONFIG_FILE_NAME
+
 import concurrent.futures
 import functools
 import logging
@@ -10,12 +19,8 @@ import checkpointutil  # noqa: F401 - for import-time checkpoint config
 import configuration
 import ingest
 
-# initial conda setup on cori:
-# $ ./initialize/initConda.sh
-
-# to run the workflow, assuming above setup has been done:
-
-# $ ./runWorkflow.sh CONFIG_FILE_NAME
+##### FLAGS ######
+doIngest = False     # skip the ingest step (if repo already in place)
 
 
 # TODO:
@@ -30,7 +35,7 @@ import ingest
 # magic)
 # This approach then limits concurrency, perhaps?
 
-# The rerun name for each step should include the previous steps, automaticaaly
+# The rerun name for each step should include the previous steps, automatically
 # so the step 6 rerun will be long.
 
 
@@ -78,9 +83,12 @@ terminal_futures = []
 # logger.info("waiting for ingest(s) to complete")
 # ingest_future.result()
 # logger.info("ingest(s) completed")
-logger.info("Skip ingest")
 
-ingest_future = ingest.perform_ingest(configuration, logdir, rerun1)
+if doIngest:
+    ingest_future = ingest.perform_ingest(configuration, logdir, rerun1)
+else:
+    logger.info("Skip ingest")
+    pass
 
 
 # This defines a decorator lsst_app which captures the options that
@@ -127,9 +135,11 @@ skymap_future = make_sky_map(configuration.repo_dir, rerun1,
                              wrap=configuration.wrap)
 
 
-logger.info("waiting for ingest(s) to complete")
-ingest_future.result()
-logger.info("ingest(s) completed")
+if doIngest:
+    logger.info("waiting for ingest(s) to complete")
+    ingest_future.result()
+    logger.info("ingest(s) completed")
+    pass
 
 #  setup_calexp: use DB to make a visit file
 logger.info("Making visit file from raw_visit table")
@@ -146,7 +156,7 @@ def make_visit_file(repo_dir, visit_file, stdout=None, stderr=None, wrap=None):
 
 
 visit_file = "{repo_dir}/rerun/{rerun}/all_visits_from_registry.list".format(
-        repo_dir=configuration.repo_dir, rerun=rerun1)
+    repo_dir=configuration.repo_dir, rerun=rerun1)
 visit_file_future = make_visit_file(
     configuration.repo_dir,
     visit_file,
@@ -246,14 +256,14 @@ visit_futures = []
 for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
 
     ################################################################
-    if n > 10: break     ## DEBUG: limit number of visits processed
+    if n > 1: break     ## DEBUG: limit number of visits processed
     ################################################################
 
     visit_id = visit_id_unstripped.strip()
     logger.info("=> Begin processing visit "+str(visit_id))
 
 
-    # some of this stuff could probably be parallelised down tot he per-sensor
+    # some of this stuff could probably be parallelised down to the per-sensor
     # level rather than per raft. finer granualarity but more overhead in
     # starting up shifter.
     # QUESTION: which bits can go to sensor level?
@@ -292,13 +302,13 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
         # raft_name is the $RAFTNAME environment variable in run_calexp in the XML workflows
         sfd_output_basename = "single_frame_driver.visit-{}.raft-{}".format(visit_id, raft_name)
         this_raft_single_frame_fut = single_frame_driver(
-                configuration.repo_dir,
-                rerun1 + ":" + rerun2,
-                visit_id,
-                raft_name,
-                stdout=logdir+sfd_output_basename+".stdout",
-                stderr=logdir+sfd_output_basename+".stderr",
-                wrap=configuration.wrap)
+            configuration.repo_dir,
+            rerun1 + ":" + rerun2,
+            visit_id,
+            raft_name,
+            stdout=logdir+sfd_output_basename+".stdout",
+            stderr=logdir+sfd_output_basename+".stderr",
+            wrap=configuration.wrap)
         # this is invoked in run_calexp with $OUT_DIR at the first parameter, but that's not something
         # i've used so far -- so I'm using IN_DIR as used in previous steps
         # TODO: is that the right thing to do? otherwise how does IN_DIR and OUT_DIR differ?
@@ -421,15 +431,12 @@ def make_patch_list_for_tract(repo_dir, rerun, tract, patches_file, stdout=None,
     # this comes from srs/pipe_setups/setup_patch
     return wrap('sqlite3 {repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "SELECT DISTINCT patch FROM overlaps WHERE tract={tract};" > {patches_file}'.format(repo_dir=repo_dir, rerun=rerun, tract=tract, patches_file=patches_file))
 
-
 #    sqlite3 ${OUT_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 "select DISTINCT tract from overlaps;" > ${WORKDIR}/all_tracts.list
-
 #    registries = "{repo_dir}/rerun/{rerun}/registries".format(repo_dir=repo_dir, rerun=rerun)
-
 #    return wrap("mkdir -p {registries} && {root_softs}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir={repo_dir}/rerun/{rerun} --db={registries}/tracts_mapping_{visit}.sqlite3
 
 logger.info("Create tract list")
-tracts_file = "{repo_dir}/rerun/{rerun}/tracts.list".format(repo_dir=configuration.repo_dir, rerun=rerun)
+tracts_file = "{repo_dir}/rerun/{rerun}/tracts.list".format(repo_dir=configuration.repo_dir, rerun=rerun3)
 tract_list_future = make_tract_list(
     configuration.repo_dir,
     rerun3,
