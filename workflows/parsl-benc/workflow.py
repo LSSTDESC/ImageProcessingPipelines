@@ -79,7 +79,7 @@ ingest_future = ingest.perform_ingest(configuration, logdir, rerun1)
 # most of the core application code will need
 lsst_app = bash_app(executors=["worker-nodes"],
                     cache=True,
-                    ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+                    ignore_for_cache=["stdout", "stderr", "wrap"])
 
 # now equivalent of DC2DM_2_SINGLEFRAME_NERSC.xml
 
@@ -127,7 +127,7 @@ logger.info("Making visit file from raw_visit table")
 
 # TODO: this is sql so should use the sqlwrapper
 @bash_app(executors=["worker-nodes"], cache=True,
-          ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+          ignore_for_cache=["stdout", "stderr", "wrap"])
 def make_visit_file(repo_dir, visit_file, stdout=None, stderr=None, wrap=None):
     return wrap(('sqlite3 {repo_dir}/registry.sqlite3 '
                  '"SELECT DISTINCT visit FROM raw_visit;" '
@@ -183,7 +183,7 @@ def single_frame_driver(repo_dir, rerun, visit_id, raft_name,
 
 
 @bash_app(executors=["worker-nodes"], cache=True,
-          ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+          ignore_for_cache=["stdout", "stderr", "wrap"])
 def raft_list_for_visit(repo_dir, visit_id, out_filename,
                         stderr=None, stdout=None, wrap=None):
     return wrap(("sqlite3 {repo_dir}/registry.sqlite3 "
@@ -395,7 +395,7 @@ logger.info("Processing tracts")
 
 @bash_app(executors=["worker-nodes"],
           cache=True,
-          ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+          ignore_for_cache=["stdout", "stderr", "wrap"])
 def make_tract_list(repo_dir, rerun, tracts_file,
                     stdout=None, stderr=None, wrap=None):
     # this comes from srs/pipe_setups/setup_fullcoadd
@@ -403,7 +403,7 @@ def make_tract_list(repo_dir, rerun, tracts_file,
 
 
 @bash_app(executors=["worker-nodes"], cache=True,
-          ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+          ignore_for_cache=["stdout", "stderr", "wrap"])
 def make_patch_list_for_tract(repo_dir, rerun, tract, patches_file, stdout=None, stderr=None, wrap=None):
     # this comes from srs/pipe_setups/setup_patch
     return wrap('sqlite3 {repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "SELECT DISTINCT patch FROM overlaps WHERE tract={tract};" > {patches_file}'.format(repo_dir=repo_dir, rerun=rerun, tract=tract, patches_file=patches_file))
@@ -456,7 +456,7 @@ concurrent.futures.wait(tract_patch_futures)
 
 
 @bash_app(executors=["worker-nodes"], cache=True,
-          ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+          ignore_for_cache=["stdout", "stderr", "wrap"])
 def visits_for_tract_patch_filter(repo_dir, rerun, tract_id, patch_id,
                                   filter_id, visit_file,
                                   stdout=None, stderr=None, wrap=None):

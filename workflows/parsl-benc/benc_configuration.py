@@ -92,6 +92,7 @@ cori_shifter_debug_config = WorkflowConfig(
   parsl_config=Config(executors=[cori_queue_executor],
                       app_cache=True, checkpoint_mode='task_exit',
                       checkpoint_files=get_all_checkpoints(),
+                      retries=2,
                       monitoring=MonitoringHub(
                             hub_address=address_by_hostname(),
                             hub_port=55055,
