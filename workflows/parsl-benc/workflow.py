@@ -256,7 +256,7 @@ visit_futures = []
 for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
 
     ################################################################
-    if n > 1: break     ## DEBUG: limit number of visits processed
+    if n > 100: break     ## DEBUG: limit number of visits processed
     ################################################################
 
     visit_id = visit_id_unstripped.strip()
