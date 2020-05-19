@@ -67,7 +67,7 @@ cori_queue_executor = HighThroughputExecutor(
     heartbeat_threshold=180,      ## time-out betweeen batch and local nodes
     provider=SlurmProvider(
         "None",                   ## cori queue/partition/qos
-        nodes_per_block=20,       ## nodes per batch job
+        nodes_per_block=5,       ## nodes per batch job
         exclusive=True,
         init_blocks=0,            ## blocks (batch jobs) to start with (on spec)
         min_blocks=0,

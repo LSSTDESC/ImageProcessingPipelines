@@ -56,7 +56,7 @@ logger = logging.getLogger("parsl.dm")
 
 parsl.set_stream_logger()
 
-logger.info("Parsl driver for DM pipeline")
+logger.info("WFLOW: Parsl driver for DM pipeline")
 
 configuration = configuration.load_configuration()
 
@@ -68,7 +68,7 @@ configuration.wrap = functools.partial(configuration.wrap,
                                        run_dir=parsl.dfk().run_dir)
 
 logdir = parsl.dfk().run_dir + "/dm-logs/"
-logger.info("Log directory is " + logdir)
+logger.info("WFLOW: Log directory is " + logdir)
 
 
 # This is a list of futures which should be waited on at the end
@@ -87,7 +87,7 @@ terminal_futures = []
 if doIngest:
     ingest_future = ingest.perform_ingest(configuration, logdir, rerun1)
 else:
-    logger.info("Skip ingest")
+    logger.info("WFLOW: Skip ingest")
     pass
 
 
@@ -128,7 +128,7 @@ def make_sky_map(repo_dir, rerun, stdout=None, stderr=None, wrap=None):
 
 
 # TODO: this can run in parallel with ingest
-logger.info("launching makeSkyMap")
+logger.info("WFLOW: launching makeSkyMap")
 skymap_future = make_sky_map(configuration.repo_dir, rerun1,
                              stdout=logdir+"make_sky_map.stdout",
                              stderr=logdir+"make_sky_map.stderr",
@@ -136,13 +136,13 @@ skymap_future = make_sky_map(configuration.repo_dir, rerun1,
 
 
 if doIngest:
-    logger.info("waiting for ingest(s) to complete")
+    logger.info("WFLOW: waiting for ingest(s) to complete")
     ingest_future.result()
-    logger.info("ingest(s) completed")
+    logger.info("WFLOW: ingest(s) completed")
     pass
 
 #  setup_calexp: use DB to make a visit file
-logger.info("Making visit file from raw_visit table")
+logger.info("WFLOW: Making visit file from raw_visit table")
 
 
 # TODO: this is sql so should use the sqlwrapper
@@ -166,9 +166,9 @@ visit_file_future = make_visit_file(
     stderr=logdir+"make_visit_file.stderr",
     wrap=configuration.wrap)
 
-logger.info("Waiting for visit list generation to complete")
+logger.info("WFLOW: Waiting for visit list generation to complete")
 visit_file_future.result()
-logger.info("Visit list generation completed")
+logger.info("WFLOW: Visit list generation completed")
 # should make some comment here about how we have to explicitly wait for a
 # result here in the main workflow code, rather than using visit_file_future
 # as a dependency, because its used to generate more tasks (the
@@ -177,11 +177,11 @@ logger.info("Visit list generation completed")
 # for visualisation, and that there is some constraint on expressing
 # concurrency.
 
-logger.info("waiting for makeSkyMap to complete")
+logger.info("WFLOW: waiting for makeSkyMap to complete")
 skymap_future.result()
-logger.info("makeSkyMap completed")
+logger.info("WFLOW: makeSkyMap completed")
 
-logger.info("submitting task_calexps")
+logger.info("WFLOW: submitting task_calexps")
 
 
 @lsst_app
@@ -253,16 +253,21 @@ def sky_correction(repo_dir, rerun, visit, raft_name, inputs=[], stdout=None, st
 
 with open(visit_file) as f:
     visit_lines = f.readlines()
+    pass
 
+logger.info("WFLOW:  There were "+str(len(visit_lines))+" visits read from "+str(visit_file))
+
+nvisits = 0
 visit_futures = []
 for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
 
     ################################################################
-    if n > 100: break     ## DEBUG: limit number of visits processed
+    if n > 10: break     ## DEBUG: limit number of visits processed
     ################################################################
 
+    nvisits += 1
     visit_id = visit_id_unstripped.strip()
-    logger.info("=> Begin processing visit "+str(visit_id))
+    logger.info("WFLOW: => Begin processing visit "+str(visit_id))
 
 
     # some of this stuff could probably be parallelised down to the per-sensor
@@ -290,14 +295,14 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
         raft_lines = f.readlines()
         pass
     rlist = [x.strip() for x in raft_lines]
-    logger.info("=> There are "+str(len(rlist))+ " rafts to process:")
-    logger.info(str(rlist))
+    logger.info("WFLOW: => There are "+str(len(rlist))+ " rafts to process:")
+    logger.info("WFLOW: "+str(rlist))
 
     this_visit_single_frame_futs = []
 
     for (m, raft_name_stripped) in zip(range(0, len(raft_lines)), raft_lines):
         raft_name = raft_name_stripped.strip()
-        logger.info("visit {} raft {}".format(visit_id, raft_name))
+        logger.info("WFLOW: visit {} raft {}".format(visit_id, raft_name))
 
         # this call is based on run_calexp shell script
         # assume visit_id really is a visit id... workflows/srs/pipe_setups/setup_calexp has a case where the visit file has two fields per line, and this is handled differently there. I have ignored that here.
@@ -376,17 +381,32 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
     visit_futures.append(fut_tract2visit)
 
     # TODO: visitAnlysis.py for stream and visit - this involves sqlite
+    pass
 
 
-logger.info("Waiting for completion of all per-visit tasks")
+logger.info("WFLOW: Waiting for completion of all "+str(nvisits)+" sensor/raft-oriented tasks")
 
 # wait for them all to complete ...
 concurrent.futures.wait(visit_futures)
+logger.info("WFLOW: sensor/raft-oriented tasks complete")
+
+
 
 # ... and throw exception here if any of them threw exceptions
-[future.result() for future in visit_futures]
+## This is a bottleneck for d/s tasks: a single failure will halt the entire workflow
 
-logger.info("Begin processing tracts")
+logger.info("WFLOW: Checking results of sensor/raft-oriented tasks")
+try:
+    [future.result() for future in visit_futures]
+except:
+    logger.error("WFLOW: There were one or more exceptions.")
+    ## For the moment, just disregard the presence of failed tasks.
+    pass
+
+
+
+
+logger.info("WFLOW: Begin processing tracts")
 
 # now we can do coadds. This is concurrent by tract, not by visit.
 # information about tracts comes from the result of tract2visit_mapper
@@ -441,7 +461,7 @@ def make_patch_list_for_tract(repo_dir, rerun, tract, patches_file, stdout=None,
 #    registries = "{repo_dir}/rerun/{rerun}/registries".format(repo_dir=repo_dir, rerun=rerun)
 #    return wrap("mkdir -p {registries} && {root_softs}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir={repo_dir}/rerun/{rerun} --db={registries}/tracts_mapping_{visit}.sqlite3
 
-logger.info("Create tract list")
+logger.info("WFLOW: Create tract list")
 tracts_file = "{repo_dir}/rerun/{rerun}/tracts.list".format(repo_dir=configuration.repo_dir, rerun=rerun3)
 tract_list_future = make_tract_list(
     configuration.repo_dir,
@@ -459,7 +479,7 @@ with open(tracts_file) as f:
 tract_patch_futures = []
 for tract_id_unstripped in tract_lines:
     tract_id = tract_id_unstripped.strip()
-    logger.info("process tract {}".format(tract_id))
+    logger.info("WFLOW: process tract {}".format(tract_id))
 
     # assemble a patch list for this tract, as in setup_patch
     patches_file = "{repo_dir}/rerun/{rerun}/patches-for-tract-{tract}.list".format(tract=tract_id, repo_dir=configuration.repo_dir, rerun=rerun3)
@@ -517,7 +537,7 @@ tract_patch_visit_futures = []
 for tract_id_unstripped in tract_lines:
     tract_id = tract_id_unstripped.strip()
 
-    logger.info("generating visit list for patches in tract {}".format(tract_id))
+    logger.info("WFLOW: generating visit list for patches in tract {}".format(tract_id))
 
     # TODO: this filename should be coming from a File output object from
     # the earlier futures, and not hardcoded here and in patch list generator.
@@ -532,12 +552,12 @@ for tract_id_unstripped in tract_lines:
 
     for patch_id_unstripped in patch_lines:
         patch_id = patch_id_unstripped.strip()
-        logger.info("generating visit list for tract {} patch {}".format(tract_id, patch_id))
+        logger.info("WFLOW: generating visit list for tract {} patch {}".format(tract_id, patch_id))
 
         this_patch_futures = []
 
         for filter_id in ["g", "r", "i", "z", "y", "u"]:
-            logger.info("generating visit list for tract {} patch {} filter {}".format(tract_id, patch_id, filter_id))
+            logger.info("WFLOW: generating visit list for tract {} patch {} filter {}".format(tract_id, patch_id, filter_id))
 
             filename_patch_id = patch_id.replace(" ", "-").replace("(", "").replace(")", "")  # remove shell-fussy characters for filename. this avoids shell escaping. be careful that this still generates unique filenames.
             visit_file = "{repo_dir}/rerun/{rerun}/visits-for-tract-{tract_id}-patch-{filename_patch_id}-filter-{filter_id}.list".format(repo_dir=configuration.repo_dir, rerun=rerun3, tract_id=tract_id, patch_id=patch_id, filename_patch_id=filename_patch_id, filter_id=filter_id)
@@ -591,4 +611,4 @@ concurrent.futures.wait(terminal_futures)
 [future.result() for future in terminal_futures]
 
 
-logger.info("Reached the end of the parsl driver for DM pipeline")
+logger.info("WFLOW: Reached the end of the parsl driver for DM pipeline")
