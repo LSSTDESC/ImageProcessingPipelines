@@ -54,7 +54,7 @@ rerun5 = rerun4 + "." + rerun5_name
 
 logger = logging.getLogger("parsl.dm")
 
-parsl.set_stream_logger()
+parsl.set_stream_logger(level=logging.INFO)    ## Make console log a bit less verbose with "INFO"
 
 logger.info("WFLOW: Parsl driver for DM pipeline")
 
@@ -121,7 +121,7 @@ lsst_app = bash_app(executors=["batch-1"],
 # sounds like it needs images to have been imported first so that the sky
 # map covers the right amount of the sky. Is that the case here? is so,
 # there needs to be a new dependency added.
-###OLD## @bash_app(executors=["batch-1"], cache=True, ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+###OLD## @bash_app(executors=["batch-1"], cache=True, ignore_for_cache=["stdout", "stderr", "wrap"])
 @lsst_app
 def make_sky_map(repo_dir, rerun, stdout=None, stderr=None, wrap=None):
     return wrap("makeSkyMap.py {} --rerun {}".format(repo_dir, rerun))
@@ -384,7 +384,7 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
     pass
 
 
-logger.info("WFLOW: Waiting for completion of all "+str(nvisits)+" sensor/raft-oriented tasks")
+logger.info("WFLOW: Waiting for completion of all sensor/raft oriented tasks associated with "+str(nvisits)+" visits")
 
 # wait for them all to complete ...
 concurrent.futures.wait(visit_futures)
@@ -522,13 +522,13 @@ def visits_for_tract_patch_filter(repo_dir, rerun, tract_id, patch_id,
 
 
 
-@bash_app(executors=["batch-1"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+@bash_app(executors=["batch-1"], cache=True,  ignore_for_cache=["stdout", "stderr", "wrap"])
 def coadd_driver(repo_dir, rerun, tract_id, patch_id, filter_id, visit_file, inputs=None, stdout=None, stderr=None, wrap=None):
     # TODO: what does --doraise mean?
     return wrap("coaddDriver.py {repo_dir} --rerun {rerun} --id tract={tract_id} patch='{patch_id}' filter={filter_id} @{visit_file} --cores 1 --batch-type none --doraise --longlog".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, visit_file=visit_file))
 
 
-@bash_app(executors=["batch-1"], cache=True,  ignore_for_checkpointing=["stdout", "stderr", "wrap"])
+@bash_app(executors=["batch-1"], cache=True,  ignore_for_cache=["stdout", "stderr", "wrap"])
 def multiBand_driver(repo_dir, rerun, tract_id, patch_id, inputs=[], stdout=None, stderr=None, wrap=None):
     return wrap("multiBandDriver.py {repo_dir} --rerun {rerun} --id tract={tract_id} patch='{patch_id}' filter=u,g,r,i,z,y --cores 1 --batch-type none --doraise --longlog".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id))
 
