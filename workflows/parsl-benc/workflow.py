@@ -262,7 +262,7 @@ visit_futures = []
 for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
 
     ################################################################
-    if n > 10: break     ## DEBUG: limit number of visits processed
+    if n > 100: break     ## DEBUG: limit number of visits processed
     ################################################################
 
     nvisits += 1
@@ -471,7 +471,13 @@ tract_list_future = make_tract_list(
     stderr=logdir+"make_tract_list.stderr",
     wrap=configuration.wrap)
 
-tract_list_future.result()
+logger.info("WFLOW: Awaiting results from make_tract_list")
+try:
+    tract_list_future.result()
+except:
+    logger.error("WFLOW: Exception with make_tract_list.")
+    ## For the moment, just disregard the presence of failed tasks.
+    pass
 
 with open(tracts_file) as f:
     tract_lines = f.readlines()
@@ -608,7 +614,15 @@ for tract_id_unstripped in tract_lines:
 
 terminal_futures += tract_patch_visit_futures
 concurrent.futures.wait(terminal_futures)
-[future.result() for future in terminal_futures]
+
+logger.info("WFLOW: Awaiting results from terminal_futures")
+try:
+    [future.result() for future in terminal_futures]
+except:
+    logger.error("WFLOW: Exception in terminal_futures.")
+    ## For the moment, just disregard the presence of failed tasks.
+    pass
+
 
 
 logger.info("WFLOW: Reached the end of the parsl driver for DM pipeline")
