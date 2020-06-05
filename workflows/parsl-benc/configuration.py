@@ -20,6 +20,7 @@ class WorkflowConfig:
     ingest_source: str
     trim_ingest_list: int
     repo_dir: str
+    rerun_prefix: str
     root_softs: str
     wrap: Callable[[str], str]
     wrap_sql: Callable[[str], str]
@@ -67,7 +68,7 @@ cori_queue_executor = HighThroughputExecutor(
     heartbeat_threshold=180,      ## time-out betweeen batch and local nodes
     provider=SlurmProvider(
         "None",                   ## cori queue/partition/qos
-        nodes_per_block=20,       ## nodes per batch job
+        nodes_per_block=2,       ## nodes per batch job
         exclusive=True,
         init_blocks=0,            ## blocks (batch jobs) to start with (on spec)
         min_blocks=0,
@@ -88,12 +89,12 @@ cori_shifter_debug_config = WorkflowConfig(
     trim_ingest_list = None,
 
   # this is the butler repo to use
-#  repo_dir="/global/cscratch1/sd/bxc/parslTest/test0",
+#    repo_dir="/global/cscratch1/sd/bxc/parslTest/test0",
 #    repo_dir = "/global/cscratch1/sd/descdm/tomTest/DRPtest1",
     repo_dir = "/global/cscratch1/sd/descdm/tomTest/end2endr",
 
-# The 'rerun' directory within the DM repository
-#    rerun="RunJ",
+# A prefix for the 'rerun' directories within the DM repository
+    rerun_prefix="G14-",
 
 #  root_softs="/global/homes/b/bxc/dm/",
     root_softs="/global/homes/d/descdm/tomTest/DRPtest/",

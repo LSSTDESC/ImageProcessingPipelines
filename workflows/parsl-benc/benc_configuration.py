@@ -63,9 +63,11 @@ cori_queue_executor = HighThroughputExecutor(
                 cmd_timeout=60,
                 walltime=walltime,
                 worker_init=worker_init,
-                parallelism=1.0/(64.0 * compute_nodes) # number of workers that will run in a block
+                parallelism=1.0
             ),
         )
+
+local_executor = ThreadPoolExecutor(max_threads=2, label="submit-node")
 
 def wrap_no_op(s):
     return s
@@ -89,7 +91,7 @@ cori_shifter_debug_config = WorkflowConfig(
   wrap=wrap_shifter_container,
   wrap_sql=wrap_no_op,
 
-  parsl_config=Config(executors=[cori_queue_executor],
+  parsl_config=Config(executors=[cori_queue_executor, local_executor],
                       app_cache=True, checkpoint_mode='task_exit',
                       checkpoint_files=get_all_checkpoints(),
                       retries=2,

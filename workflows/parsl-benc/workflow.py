@@ -22,6 +22,13 @@ import ingest
 ##### FLAGS ######
 doIngest = False     # skip the ingest step (if repo already in place)
 
+## Establish logging
+logger = logging.getLogger("parsl.dm")
+parsl.set_stream_logger(level=logging.INFO)    ## Make console log a bit less verbose with "INFO"
+logger.info("WFLOW: Parsl driver for DM pipeline")
+
+## Read in workflow configuration
+configuration = configuration.load_configuration()
 
 # TODO:
 # restarts by reruns
@@ -45,28 +52,21 @@ rerun3_name = "R3-3"  # ... etc
 rerun4_name = "R4-1"
 rerun5_name = "R5-1"
 
-rerun1 = rerun1_name
+rerun1 = configuration.rerun_prefix+rerun1_name
 rerun2 = rerun1 + "." + rerun2_name
 rerun3 = rerun2 + "." + rerun3_name
 rerun4 = rerun3 + "." + rerun4_name
 rerun5 = rerun4 + "." + rerun5_name
+logger.info("WFLOW: Output to rerun/"+rerun1+" (etc)")
 
-
-logger = logging.getLogger("parsl.dm")
-
-parsl.set_stream_logger(level=logging.INFO)    ## Make console log a bit less verbose with "INFO"
-
-logger.info("WFLOW: Parsl driver for DM pipeline")
-
-configuration = configuration.load_configuration()
-
+## Initialize Parsl
 parsl.load(configuration.parsl_config)
 
 # tell wrapper about parsl run_dir which isn't decided until
 # after parsl.load()
 configuration.wrap = functools.partial(configuration.wrap,
                                        run_dir=parsl.dfk().run_dir)
-
+# Define Parsl log directory
 logdir = parsl.dfk().run_dir + "/dm-logs/"
 logger.info("WFLOW: Log directory is " + logdir)
 
@@ -262,7 +262,7 @@ visit_futures = []
 for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
 
     ################################################################
-    if n > 100: break     ## DEBUG: limit number of visits processed
+    if n > 5: break     ## DEBUG: limit number of visits processed
     ################################################################
 
     nvisits += 1
