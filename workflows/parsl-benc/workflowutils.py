@@ -20,4 +20,5 @@ def wrap_shifter_container(cmd: str, run_dir: str = "./") -> str:
     return "echo $(date) wrap-shifter: about to start shifter; shifter --image=lsstdesc/desc-drp-stack:v19-dc2-run2.2-v1 {workflow_src_dir}/container-inner.sh {cwd} {cmd}".format(workflow_src_dir = workflow_src_dir, cmd=cmdfile, cwd=os.getcwd())
 
 
-#    return "echo $(date) wrap-shifter: about to start shifter; shifter --image=lsstdesc/stack:w_2019_19-dc2_run2.1i-v1 {workflow_src_dir}/container-inner.sh {cwd} {cmd}".format(workflow_src_dir = workflow_src_dir, cmd=cmdfile, cwd=os.getcwd())
+    ## Old shifter image for Run 2.1i
+    #return "echo $(date) wrap-shifter: about to start shifter; shifter --image=lsstdesc/stack:w_2019_19-dc2_run2.1i-v1 {workflow_src_dir}/container-inner.sh {cwd} {cmd}".format(workflow_src_dir = workflow_src_dir, cmd=cmdfile, cwd=os.getcwd())

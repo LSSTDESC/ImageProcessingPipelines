@@ -94,7 +94,7 @@ cori_shifter_debug_config = WorkflowConfig(
     repo_dir = "/global/cscratch1/sd/descdm/tomTest/end2endr",
 
 # A prefix for the 'rerun' directories within the DM repository
-    rerun_prefix="G14-",
+    rerun_prefix="G15-",
 
 #  root_softs="/global/homes/b/bxc/dm/",
     root_softs="/global/homes/d/descdm/tomTest/DRPtest/",
