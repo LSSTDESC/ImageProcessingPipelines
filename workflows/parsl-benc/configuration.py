@@ -22,6 +22,7 @@ class WorkflowConfig:
     repo_dir: str
     rerun_prefix: str
     root_softs: str
+    dm_root: str
     wrap: Callable[[str], str]
     wrap_sql: Callable[[str], str]
     parsl_config: Config
@@ -88,15 +89,20 @@ cori_shifter_debug_config = WorkflowConfig(
     ingest_source="/global/projecta/projectdirs/lsst/production/DC2_ImSim/Run2.1.1i/sim/agn-test",
     trim_ingest_list = None,
 
-  # this is the butler repo to use
-#    repo_dir="/global/cscratch1/sd/bxc/parslTest/test0",
-#    repo_dir = "/global/cscratch1/sd/descdm/tomTest/DRPtest1",
+    # this is the butler repo to use
+    #    repo_dir="/global/cscratch1/sd/bxc/parslTest/test0",
+    #    repo_dir = "/global/cscratch1/sd/descdm/tomTest/DRPtest1",
     repo_dir = "/global/cscratch1/sd/descdm/tomTest/end2endr",
 
-# A prefix for the 'rerun' directories within the DM repository
+    # A prefix for the 'rerun' directories within the DM repository
     rerun_prefix="G15-",
 
-#  root_softs="/global/homes/b/bxc/dm/",
+    # This is the location of the DM stack within the docker image
+    dm_root="/opt/lsst/software/stack",
+
+    ## This is the location of non-DM stack software needed by the workflow
+    ## The SRS workflow may have added such software to its own task config area
+    #  root_softs="/global/homes/b/bxc/dm/",
     root_softs="/global/homes/d/descdm/tomTest/DRPtest/",
   # what is ROOT_SOFTS in general? this has come from the SRS workflow,
   # probably the path to this workflow's repo, up one level.

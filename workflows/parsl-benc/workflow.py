@@ -221,17 +221,17 @@ def raft_list_for_visit(repo_dir, visit_id, out_filename,
 # original ingest list might change? would need eg "files in each visit"
 # list to generate a per-visit input "version" id/hash
 @lsst_app
-def check_ccd_astrometry(root_softs, repo_dir, rerun, visit, inputs=[],
+def check_ccd_astrometry(dm_root, repo_dir, rerun, visit, inputs=[],
                          stderr=None, stdout=None, wrap=None):
     # inputs=[] ignored but used for dependency handling
     ##### Old checkCcdAstrometry.py from private IPP instance
     #    return wrap("{root_softs}/ImageProcessingPipelines/python/util/checkCcdAstrometry.py {repo_dir}/rerun/{rerun} --id visit={visit} --loglevel CameraMapper=warn".format(visit=visit, rerun=rerun, repo_dir=repo_dir, root_softs=root_softs))
-    ##### (6/11/2020) New checkCcdAstrometry.py now part of the docker/shifter image
-    return wrap("checkCcdAstrometry.py {repo_dir}/rerun/{rerun} "
+    return wrap("{dm_root}/ImageProcessingPipelines/python/util/checkCcdAstrometry.py {repo_dir}/rerun/{rerun} "
                 "--id visit={visit} "
                 "--loglevel CameraMapper=warn".format(visit=visit,
                                                       rerun=rerun,
-                                                      repo_dir=repo_dir))
+                                                      repo_dir=repo_dir,
+                                                      dm_root=dm_root))
 
 # the parsl checkpointing for this won't detect if we ingested more stuff
 # to do with the specified visit - see comments for check_ccd_astrometry
@@ -352,7 +352,7 @@ for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
 
     check_ccd_stdbase = "check_ccd_astrometry.{}".format(visit_id)
     fut_check_ccd = check_ccd_astrometry(
-        configuration.root_softs,
+        configuration.dm_root,
         configuration.repo_dir,
         rerun3,
         visit_id,

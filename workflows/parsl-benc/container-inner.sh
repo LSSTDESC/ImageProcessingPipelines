@@ -4,7 +4,8 @@ echo $(date) wrap-shifter: just inside shifter
 cd $1
 shift
 
-source /opt/lsst/software/stack/loadLSST.bash
+export DM_ROOT=/opt/lsst/software/stack
+source $DM_ROOT/loadLSST.bash
 setup lsst_distrib
 setup obs_lsst
 
