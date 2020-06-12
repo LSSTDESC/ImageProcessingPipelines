@@ -17,7 +17,7 @@ def wrap_shifter_container(cmd: str, run_dir: str = "./") -> str:
         pass
 
     ## 6/5/2020 - New shifter image for Run 2.2i
-    return "echo $(date) wrap-shifter: about to start shifter; shifter --image=lsstdesc/desc-drp-stack:latest {workflow_src_dir}/container-inner.sh {cwd} {cmd}".format(workflow_src_dir = workflow_src_dir, cmd=cmdfile, cwd=os.getcwd())
+    return "echo $(date) wrap-shifter: about to start shifter; shifter --image=lsstdesc/desc-drp-stack:v19-dc2-run2.2-v2 {workflow_src_dir}/container-inner.sh {cwd} {cmd}".format(workflow_src_dir = workflow_src_dir, cmd=cmdfile, cwd=os.getcwd())
 
 
     ## Old shifter image for Run 2.1i
