@@ -57,7 +57,7 @@ cori_queue_executor = HighThroughputExecutor(
     label='batch-1',
     address=address_by_hostname(),
     worker_debug=True,
-    max_workers=30,               ## workers(user tasks)/node
+    max_workers=20,               ## workers(user tasks)/node
     #cores_per_worker=30,          ## threads/user task
 
     # this overrides the default HighThroughputExecutor process workers
@@ -90,12 +90,12 @@ cori_shifter_debug_config = WorkflowConfig(
     trim_ingest_list = None,
 
     # this is the butler repo to use
-    #    repo_dir="/global/cscratch1/sd/bxc/parslTest/test0",
+    #    repo_dir = "/global/cscratch1/sd/bxc/parslTest/test0",
     #    repo_dir = "/global/cscratch1/sd/descdm/tomTest/DRPtest1",
-    repo_dir = "/global/cscratch1/sd/descdm/tomTest/end2endr",
-
+    #    repo_dir = "/global/cscratch1/sd/descdm/tomTest/end2endr",
+    repo_dir = "/global/cscratch1/sd/descdm/DC2/Run2.2i-parsl/v19.0.0-v1",
     # A prefix for the 'rerun' directories within the DM repository
-    rerun_prefix="G15-",
+    rerun_prefix="G20-",
 
     # This is the location of the DM stack within the docker image
     dm_root="/opt/lsst/software/stack",
