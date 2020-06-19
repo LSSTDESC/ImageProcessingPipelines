@@ -53,7 +53,7 @@ export OMP_NUM_THREADS=1
 """.format(workflow_cwd=workflow_cwd, workflow_src_dir=workflow_src_dir)
 
 
-cori_queue_executor = HighThroughputExecutor(
+cori_knl_1 = HighThroughputExecutor(
     label='batch-1',
     address=address_by_hostname(),
     worker_debug=True,
@@ -82,6 +82,42 @@ cori_queue_executor = HighThroughputExecutor(
         worker_init=worker_init
     ),
 )
+
+
+cori_knl_2 = HighThroughputExecutor(
+    label='batch-2',
+    address=address_by_hostname(),
+    worker_debug=True,
+    max_workers=200,               ## workers(user tasks)/node
+    #cores_per_worker=30,          ## threads/user task
+
+    # this overrides the default HighThroughputExecutor process workers
+    # with process workers run inside the appropriate shifter container
+    # with lsst setup commands executed. That means that everything
+    # running in those workers will inherit the correct environment.
+
+    heartbeat_period=60,
+    heartbeat_threshold=180,      ## time-out betweeen batch and local nodes
+    provider=SlurmProvider(
+        "None",                   ## cori queue/partition/qos
+        nodes_per_block=1,       ## nodes per batch job
+        exclusive=True,
+        init_blocks=0,            ## blocks (batch jobs) to start with (on spec)
+        min_blocks=0,
+        max_blocks=1,             ## max # of batch jobs
+        parallelism=0,            ## >0 causes multiple batch jobs, even for simple WFs
+        scheduler_options="""#SBATCH --constraint=knl\n#SBATCH --qos=premium""",  ## cori queue
+        launcher=SrunLauncher(overrides='-K0 -k --slurmd-debug=verbose'),
+        cmd_timeout=300,          ## timeout (sec) for slurm commands (NERSC can be slow)
+        walltime="4:00:00",
+        worker_init=worker_init
+    ),
+)
+
+
+
+
+
 
 local_executor = ThreadPoolExecutor(max_threads=2, label="submit-node")
 
@@ -116,7 +152,7 @@ cori_shifter_debug_config = WorkflowConfig(
     wrap_sql=wrap_shifter_container,
 
     parsl_config=Config(
-        executors=[local_executor, cori_queue_executor],
+        executors=[local_executor, cori_knl_1, cori_knl_2],
         app_cache=True,
         checkpoint_mode='task_exit',
         checkpoint_files=get_all_checkpoints(),
