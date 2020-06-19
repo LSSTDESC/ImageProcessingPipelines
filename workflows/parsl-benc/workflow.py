@@ -50,11 +50,11 @@ configuration = configuration.load_configuration()
 
 # The rerun name for each step should include the previous steps, automatically
 # so the step 6 rerun will be long.
-rerun1_name = "R1-1"  # contains outputs of: ingest and skymap
-rerun2_name = "R2-1"  # contains outputs of: singleFrameDriver
-rerun3_name = "R3-3"  # ... etc
-rerun4_name = "R4-1"
-rerun5_name = "R5-1"
+rerun1_name = "1"  # contains outputs of: ingest and skymap
+rerun2_name = "2"  # contains outputs of: singleFrameDriver
+rerun3_name = "3"  # ... etc
+rerun4_name = "4"
+rerun5_name = "5"
 
 rerun1 = configuration.rerun_prefix+rerun1_name
 rerun2 = rerun1 + "." + rerun2_name
@@ -605,7 +605,7 @@ tract_patch_visit_futures = []
 ntracts=0
 for tract_id_unstripped in tract_lines:
     ntracts += 1
-    if ntracts > 1: break     #################################### FOR DEVELOPMENT ONLY ###########################
+    #if ntracts > 1: break     #################################### FOR DEVELOPMENT ONLY ###########################
     tract_id = tract_id_unstripped.strip()
 
     logger.info("WFLOW: generating visit list for patches in tract {}".format(tract_id))
@@ -685,6 +685,7 @@ terminal_futures += tract_patch_visit_futures
 concurrent.futures.wait(terminal_futures)
 
 logger.info("WFLOW: Awaiting results from terminal_futures")
+logger.info("WFLOW: #tracts = "+str(ntracts)+", #patches = "+str(npatches))
 try:
     [future.result() for future in terminal_futures]
 except:
