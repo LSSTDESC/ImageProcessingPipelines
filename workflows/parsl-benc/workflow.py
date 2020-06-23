@@ -22,8 +22,10 @@ import ingest
 
 
 ##### PROCESSING FLAGS ######
-doIngest = False     # perform the ingest step, if True
-doSensor = False     # perform sensor/raft level processing, if True
+doIngest = False     # switch to perform the ingest step, if True
+doSkyMap = False     # switch to perform sky map creation
+doSensor = False     # switch to perform sensor/raft level processing, if True
+doSqlite = True     # switch to perform the surprisingly time-consuming sqlite queries against the tracts_mapping db
 #############################
 
 
@@ -139,17 +141,24 @@ def make_sky_map(repo_dir, rerun, stdout=None, stderr=None, wrap=None):
 
 
 # TODO: this can run in parallel with ingest
-logger.info("WFLOW: launching makeSkyMap")
-skymap_future = make_sky_map(configuration.repo_dir, rerun1,
-                             stdout=logdir+"make_sky_map.stdout",
-                             stderr=logdir+"make_sky_map.stderr",
-                             wrap=configuration.wrap)
+if doSkyMap:
+    logger.info("WFLOW: launching makeSkyMap")
+    skymap_future = make_sky_map(configuration.repo_dir, rerun1,
+                                 stdout=logdir+"make_sky_map.stdout",
+                                 stderr=logdir+"make_sky_map.stderr",
+                                 wrap=configuration.wrap)
+else:
+    logger.warning("WFLOW: skipping makeSkyMap step")
+    pass
+
 
 
 if doIngest:
     logger.info("WFLOW: waiting for ingest(s) to complete")
     ingest_future.result()
     logger.info("WFLOW: ingest(s) completed")
+else:
+    logger.warning("WFLOW: skip data ingest.")
     pass
 
 
@@ -401,7 +410,7 @@ if doSensor:
         visit_futures.append(fut_tract2visit)
 
         # TODO: visitAnlysis.py for stream and visit - this involves sqlite
-        pass
+        pass   ## End of loop over rafts
 
 
     logger.info("WFLOW: Waiting for completion of all sensor/raft oriented tasks associated with "+str(nvisits)+" visits")
@@ -422,7 +431,7 @@ if doSensor:
         logger.error("WFLOW: There were one or more exceptions.")
         ## For the moment, just disregard the presence of failed tasks.
         pass
-    pass
+    pass   ## End of loop over visits
 else:
     logger.info("WFLOW: Skipping sensor/raft level processing")
     pass
@@ -438,6 +447,9 @@ else:
 ####################################################################################################
 ####################################################################################################
 logger.info("WFLOW: Begin processing tracts/patches")
+
+
+
 
 ####################################################################################################
 ##
@@ -458,6 +470,7 @@ rerun3 = 'run2.2i-calexp-v1'
 ## Define the beginning and ending visitIDs for DC2 Year 1 data
 vStart = 230
 vEnd = 262622
+
 ####################################################################################################
 
 
@@ -518,80 +531,91 @@ def make_patch_list_for_tract(repo_dir, rerun, tract, vStart, vEnd, patches_file
 
 
 
-logger.info("WFLOW: Make tract list")
 tracts_file = "{repo_dir}/rerun/{rerun}/tracts.list".format(repo_dir=configuration.repo_dir, rerun=rerunM)
-tract_list_future = make_tract_list(
-    configuration.repo_dir,
-    rerunM,
-    vStart,
-    vEnd,
-    tracts_file,
-    stdout=logdir+"make_tract_list.stdout",
-    stderr=logdir+"make_tract_list.stderr",
-    wrap=configuration.wrap)
 
-logger.info("WFLOW: Awaiting results from make_tract_list")
-try:
-    tract_list_future.result()
-except:
-    logger.error("WFLOW: Exception with make_tract_list.")
-    ## For the moment, just disregard the presence of failed tasks.
-    pass
 
-with open(tracts_file) as f:
-    tract_lines = f.readlines()
-
-tract_patch_futures = []
-for tract_id_unstripped in tract_lines:
-    tract_id = tract_id_unstripped.strip()
-    logger.info("WFLOW: process tract {}".format(tract_id))
-
-    # assemble a patch list for this tract, as in setup_patch
-    patches_file = "{repo_dir}/rerun/{rerun}/patches-for-tract-{tract}.list".format(tract=tract_id, repo_dir=configuration.repo_dir, rerun=rerunM)
-    tract_patch_futures.append(make_patch_list_for_tract(
+if doSqlite:
+    logger.info("WFLOW: Make tract list")
+    tract_list_future = make_tract_list(
         configuration.repo_dir,
         rerunM,
-        tract_id,
         vStart,
         vEnd,
-        patches_file,
-        stdout=logdir+"make_patch_list_for_tract_{}.stdout".format(tract_id),
-        stderr=logdir+"make_patch_list_for_tract_{}.stderr".format(tract_id),
-        wrap=configuration.wrap_sql))
+        tracts_file,
+        stdout=logdir+"make_tract_list.stdout",
+        stderr=logdir+"make_tract_list.stderr",
+        wrap=configuration.wrap)
 
-# instead of this wait(), make downstream depend on File objects that
-# are the patch list.
-concurrent.futures.wait(tract_patch_futures)
+    logger.info("WFLOW: Awaiting results from make_tract_list")
+    try:
+        tract_list_future.result()
+    except:
+        logger.error("WFLOW: Exception with make_tract_list.")
+        ## For the moment, just disregard the presence of failed tasks.
+        pass
 
-# for each tract, for each patch, generate a list of visits that
-# overlap this tract/patch from the tract db - see srs/pipe_setups/?sky_corr
+    with open(tracts_file) as f:
+        tract_lines = f.readlines()
+        pass
+    
+    tract_patch_futures = []
+    for tract_id_unstripped in tract_lines:
+        tract_id = tract_id_unstripped.strip()
+        logger.info("WFLOW: process tract {}".format(tract_id))
 
-# so we can generate this list once we have all the patch information, even
-# if the final image processing steps haven't happened for a particular visit;
-# as long as we then somehow # depend on the processing for that visit
-# completing before we do the coadd.
+        # assemble a patch list for this tract, as in setup_patch
+        patches_file = "{repo_dir}/rerun/{rerun}/patches-for-tract-{tract}.list".format(tract=tract_id, repo_dir=configuration.repo_dir, rerun=rerunM)
+        tract_patch_futures.append(make_patch_list_for_tract(
+            configuration.repo_dir,
+            rerunM,
+            tract_id,
+            vStart,
+            vEnd,
+            patches_file,
+            stdout=logdir+"make_patch_list_for_tract_{}.stdout".format(tract_id),
+            stderr=logdir+"make_patch_list_for_tract_{}.stderr".format(tract_id),
+            wrap=configuration.wrap_sql))
+        pass
+    # instead of this wait(), make downstream depend on File objects that
+    # are the patch list.
+    concurrent.futures.wait(tract_patch_futures)
 
-# doing this as a separate loop from the above loop rather than doing something useful with dependencies is ugly.
+    # for each tract, for each patch, generate a list of visits that
+    # overlap this tract/patch from the tract db - see srs/pipe_setups/?sky_corr
+
+    # so we can generate this list once we have all the patch information, even
+    # if the final image processing steps haven't happened for a particular visit;
+    # as long as we then somehow # depend on the processing for that visit
+    # completing before we do the coadd.
+
+    # doing this as a separate loop from the above loop rather than doing something useful with dependencies is ugly.
 
 
-@lsst_app2
-def visits_for_tract_patch_filter(repo_dir, rerun, tract_id, patch_id,
-                                  filter_id, vStart, vEnd, visit_file,
-                                  stdout=None, stderr=None, wrap=None):
+    @lsst_app2
+    def visits_for_tract_patch_filter(repo_dir, rerun, tract_id, patch_id,
+                                      filter_id, vStart, vEnd, visit_file,
+                                      stdout=None, stderr=None, wrap=None):
     # TODO: set_coaddDriver treats filter_id differently here:
     # it takes a *list* of filters not a single filter, and generates
     # SQL from that somehow. Ask Johann about it? Is there some
     # non-trivial interaction of multiple filters here?
-    sql = "SELECT DISTINCT visit FROM overlaps WHERE tract={tract_id} AND filter='{filter_id}' AND patch=\'{patch_id}\' and visit >= {vStart} and visit <= {vEnd};".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, vStart=vStart, vEnd=vEnd)
-    return wrap('sqlite3 "file:{repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3?mode=ro" "{sql}" > {visit_file}'.format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, sql=sql, visit_file=visit_file))
+        sql = "SELECT DISTINCT visit FROM overlaps WHERE tract={tract_id} AND filter='{filter_id}' AND patch=\'{patch_id}\' and visit >= {vStart} and visit <= {vEnd};".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, vStart=vStart, vEnd=vEnd)
+        ## sqlite returns a list of visitIDs, one per line.  This needs to be converted into a single line of the form:
+        ##     --selectID visit=<visitID1>^<visitID2>^...
+        return wrap('sqlite3 "file:{repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3?mode=ro" "{sql}"  | tr \'\n\' \'^\' | sed s\'/.$//\' | sed \'s/^/--selectId visit=/\' > {visit_file}'.format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, sql=sql, visit_file=visit_file))
 
-
+else:
+    logger.info("Skipping SQLite3 block")
+    with open(tracts_file) as f:
+        tract_lines = f.readlines()
+        pass
+    pass ## End of doSqlite block
 
 
 @lsst_app1
 def coadd_driver(repo_dir, rerun, tract_id, patch_id, filter_id, visit_file, inputs=None, stdout=None, stderr=None, wrap=None):
     # TODO: what does --doraise mean?
-    return wrap("coaddDriver.py {repo_dir} --rerun {rerun} --id tract={tract_id} patch='{patch_id}' filter={filter_id} @{visit_file} --cores 1 --batch-type none --doraise --longlog".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, visit_file=visit_file))
+    return wrap("coaddDriver.py {repo_dir} --rerun {rerun} --id tract={tract_id} patch='{patch_id}' filter={filter_id} --selectId visit=@{visit_file} --cores 1 --batch-type none --doraise --longlog --calib {repo_dir}/CALIB".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, visit_file=visit_file))
 
 
 
@@ -602,9 +626,9 @@ def multiBand_driver(repo_dir, rerun, tract_id, patch_id, inputs=[], stdout=None
 
 tract_patch_visit_futures = []
 ntracts=0
+npatches=0
 for tract_id_unstripped in tract_lines:
     ntracts += 1
-    #if ntracts > 1: break     #################################### FOR DEVELOPMENT ONLY ###########################
     tract_id = tract_id_unstripped.strip()
 
     logger.info("WFLOW: generating visit list for patches in tract {}".format(tract_id))
@@ -621,10 +645,10 @@ for tract_id_unstripped in tract_lines:
         patch_lines = f.readlines()
         pass
 
-    npatches=0
+    npatches_per_tract=0
     for patch_id_unstripped in patch_lines:
         npatches += 1
-        #if npatches > 1: break     #################################### FOR DEVELOPMENT ONLY ###########################
+        npatches_per_tract += 1
         patch_id = patch_id_unstripped.strip()
         logger.info("WFLOW: generating visit list for tract {} patch {}".format(tract_id, patch_id))
 
@@ -633,17 +657,31 @@ for tract_id_unstripped in tract_lines:
         for filter_id in ["g", "r", "i", "z", "y", "u"]:
             logger.info("WFLOW: generating visit list for tract {} patch {} filter {}".format(tract_id, patch_id, filter_id))
 
-            filename_patch_id = patch_id.replace(" ", "-").replace("(", "").replace(")", "")  # remove shell-fussy characters for filename. this avoids shell escaping. be careful that this still generates unique filenames.
+            filename_patch_id = patch_id.replace(" ", "-").replace("(", "").replace(")", "").replace(",","")  # remove shell-fussy characters for filename. this avoids shell escaping. be careful that this still generates unique filenames.
             visit_file = "{repo_dir}/rerun/{rerun}/visits-for-tract-{tract_id}-patch-{filename_patch_id}-filter-{filter_id}.list".format(repo_dir=configuration.repo_dir, rerun=rerunM, tract_id=tract_id, patch_id=patch_id, filename_patch_id=filename_patch_id, filter_id=filter_id)
-            fut = visits_for_tract_patch_filter(configuration.repo_dir, rerunM, tract_id, patch_id, filter_id,vStart,vEnd,
-                                                visit_file,
-                                                stdout=logdir+"visit_for_tract_{}_patch_{}_filter_{}.stdout".format(tract_id, patch_id, filter_id),
-                                                stderr=logdir+"visit_for_tract_{}_patch_{}_filter_{}.stderr".format(tract_id, patch_id, filter_id),
-                                                wrap=configuration.wrap_sql)
-            # TODO: this visit_file should become an input/output File object to give the dependency instead of relying on 'fut'
 
-            # the visit_file is sometimes empty - we could optimise away a singularity+coadd driver launch by only submitting that task if the file isn't empty (see monadic behaviour: but Maybe style do/don't, rather than []-style "how many?")
-            fut2 = coadd_driver(configuration.repo_dir, rerun3 + ":" + rerun4, tract_id, patch_id, filter_id, visit_file, inputs=[fut],
+            ## Slight variation depending on whether the sqlite query results have already been produced
+            if doSqlite:
+                fut = visits_for_tract_patch_filter(configuration.repo_dir, rerunM, tract_id, patch_id, filter_id,vStart,vEnd,
+                                                    visit_file,
+                                                    stdout=logdir+"visit_for_tract_{}_patch_{}_filter_{}.stdout".format(tract_id, patch_id, filter_id),
+                                                    stderr=logdir+"visit_for_tract_{}_patch_{}_filter_{}.stderr".format(tract_id, patch_id, filter_id),
+                                                    wrap=configuration.wrap_sql)
+                # TODO: this visit_file should become an input/output File
+                # object to give the dependency instead of relying on
+                # 'fut'
+
+                # the visit_file is sometimes empty - we could optimise
+                # away a singularity+coadd driver launch by only
+                # submitting that task if the file isn't empty (see
+                # monadic behaviour: but Maybe style do/don't, rather than
+                # []-style "how many?")
+                iList = [fut]
+            else:
+                iList = []
+                pass
+                
+            fut2 = coadd_driver(configuration.repo_dir, rerun3 + ":" + rerun4, tract_id, patch_id, filter_id, visit_file, inputs=iList,
                                 stdout=logdir+"coadd_for_tract_{}_patch_{}_filter_{}.stdout".format(tract_id, patch_id, filter_id),
                                 stderr=logdir+"coadd_for_tract_{}_patch_{}_filter_{}.stderr".format(tract_id, patch_id, filter_id),
                                 wrap=configuration.wrap)
@@ -652,11 +690,17 @@ for tract_id_unstripped in tract_lines:
             # so for each of those files, launch coadd for this
             # tract/patch/filter
 
-            # filt=u has different processing here that i'm not sure why... looks like stuff goes into a different rerun out directory. in workflows/srs/pipe_setups/run_coaddDrive - TODO: ask johann what the reasoning for that is.  I want to try do different stuff with rerun directories anyway.
+            # filt=u has different processing here that i'm not sure
+            # why... looks like stuff goes into a different rerun out
+            # directory. in workflows/srs/pipe_setups/run_coaddDrive -
+            # TODO: ask johann what the reasoning for that is.  I want
+            # to try do different stuff with rerun directories anyway.
 
             #    coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog
 
             this_patch_futures.append(fut2)
+            break ################################################### DEVELOPMENT ONLY!
+            pass  ## end of loop over filters
 
         fut3 = multiBand_driver(configuration.repo_dir, rerun4 + ":" + rerun5, tract_id, patch_id, inputs=this_patch_futures,
                                 stdout=logdir+"multiband_for_tract_{}_patch_{}.stdout".format(tract_id, patch_id),
@@ -664,6 +708,10 @@ for tract_id_unstripped in tract_lines:
                                 wrap=configuration.wrap)
 
         tract_patch_visit_futures.append(fut3)
+        break ################################################### DEVELOPMENT ONLY!
+        pass  ## end of loop over patches
+    break ################################################### DEVELOPMENT ONLY!
+    pass  ## end of loop over tracts
 
         # this query is *per filter* which is another dimension of
         # concurrency but also perhaps another dimension of presence of data?
