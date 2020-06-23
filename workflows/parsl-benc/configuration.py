@@ -54,6 +54,7 @@ export OMP_NUM_THREADS=1
 
 
 cori_knl_1 = HighThroughputExecutor(
+    ## This executor is intended for large CPU/memory tasks
     label='batch-1',
     address=address_by_hostname(),
     worker_debug=True,
@@ -69,7 +70,7 @@ cori_knl_1 = HighThroughputExecutor(
     heartbeat_threshold=180,      ## time-out betweeen batch and local nodes
     provider=SlurmProvider(
         "None",                   ## cori queue/partition/qos
-        nodes_per_block=1,       ## nodes per batch job
+        nodes_per_block=40,       ## nodes per batch job
         exclusive=True,
         init_blocks=0,            ## blocks (batch jobs) to start with (on spec)
         min_blocks=0,
@@ -85,6 +86,7 @@ cori_knl_1 = HighThroughputExecutor(
 
 
 cori_knl_2 = HighThroughputExecutor(
+    ## This executor is intended for small CPU/memory tasks
     label='batch-2',
     address=address_by_hostname(),
     worker_debug=True,

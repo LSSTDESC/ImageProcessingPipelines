@@ -602,7 +602,7 @@ if doSqlite:
         sql = "SELECT DISTINCT visit FROM overlaps WHERE tract={tract_id} AND filter='{filter_id}' AND patch=\'{patch_id}\' and visit >= {vStart} and visit <= {vEnd};".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, vStart=vStart, vEnd=vEnd)
         ## sqlite returns a list of visitIDs, one per line.  This needs to be converted into a single line of the form:
         ##     --selectID visit=<visitID1>^<visitID2>^...
-        return wrap('sqlite3 "file:{repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3?mode=ro" "{sql}"  | tr \'\n\' \'^\' | sed s\'/.$//\' | sed \'s/^/--selectId visit=/\' > {visit_file}'.format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, sql=sql, visit_file=visit_file))
+        return wrap('sqlite3 "file:{repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3?mode=ro" "{sql}"  | tr \'\\n\' \'^\' | sed s\'/.$//\' | sed \'s/^/--selectId visit=/\' > {visit_file}'.format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, sql=sql, visit_file=visit_file))
 
 else:
     logger.info("Skipping SQLite3 block")
@@ -699,7 +699,7 @@ for tract_id_unstripped in tract_lines:
             #    coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog
 
             this_patch_futures.append(fut2)
-            break ################################################### DEVELOPMENT ONLY!
+            #break ################################################### DEVELOPMENT ONLY!
             pass  ## end of loop over filters
 
         fut3 = multiBand_driver(configuration.repo_dir, rerun4 + ":" + rerun5, tract_id, patch_id, inputs=this_patch_futures,
@@ -708,9 +708,9 @@ for tract_id_unstripped in tract_lines:
                                 wrap=configuration.wrap)
 
         tract_patch_visit_futures.append(fut3)
-        break ################################################### DEVELOPMENT ONLY!
+        #break ################################################### DEVELOPMENT ONLY!
         pass  ## end of loop over patches
-    break ################################################### DEVELOPMENT ONLY!
+    #break ################################################### DEVELOPMENT ONLY!
     pass  ## end of loop over tracts
 
         # this query is *per filter* which is another dimension of
