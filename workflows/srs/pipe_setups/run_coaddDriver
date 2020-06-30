@@ -12,16 +12,52 @@ echo "Working on TRACT=${TRACT}, PATCH=${PATCH}, FILT=${FILT}"
 visit_file=${FILEDIR}/${TRACT}_${PATCH}_${FILT}_visits.list 
 
 if [ $FILT = u ]; then
-    echo "coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-u --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --longlog --configfile=${OBS_LSST_DIR}/config/coaddDriver_noPSF.py --reuse-outputs-from  all"
-    coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-u --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --longlog --configfile=${OBS_LSST_DIR}/config/coaddDriver_noPSF.py --reuse-outputs-from  all
+    cd $TMPDIR
+    cmd="coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-u --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --longlog --configfile=${OBS_LSST_DIR}/config/coaddDriver_noPSF.py --reuse-outputs-from  all --doraise"
+    echo $cmd;$cmd
+    if [[ $? == 0 ]]; then
+	echo "successful execution of ${cmd}"
+    else 
+	echo "failure in execution of ${cmd}"
+	exit 1
+    fi
+    for patch in ${PATCH//^/ }; do
+	warpdir="${OUT_DIR}/rerun/${RERUN2}-u/deepCoadd/$FILT/$TRACT/$patch"
+	if [[ -d ${warpdir} && -f ${warpdir}/../$patch.fits ]]; then
+    	    echo "removing warps in ${warpdir}"
+    	    #rm -r ${warpdir}
+	fi
+    done
 else
-    echo "coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --longlog --reuse-outputs-from  all"
-    coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --longlog --reuse-outputs-from  all
+    cd ${TMPDIR}
+    cmd="coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --longlog --reuse-outputs-from  all --doraise"
+    echo $cmd;$cmd;
+    if [[ $? == 0 ]]; then
+	echo "successful execution of ${cmd}"
+    else 
+	echo "failure in execution of ${cmd}"
+	exit 1
+    fi
+    for patch in ${PATCH//^/ }; do
+	warpdir="${OUT_DIR}/rerun/${RERUN2}-grizy/deepCoadd/$FILT/$TRACT/$patch"
+        if [[ -d ${warpdir} && -f ${warpdir}/../$patch.fits ]]; then
+            echo "removing warps in ${warpdir}"
+            #rm -r ${warpdir}
+        fi
+    done
 fi
 
-echo "grep \"Caught FitsError while coadding DataId\"  ${JOBCONTROL_LOGFILE}"
-out=`grep  "Caught FitsError while coadding DataId" ${JOBCONTROL_LOGFILE}`
-if [[ ! -z $out ]];then 
-    echo "Traceback detected... exiting with error"
-    exit 1
+mkdir -p ${OUT_DIR}/expmaps/${TRACT} 
+cd ${TMPDIR}
+echo "executing supreme...."
+for p in $(echo ${PATCH} | tr "^" "\n"); do
+    cmd=${ROOT_SOFTS}/bin/supreme_map_patch.py -c ${OUT_DIR}/expmaps/config_quick.yml -r ${OUT_DIR}/rerun/${RERUN2} -t ${TRACT} -f $FILT -p $p -o ${OUT_DIR}/expmaps/${TRACT}/
+    mv *.hs ${OUT_DIR}/expmaps/${TRACT}/.
+    echo $cmd;$cmd
+done
+if [[ $? == 0 ]]; then
+  echo "successful execution of ${cmd}"
+else
+  echo "failure in execution of ${cmd}"
+  exit 1
 fi

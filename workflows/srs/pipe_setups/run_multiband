@@ -8,6 +8,23 @@ then
     /pbs/home/d/descprod/bin/joremon.sh
 fi
 
-cmd="multiBandDriver.py ${OUT_DIR} --rerun ${RERUN2} --id tract=${TRACT} patch=${PATCH} filter=${FILTERS//,/^} --cores=$((NSLOTS+1)) --longlog --reuse-outputs-from  all"
+cd ${TMPDIR}
+cmd="multiBandDriver.py ${OUT_DIR} --rerun ${RERUN2} --id tract=${TRACT} patch=${PATCH} filter=${FILTERS//,/^} --cores=$((NSLOTS+1)) --longlog --reuse-outputs-from  all --doraise"
 echo $cmd;$cmd
 
+if [[ $? == 0 ]]; then
+    rc=0
+    for patch in ${PATCH//^/ }; do
+	outref=${OUT_DIR}/rerun/${RERUN2}/deepCoadd-results/merged/${TRACT}/${patch}/ref-${TRACT}-${patch}.fits
+	if [[ ! -f ${outref} ]]; then
+	    echo "${outref} not found; multiband execution likely failed."
+	    status=1
+	fi
+    done
+    if [[ $rc == 0 ]]; then
+	echo "successful execution of ${cmd}"
+    else
+	echo "failure in execution of ${cmd}" 
+	exit rc
+    fi
+fi

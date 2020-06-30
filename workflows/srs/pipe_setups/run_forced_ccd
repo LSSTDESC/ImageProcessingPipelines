@@ -6,6 +6,7 @@ fi
 DPDD_DIR=${OUT_DIR}/dpdd/${DPDD_TAG}/source_table_summary
 mkdir -p $DPDD_DIR
 
+cd ${TMPDIR}
 forcedPhotCcd.py ${IN_DIR} -j ${NSLOTS} --rerun ${RERUN} --id visit=${VISIT} --timeout 999999999 -C ${ROOT_SOFTS}/ImageProcessingPipelines/config/forcedPhotCcdConfig.py
 
 echo "DPDD : generate files for source table in visit=${VISIT}"

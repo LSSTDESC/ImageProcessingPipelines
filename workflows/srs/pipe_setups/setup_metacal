@@ -23,6 +23,10 @@ fi
 
 echo $patches
 for patch in $patches; do
-    echo pipelineCreateStream task_metacal -1 "DM_SETUP="\""${DM_SETUP}"\"",WORKDIR="\""${WORKDIR}"\"",TRACT="\""${TRACT}"\"",PATCH="\""${patch}"\"""
-    pipelineCreateStream task_metacal -1 "DM_SETUP="\""${DM_SETUP}"\"",WORKDIR="\""${WORKDIR}"\"",TRACT="\""${TRACT}"\"",PATCH="\""${patch}"\"""
+    if [[ ! -f ${OUT_DIR}/rerun/${RERUN2}/deepCoadd-results/merged/${TRACT}/${PATCH}/ngmix-deblended-${TRACT}-${PATCH}.fits ]]; then
+	echo pipelineCreateStream task_metacal -1 "DM_SETUP="\""${DM_SETUP}"\"",WORKDIR="\""${WORKDIR}"\"",TRACT="\""${TRACT}"\"",PATCH="\""${patch}"\"""
+	pipelineCreateStream task_metacal -1 "DM_SETUP="\""${DM_SETUP}"\"",WORKDIR="\""${WORKDIR}"\"",TRACT="\""${TRACT}"\"",PATCH="\""${patch}"\"""
+    else
+	echo "File ${OUT_DIR}/rerun/${RERUN2}/deepCoadd-results/merged/${TRACT}/${PATCH}/ngmix-deblended-${TRACT}-${PATCH}.fits exists; not overwriting;"
+    fi
 done

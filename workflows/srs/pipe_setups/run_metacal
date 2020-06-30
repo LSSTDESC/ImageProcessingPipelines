@@ -23,6 +23,11 @@ else
 	echo "failure in execution of ${cmd}"
 	exit 1
     fi
+    outfile="${OUT_DIR}/rerun/${RERUN2}/deepCoadd-results/merged/${TRACT}/${PATCH}/mcalmax-deblended-${TRACT}-${PATCH}.fits"
+    if [[ ! -f ${outfile} ]]; then
+        echo "${outfile} not created! Exiting...."
+        exit 1
+    fi
 fi
 
 status=`verify_checkpoint run_ngmix`
@@ -39,6 +44,11 @@ else
     else
         echo "failure in execution of ${cmd}"
         exit 1
+    fi
+    outfile="${OUT_DIR}/rerun/${RERUN2}/deepCoadd-results/merged/${TRACT}/${PATCH}/ngmix-deblended-${TRACT}-${PATCH}.fits"
+    if [[ ! -f ${outfile} ]]; then
+	echo "${outfile} not created! Exiting...."
+	exit 1
     fi
 fi
 

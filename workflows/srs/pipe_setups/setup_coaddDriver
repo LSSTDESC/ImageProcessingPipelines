@@ -7,9 +7,12 @@ IFS='^' read -ra array <<< ${PATCH}
 patch_str="(";for d in ${array[@]}; do patch_str+="patch='(${d//,/, })' or ";done
 patch_str=${patch_str::-4}\)
 
+#copy the db locally to avoid hitting the FS
+cp ${OUT_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 ${TMPDIR}/
+
 for FILT in $(echo ${FILTERS} | tr "," "\n")
 do
-    visit_list=`sqlite3 ${OUT_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 "SELECT DISTINCT visit FROM overlaps WHERE tract=${TRACT} and filter='${FILT}' and ${patch_str}"`
+    visit_list=`sqlite3 ${TMPDIR}/tracts_mapping.sqlite3 "SELECT DISTINCT visit FROM overlaps WHERE tract=${TRACT} and filter='${FILT}' and ${patch_str}"`
     echo $visit_list
 
     if [[ -z "${COADD_VISITS}" ]]; then
@@ -17,8 +20,8 @@ do
     else
 	comm -12 <(sort ${COADD_VISITS}) <(sort <<<"${visit_list[*]}")
 	usable_visits=`comm -12 <(sort ${COADD_VISITS}) <(sort <<<"${visit_list[*]}")`
+	echo "usable visits: ${usable_visits}"
     fi
-    echo "usable visits: ${usable_visits}"
 
     if [[ ! -z "${usable_visits}" ]]; then
 	visit_file=${WORKDIR}/${streamID}/${TRACT}_${PATCH}_${FILT}_visits.list
@@ -27,10 +30,18 @@ do
 	fi
 	touch ${visit_file}
 	for line in $usable_visits; do
-	    detector_list=`sqlite3 ${OUT_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 "SELECT DISTINCT detector FROM overlaps WHERE visit=${line} and tract=${TRACT} and filter='${FILT}' and ${patch_str}"`
+	    detector_list=`sqlite3 ${TMPDIR}/tracts_mapping.sqlite3 "SELECT DISTINCT detector FROM overlaps WHERE visit=${line} and tract=${TRACT} and filter='${FILT}' and ${patch_str}"`
 	    #IFS="|" read visit detector <<< $line
 	    for detector in $detector_list; do
-		echo "--selectId visit=$line detector=$detector">>${visit_file}
+		#kludge : check that the sky correction exists
+		visit=$( printf "%08d" $line )
+		det=$( printf "%03d" $detector )
+		dummy=`ls ${OUT_DIR}/rerun/${RERUN1}/calexp_camera/${visit}-${FILT}/*/calexp_camera_${visit}-${FILT}*det${det}.fits`
+		if [[ $? == 0 ]]; then
+		    echo "--selectId visit=$line detector=$detector">>${visit_file}
+		else
+		    echo "discarding visit=$line detector=${detector}"
+		fi
 	    done
 	done
 	echo pipelineCreateStream task_coaddDriver "FILT="\""${FILT}"\"",FILEDIR="\""${FILEDIR}"\"""
@@ -39,3 +50,10 @@ do
 	echo "No visit match the requested tract/patch/filter"
     fi
 done
+
+if [[ $? == 0 ]]; then
+  echo 'success'
+else
+  echo 'error'
+  exit 1
+fi
