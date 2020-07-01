@@ -12,6 +12,7 @@ import os,sys
 import concurrent.futures
 import functools
 import logging
+import re
 
 import parsl
 from parsl import bash_app
@@ -25,7 +26,7 @@ import ingest
 doIngest = False     # switch to perform the ingest step, if True
 doSkyMap = False     # switch to perform sky map creation
 doSensor = False     # switch to perform sensor/raft level processing, if True
-doSqlite = True     # switch to perform the surprisingly time-consuming sqlite queries against the tracts_mapping db
+doSqlite = False     # switch to perform the surprisingly time-consuming sqlite queries against the tracts_mapping db
 #############################
 
 
@@ -516,7 +517,7 @@ vEnd = 262622
 def make_tract_list(repo_dir, rerun, vStart, vEnd, tracts_file,
                     stdout=None, stderr=None, wrap=None):
     # this comes from srs/pipe_setups/setup_fullcoadd
-    return wrap('sqlite3 {repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "SELECT DISTINCT tract FROM overlaps where visit >= {vStart} and visit <= {vEnd};" > {tracts_file}'.format(repo_dir=repo_dir, rerun=rerun, vStart=vStart, vEnd=vEnd, tracts_file=tracts_file))
+    return wrap('sqlite3 {repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "SELECT DISTINCT tract FROM overlaps where visit >= {vStart} and visit <= {vEnd} sort by tract asc;" > {tracts_file}'.format(repo_dir=repo_dir, rerun=rerun, vStart=vStart, vEnd=vEnd, tracts_file=tracts_file))
 
 
 @lsst_app2
@@ -615,7 +616,7 @@ else:
 @lsst_app1
 def coadd_driver(repo_dir, rerun, tract_id, patch_id, filter_id, visit_file, inputs=None, stdout=None, stderr=None, wrap=None):
     # TODO: what does --doraise mean?
-    return wrap("coaddDriver.py {repo_dir} --rerun {rerun} --id tract={tract_id} patch='{patch_id}' filter={filter_id} --selectId visit=@{visit_file} --cores 1 --batch-type none --doraise --longlog --calib {repo_dir}/CALIB".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, visit_file=visit_file))
+    return wrap("coaddDriver.py {repo_dir} --rerun {rerun} --id tract={tract_id} patch='{patch_id}' filter={filter_id} @{visit_file} --cores 1 --batch-type none --doraise --longlog --calib {repo_dir}/CALIB".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, visit_file=visit_file))
 
 
 
@@ -627,11 +628,29 @@ def multiBand_driver(repo_dir, rerun, tract_id, patch_id, inputs=[], stdout=None
 tract_patch_visit_futures = []
 ntracts=0
 npatches=0
+
+#################################
+### TEST AND DEVELOPMENT ONLY ###
+#################################
+
+tractFavs = [4030,4031,4032,4033,4225,4226,4227,4228,4229,4230,4231,4232,4233,4234,4235,4430,4431,4432,4433,4434,4435,4436,4437,4438,4439,4637,4638,4639,4640,4641,4642,4643,4644,4645,4646,4647]   ## 36 centrally located tracts
+
+tractFavs = [4030,4031]   ## 2 centrally located tracts
+
+logger.warn("WFLOW: Processing only selected tracts: ",tractFavs)
+#################################
+### TEST AND DEVELOPMENT ONLY ###
+#################################
+
+
+
 for tract_id_unstripped in tract_lines:
-    ntracts += 1
     tract_id = tract_id_unstripped.strip()
 
-    logger.info("WFLOW: generating visit list for patches in tract {}".format(tract_id))
+    if not int(tract_id) in tractFavs: continue     ################### TEST AND DEVELOPMENT
+
+    ntracts += 1
+    logger.info("WFLOW: generating patch list for tract {}".format(tract_id))
 
     # TODO: this filename should be coming from a File output object from
     # the earlier futures, and not hardcoded here and in patch list generator.
@@ -644,13 +663,18 @@ for tract_id_unstripped in tract_lines:
     with open(patches_file) as f:
         patch_lines = f.readlines()
         pass
+    nplines = len(patch_lines)
+    logger.info("WFLOW: tract {} contains {} patches".format(tract_id,nplines))
 
     npatches_per_tract=0
     for patch_id_unstripped in patch_lines:
         npatches += 1
         npatches_per_tract += 1
-        patch_id = patch_id_unstripped.strip()
-        logger.info("WFLOW: generating visit list for tract {} patch {}".format(tract_id, patch_id))
+        patch_id = patch_id_unstripped.strip()    ## This form used for sqlite queries, e.g., "(4, 1)"
+        patch_idx = re.sub("[\(\) ]","",patch_id) ## This form used for DM stack tools, e.g., "4,1"
+        patch_idl = re.sub(",","-",patch_idx)     ## This form used for log files, e.g., "4-1"
+        
+        logger.info("WFLOW: generating visit list for tract {} patch {}".format(tract_id, patch_idx))
 
         this_patch_futures = []
 
@@ -681,9 +705,9 @@ for tract_id_unstripped in tract_lines:
                 iList = []
                 pass
                 
-            fut2 = coadd_driver(configuration.repo_dir, rerun3 + ":" + rerun4, tract_id, patch_id, filter_id, visit_file, inputs=iList,
-                                stdout=logdir+"coadd_for_tract_{}_patch_{}_filter_{}.stdout".format(tract_id, patch_id, filter_id),
-                                stderr=logdir+"coadd_for_tract_{}_patch_{}_filter_{}.stderr".format(tract_id, patch_id, filter_id),
+            fut2 = coadd_driver(configuration.repo_dir, rerun3 + ":" + rerun4, tract_id, patch_idx, filter_id, visit_file, inputs=iList,
+                                stdout=logdir+"coadd_for_tract_{}_patch_{}_filter_{}.stdout".format(tract_id, patch_idl, filter_id),
+                                stderr=logdir+"coadd_for_tract_{}_patch_{}_filter_{}.stderr".format(tract_id, patch_idl, filter_id),
                                 wrap=configuration.wrap)
             # now we have a load of files like this:
             #   visits-for-tract-4232-patch-6,-4-filter-g.list
@@ -702,9 +726,9 @@ for tract_id_unstripped in tract_lines:
             #break ################################################### DEVELOPMENT ONLY!
             pass  ## end of loop over filters
 
-        fut3 = multiBand_driver(configuration.repo_dir, rerun4 + ":" + rerun5, tract_id, patch_id, inputs=this_patch_futures,
-                                stdout=logdir+"multiband_for_tract_{}_patch_{}.stdout".format(tract_id, patch_id),
-                                stderr=logdir+"multiband_for_tract_{}_patch_{}.stderr".format(tract_id, patch_id),
+        fut3 = multiBand_driver(configuration.repo_dir, rerun4 + ":" + rerun5, tract_id, patch_idx, inputs=this_patch_futures,
+                                stdout=logdir+"multiband_for_tract_{}_patch_{}.stdout".format(tract_id, patch_idl),
+                                stderr=logdir+"multiband_for_tract_{}_patch_{}.stderr".format(tract_id, patch_idl),
                                 wrap=configuration.wrap)
 
         tract_patch_visit_futures.append(fut3)

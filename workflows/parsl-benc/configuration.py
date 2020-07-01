@@ -59,6 +59,7 @@ cori_knl_1 = HighThroughputExecutor(
     address=address_by_hostname(),
     worker_debug=True,
     max_workers=20,               ## workers(user tasks)/node
+    #max_workers=20,               ## workers(user tasks)/node
     #cores_per_worker=30,          ## threads/user task
 
     # this overrides the default HighThroughputExecutor process workers
@@ -70,7 +71,7 @@ cori_knl_1 = HighThroughputExecutor(
     heartbeat_threshold=180,      ## time-out betweeen batch and local nodes
     provider=SlurmProvider(
         "None",                   ## cori queue/partition/qos
-        nodes_per_block=40,       ## nodes per batch job
+        nodes_per_block=50,       ## nodes per batch job
         exclusive=True,
         init_blocks=0,            ## blocks (batch jobs) to start with (on spec)
         min_blocks=0,
@@ -79,7 +80,7 @@ cori_knl_1 = HighThroughputExecutor(
         scheduler_options="""#SBATCH --constraint=knl\n#SBATCH --qos=premium""",  ## cori queue
         launcher=SrunLauncher(overrides='-K0 -k --slurmd-debug=verbose'),
         cmd_timeout=300,          ## timeout (sec) for slurm commands (NERSC can be slow)
-        walltime="4:00:00",
+        walltime="8:00:00",
         worker_init=worker_init
     ),
 )
