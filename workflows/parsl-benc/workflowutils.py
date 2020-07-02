@@ -22,3 +22,14 @@ def wrap_shifter_container(cmd: str, run_dir: str = "./") -> str:
 
     ## Old shifter image for Run 2.1i
     #return "echo $(date) wrap-shifter: about to start shifter; shifter --image=lsstdesc/stack:w_2019_19-dc2_run2.1i-v1 {workflow_src_dir}/container-inner.sh {cwd} {cmd}".format(workflow_src_dir = workflow_src_dir, cmd=cmdfile, cwd=os.getcwd())
+
+def read_and_strip(filename):
+    """This helper will read a file of lines and return
+    each line stripped of whitespace and line endings.
+    """
+    output = []
+    with open(filename) as f:
+        lines = f.readlines()
+    for line in lines:
+        output.append(line.strip())
+    return output

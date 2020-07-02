@@ -26,6 +26,7 @@ class WorkflowConfig:
     wrap: Callable[[str], str]
     wrap_sql: Callable[[str], str]
     parsl_config: Config
+    obs_lsst_configs: str
     
 def load_configuration():
     if len(sys.argv) < 2:
@@ -125,6 +126,7 @@ cori_knl_2 = HighThroughputExecutor(
 local_executor = ThreadPoolExecutor(max_threads=2, label="submit-node")
 
 cori_shifter_debug_config = WorkflowConfig(
+    obs_lsst_configs="/opt/lsst/software/stack/obs_lsst",
     ingest_source="/global/projecta/projectdirs/lsst/production/DC2_ImSim/Run2.1.1i/sim/agn-test",
     trim_ingest_list = None,
 

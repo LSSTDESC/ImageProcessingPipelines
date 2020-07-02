@@ -19,14 +19,18 @@ from parsl import bash_app
 
 import checkpointutil  # noqa: F401 - for import-time checkpoint config
 import configuration
+import future_combinators
 import ingest
+import tracts
+
+from lsst_apps import lsst_app1, lsst_app2
 
 
 ##### PROCESSING FLAGS ######
 doIngest = False     # switch to perform the ingest step, if True
 doSkyMap = False     # switch to perform sky map creation
 doSensor = False     # switch to perform sensor/raft level processing, if True
-doSqlite = False     # switch to perform the surprisingly time-consuming sqlite queries against the tracts_mapping db
+doSqlite = True     # switch to perform the surprisingly time-consuming sqlite queries against the tracts_mapping db
 #############################
 
 
@@ -103,15 +107,6 @@ else:
     logger.info("WFLOW: Skip ingest")
     pass
 
-
-# This defines a decorator lsst_app which captures the options that
-# most of the core application code will need
-lsst_app1 = bash_app(executors=["batch-1"],
-                    cache=True,
-                    ignore_for_cache=["stdout", "stderr", "wrap"])
-lsst_app2 = bash_app(executors=["batch-2"],
-                    cache=True,
-                    ignore_for_cache=["stdout", "stderr", "wrap"])
 
 # now equivalent of DC2DM_2_SINGLEFRAME_NERSC.xml
 
@@ -517,7 +512,7 @@ vEnd = 262622
 def make_tract_list(repo_dir, rerun, vStart, vEnd, tracts_file,
                     stdout=None, stderr=None, wrap=None):
     # this comes from srs/pipe_setups/setup_fullcoadd
-    return wrap('sqlite3 {repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "SELECT DISTINCT tract FROM overlaps where visit >= {vStart} and visit <= {vEnd} sort by tract asc;" > {tracts_file}'.format(repo_dir=repo_dir, rerun=rerun, vStart=vStart, vEnd=vEnd, tracts_file=tracts_file))
+    return wrap('sqlite3 {repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "SELECT DISTINCT tract FROM overlaps where visit >= {vStart} and visit <= {vEnd} order by tract asc;" > {tracts_file}'.format(repo_dir=repo_dir, rerun=rerun, vStart=vStart, vEnd=vEnd, tracts_file=tracts_file))
 
 
 @lsst_app2
@@ -533,6 +528,14 @@ def make_patch_list_for_tract(repo_dir, rerun, tract, vStart, vEnd, patches_file
 
 
 tracts_file = "{repo_dir}/rerun/{rerun}/tracts.list".format(repo_dir=configuration.repo_dir, rerun=rerunM)
+
+    
+#################################
+### TEST AND DEVELOPMENT ONLY ###
+#################################
+tractFavs = [4030,4031,4032,4033,4225,4226,4227,4228,4229,4230,4231,4232,4233,4234,4235,4430,4431,4432,4433,4434,4435,4436,4437,4438,4439,4637,4638,4639,4640,4641,4642,4643,4644,4645,4646,4647]   ## 36 centrally located tracts
+
+tractFavs = [4030,4031]   ## 2 centrally located tracts
 
 
 if doSqlite:
@@ -558,10 +561,13 @@ if doSqlite:
     with open(tracts_file) as f:
         tract_lines = f.readlines()
         pass
-    
+
+
     tract_patch_futures = []
     for tract_id_unstripped in tract_lines:
         tract_id = tract_id_unstripped.strip()
+        if not int(tract_id) in tractFavs:
+            continue
         logger.info("WFLOW: process tract {}".format(tract_id))
 
         # assemble a patch list for this tract, as in setup_patch
@@ -603,7 +609,7 @@ if doSqlite:
         sql = "SELECT DISTINCT visit FROM overlaps WHERE tract={tract_id} AND filter='{filter_id}' AND patch=\'{patch_id}\' and visit >= {vStart} and visit <= {vEnd};".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, vStart=vStart, vEnd=vEnd)
         ## sqlite returns a list of visitIDs, one per line.  This needs to be converted into a single line of the form:
         ##     --selectID visit=<visitID1>^<visitID2>^...
-        return wrap('sqlite3 "file:{repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3?mode=ro" "{sql}"  | tr \'\\n\' \'^\' | sed s\'/.$//\' | sed \'s/^/--selectId visit=/\' > {visit_file}'.format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, sql=sql, visit_file=visit_file))
+        return wrap('sqlite3 "file:{repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3?mode=ro" "{sql}" > {visit_file} ; cat {visit_file}  | tr \'\\n\' \'^\' | sed s\'/.$//\' | sed \'s/^/--selectId visit=/\' > {visit_file}.selectid'.format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, sql=sql, visit_file=visit_file))
 
 else:
     logger.info("Skipping SQLite3 block")
@@ -628,15 +634,6 @@ def multiBand_driver(repo_dir, rerun, tract_id, patch_id, inputs=[], stdout=None
 tract_patch_visit_futures = []
 ntracts=0
 npatches=0
-
-#################################
-### TEST AND DEVELOPMENT ONLY ###
-#################################
-
-tractFavs = [4030,4031,4032,4033,4225,4226,4227,4228,4229,4230,4231,4232,4233,4234,4235,4430,4431,4432,4433,4434,4435,4436,4437,4438,4439,4637,4638,4639,4640,4641,4642,4643,4644,4645,4646,4647]   ## 36 centrally located tracts
-
-tractFavs = [4030,4031]   ## 2 centrally located tracts
-
 logger.warn("WFLOW: Processing only selected tracts: ",tractFavs)
 #################################
 ### TEST AND DEVELOPMENT ONLY ###
@@ -673,6 +670,8 @@ for tract_id_unstripped in tract_lines:
         patch_id = patch_id_unstripped.strip()    ## This form used for sqlite queries, e.g., "(4, 1)"
         patch_idx = re.sub("[\(\) ]","",patch_id) ## This form used for DM stack tools, e.g., "4,1"
         patch_idl = re.sub(",","-",patch_idx)     ## This form used for log files, e.g., "4-1"
+        if patch_idl != "1-6": # favoured patch handling, for testing
+            continue
         
         logger.info("WFLOW: generating visit list for tract {} patch {}".format(tract_id, patch_idx))
 
@@ -704,11 +703,11 @@ for tract_id_unstripped in tract_lines:
             else:
                 iList = []
                 pass
-                
-            fut2 = coadd_driver(configuration.repo_dir, rerun3 + ":" + rerun4, tract_id, patch_idx, filter_id, visit_file, inputs=iList,
-                                stdout=logdir+"coadd_for_tract_{}_patch_{}_filter_{}.stdout".format(tract_id, patch_idl, filter_id),
-                                stderr=logdir+"coadd_for_tract_{}_patch_{}_filter_{}.stderr".format(tract_id, patch_idl, filter_id),
+               
+            fut2_inner = tracts.coadd_parsl_driver(configuration, rerun3, rerun4, tract_id, patch_idx, filter_id, visit_file, None, inputs=iList,
+                                logbase=logdir+"coadd_for_tract_{}_patch_{}_filter_{}".format(tract_id, patch_idl, filter_id),
                                 wrap=configuration.wrap)
+            fut2 = future_combinators.JoinFuture(fut2_inner)
             # now we have a load of files like this:
             #   visits-for-tract-4232-patch-6,-4-filter-g.list
             # so for each of those files, launch coadd for this
