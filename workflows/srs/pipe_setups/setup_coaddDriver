@@ -16,11 +16,11 @@ do
     echo $visit_list
 
     if [[ -z "${COADD_VISITS}" ]]; then
-	usable_visits=$visit_list
+    	usable_visits=$visit_list
     else
-	comm -12 <(sort ${COADD_VISITS}) <(sort <<<"${visit_list[*]}")
-	usable_visits=`comm -12 <(sort ${COADD_VISITS}) <(sort <<<"${visit_list[*]}")`
-	echo "usable visits: ${usable_visits}"
+	    comm -12 <(sort ${COADD_VISITS}) <(sort <<<"${visit_list[*]}")
+	    usable_visits=`comm -12 <(sort ${COADD_VISITS}) <(sort <<<"${visit_list[*]}")`
+	    echo "usable visits: ${usable_visits}"
     fi
 
     if [[ ! -z "${usable_visits}" ]]; then

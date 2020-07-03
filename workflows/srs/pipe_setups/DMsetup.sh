@@ -73,6 +73,12 @@ else
     setup sims_ci_pipe dc2-run2.2
     cd ${ROOT_SOFTS}/sims_ci_pipe;if [ -d .git ];then git status;fi;cd - 
 
+    echo "setting up dia_pipe"
+    eups undeclare dia_pipe dc2-run2.2
+    eups declare -r $ROOT_SOFTS/dia_pipe dia_pipe dc2-run2.2
+    setup dia_pipe dc2-run2.2
+    cd ${ROOT_SOFTS}/dia_pipe;git status;cd - 
+
     # pipe_analysis not ready for parallel execution
     # echo "setting pipe_analysis for QA"
     # eups undeclare pipe_analysis dc2-run2.1

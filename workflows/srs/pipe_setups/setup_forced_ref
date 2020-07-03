@@ -1,0 +1,47 @@
+#!/bin/bash
+
+WORKDIR=${IN_DIR}/work/${RERUN}/${streamID}/coadd
+mkdir -p ${WORKDIR} 
+pipelineSet WORKDIR ${WORKDIR} 
+export WORKDIR
+
+#check that the skymap is present
+if [ ! -d "$OUT_DIR/rerun/${RERUN2}/deepCoadd" ]; then
+    #deepCoadd dir is created by the first execution of makeSkyMap.py
+    makeSkyMap.py ${IN_DIR} --rerun ${RERUN}
+    cp ${OUT_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 ${OUT_DIR}/rerun/${RERUN2}/tracts_mapping.sqlite3
+    #sed -i -e 's+'${IN_DIR}'+..\/..+g' ${IN_DIR}rerun/$RERUN2/repositoryCfg.yaml
+fi
+
+#Prepare the separate u and grizy reruns that occur in run_coaddDriver
+echo "grep -n ${RERUN2}-u ${OUT_DIR}/rerun/${RERUN2}/repositoryCfg.yaml | cut -f1 -d:"
+already_done=`grep -n ${RERUN2}-u ${OUT_DIR}/rerun/${RERUN2}/repositoryCfg.yaml | cut -f1 -d:`
+echo "test:${already_done}"
+if [[ -z $already_done ]]; then
+    #find where $RERUN1 is mentioned in the yaml file...
+    number=`grep -n ${RERUN1} ${OUT_DIR}/rerun/${RERUN2}/repositoryCfg.yaml | cut -f1 -d:`
+    #...and append the two coaddDriver dedicated dirs after it
+    echo "inserting \"../${RERUN2}-u\" inside ${OUT_DIR}/rerun/${RERUN2}/repositoryCfg.yaml"
+    sed -i "$((number+1))i -\ ../${RERUN2}-u" ${OUT_DIR}/rerun/${RERUN2}/repositoryCfg.yaml
+    echo "inserting \"../${RERUN2}-u\" inside ${OUT_DIR}/rerun/${RERUN2}/repositoryCfg.yaml"
+    sed -i "$((number+2))i -\ ../${RERUN2}-grizy" ${OUT_DIR}/rerun/${RERUN2}/repositoryCfg.yaml
+fi
+
+#retrieve or build the list of tracts
+if [[ -z "${TRACT_FILE}" ]]; then
+    sqlite3 ${OUT_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 "select DISTINCT tract from overlaps;" > ${WORKDIR}/all_tracts.list
+    TRACT_FILE=${WORKDIR}/all_tracts.list
+    export TRACT_FILE
+    pipelineSet TRACT_FILE ${TRACT_FILE}
+fi
+
+while read line; do
+    read TRACT PATCH <<< $line
+    echo $TRACT $PATCH
+    for FILT in $(echo ${FILTERS} | tr "," "\n"); do
+	echo pipelineCreateStream task_forced_ref -1 "FILT="\""${FILT}"\"",DM_SETUP="\""${DM_SETUP}"\"",WORKDIR="\""${WORKDIR}"\"",TRACT="\""${TRACT}"\"",PATCH="\""${PATCH}"\"""
+	pipelineCreateStream task_forced_ref -1 "FILT="\""${FILT}"\"",DM_SETUP="\""${DM_SETUP}"\"",WORKDIR="\""${WORKDIR}"\"",TRACT="\""${TRACT}"\"",PATCH="\""${PATCH}"\"""
+    done
+done < ${TRACT_FILE}
+
+
