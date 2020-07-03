@@ -10,13 +10,24 @@ fi
 
 status=`verify_checkpoint run_deblended`
 if [[ $status = 0 ]]; then
-    echo "skipping bulge-disk ngmix fit and proceeding"
+    echo "skipping metacal and proceeding"
 elif [[ $status = 1 ]]; then
-    echo "halting at bulge-disk ngmix computation"
+    echo "halting metacal computation"
     exit 1
 else
     cmd="processDeblendedCoaddsMetacalMax.py ${OUT_DIR} --rerun ${RERUN} --id tract=${TRACT} patch=${PATCH} filter=g^r^i^z -C ${ROOT_SOFTS}/ImageProcessingPipelines/config/mcal-filters.py -C ${ROOT_SOFTS}/ImageProcessingPipelines/config/ngmix-deblended-mcalmax.py"
     echo $cmd;$cmd;
+    if [ $? -eq 0 ]; then
+	echo "successful execution of ${cmd}"
+    else
+	echo "failure in execution of ${cmd}"
+	exit 1
+    fi
+    outfile="${OUT_DIR}/rerun/${RERUN2}/deepCoadd-results/merged/${TRACT}/${PATCH}/mcalmax-deblended-${TRACT}-${PATCH}.fits"
+    if [[ ! -f ${outfile} ]]; then
+        echo "${outfile} not created! Exiting...."
+        exit 1
+    fi
 fi
 
 status=`verify_checkpoint run_ngmix`
@@ -28,6 +39,17 @@ elif [[ $status = 1 ]]; then
 else
     cmd="processDeblendedCoaddsNGMixMax.py ${OUT_DIR} --rerun ${RERUN} --id tract=${TRACT} patch=${PATCH} filter=g^r^i^z -C ${ROOT_SOFTS}/ImageProcessingPipelines/config/mcal-filters.py -C ${ROOT_SOFTS}/ImageProcessingPipelines/config/ngmix-deblended-bd.py"
     echo $cmd;$cmd;
+    if [ $? -eq 0 ]; then
+        echo "successful execution of ${cmd}"
+    else
+        echo "failure in execution of ${cmd}"
+        exit 1
+    fi
+    outfile="${OUT_DIR}/rerun/${RERUN2}/deepCoadd-results/merged/${TRACT}/${PATCH}/ngmix-deblended-${TRACT}-${PATCH}.fits"
+    if [[ ! -f ${outfile} ]]; then
+	echo "${outfile} not created! Exiting...."
+	exit 1
+    fi
 fi
 
 status=`verify_checkpoint run_metacal_dpdd`
@@ -38,12 +60,12 @@ elif [[ $status = 1 ]]; then
     exit 1
 else
     DC2PROD="${ROOT_SOFTS}/DC2-production/scripts"
-if [[ -z ${DPDD_TAG} ]]; then
-    DPDD_TAG=${RERUN}
-fi
-DPDD_DIR=${OUT_DIR}/dpdd/${RERUN}/metacal_table_summary/
-mkdir -p $DPDD_DIR
-cmd="python ${DC2PROD}/make_metacal_catalog.py ${OUT_DIR}/rerun/${RERUN2} ${TRACT} -p ${PATCH} -o ${DPDD_DIR}"
-echo $cmd;$cmd;
+    if [[ -z ${DPDD_TAG} ]]; then
+	DPDD_TAG=${RERUN}
+    fi
+    DPDD_DIR=${OUT_DIR}/dpdd/${DPDD_TAG}/metacal_table_summary/
+    mkdir -p $DPDD_DIR
+    cmd="python ${DC2PROD}/make_metacal_catalog.py ${OUT_DIR}/rerun/${RERUN2} ${TRACT} -p ${PATCH} -o ${DPDD_DIR}"
+    echo $cmd;$cmd;
 fi
 

@@ -13,34 +13,22 @@ if [[ $PATCH = "" ]]; then
    PATCH=`sqlite3 ${IN_DIR}/rerun/${RERUN1}/tracts_mapping.sqlite3 "select DISTINCT patch from overlaps WHERE tract=${TRACT};"`
    #remove the space inside the patch pair
    patches="${PATCH//[\ ()]/}"
-else
-    #replace carets with spaces so that patches can be looped over
-    patches="${PATCH//^/ }"
+   #concatenate pairs with the ^
+   echo $patches > tmpfile; patches=`cat tmpfile`;rm tmpfile;PATCH="${patches//\ /^}"
 fi
+echo $PATCH
 
-patch_str=""
-count=0
 if [[ -z $MAX_PATCH_NB ]]; then
     MAX_PATCH_NB=2;
 fi
+count=$(( 4*${MAX_PATCH_NB} ))
+fold -b${count} <<< $PATCH > tmpfile
+while read patch; do
+    #remove trailing ^ if any
+    patch=${patch%^}
+    echo pipelineCreateStream task_coadd_tract_patch -1 "DM_SETUP="\""${DM_SETUP}"\"",WORKDIR="\""${WORKDIR}"\"",TRACT="\""${TRACT}"\"",PATCH="\""${patch}"\"""
+    pipelineCreateStream task_coadd_tract_patch -1 "DM_SETUP="\""${DM_SETUP}"\"",WORKDIR="\""${WORKDIR}"\"",TRACT="\""${TRACT}"\"",PATCH="\""${patch}"\"""
+done < tmpfile
+rm tmpfile
 
-echo $patches
-for patch in $patches; do
-    if [ "$patch_str" = "" ]; then
-        patch_str=$patch
-    else
-        patch_str=$patch_str^$patch
-    fi
-    count=$((count + 1))
-    if [ "$count" = "${MAX_PATCH_NB}" ]; then
-	echo pipelineCreateStream task_coadd_tract_patch -1 "DM_SETUP="\""${DM_SETUP}"\"",WORKDIR="\""${WORKDIR}"\"",TRACT="\""${TRACT}"\"",PATCH="\""${patch_str}"\"""
-	pipelineCreateStream task_coadd_tract_patch -1 "DM_SETUP="\""${DM_SETUP}"\"",WORKDIR="\""${WORKDIR}"\"",TRACT="\""${TRACT}"\"",PATCH="\""${patch_str}"\"""
-	idx=$((idx + 1))
-	count=0
-	patch_str=""
-    fi
-done
-if [[ ! -z $patch_str ]]; then
-    echo pipelineCreateStream task_coadd_tract_patch -1 "DM_SETUP="\""${DM_SETUP}"\"",WORKDIR="\""${WORKDIR}"\"",TRACT="\""${TRACT}"\"",PATCH="\""${patch_str}"\"""
-    pipelineCreateStream task_coadd_tract_patch -1 "DM_SETUP="\""${DM_SETUP}"\"",WORKDIR="\""${WORKDIR}"\"",TRACT="\""${TRACT}"\"",PATCH="\""${patch_str}"\"""
-fi
+[[ $? == 0 ]] && echo "success" || (echo 'error'; exit 1)

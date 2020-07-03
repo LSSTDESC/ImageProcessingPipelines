@@ -18,6 +18,7 @@ elif [[ $status = 1 ]]; then
     exit 1
 else
     echo "Running singleFrameDriver.py"
+    cd ${TMPDIR}
     singleFrameDriver.py ${IN_DIR} --rerun ${RERUN1} --id visit=${VISIT}  --cores $((NSLOTS+1)) --timeout 99999999 --loglevel CameraMapper=warn
 
     echo "Running checCcdAstrometry.py"
@@ -60,6 +61,5 @@ elif [[ $status = 1 ]]; then
 else
     SFPDIR=/sps/lsst/users/descprod/web/LSST/DESC/DC2/Pipeline/SFP/${RERUN1}
     mkdir -p ${SFPDIR}
-    BASENAME="${SFPDIR}/sfp-${VISIT}"
-    make_sfp_validation_plots.py --pickle_file ${BASENAME}.pkl --outfile ${BASENAME}.png --metrics_file ${BASENAME}-metrics.pkl ${IN_DIR}/rerun/${RERUN1} ${VISIT}
+    make_sfp_validation_plots.py --outdir ${SFPDIR} ${IN_DIR}/rerun/${RERUN1} ${VISIT}
 fi
