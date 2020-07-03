@@ -18,7 +18,7 @@ if [[ $? == 0 ]]; then
 	outref=${OUT_DIR}/rerun/${RERUN2}/deepCoadd-results/merged/${TRACT}/${patch}/ref-${TRACT}-${patch}.fits
 	if [[ ! -f ${outref} ]]; then
 	    echo "${outref} not found; multiband execution likely failed."
-	    status=1
+	    rc=1
 	fi
     done
     if [[ $rc == 0 ]]; then
