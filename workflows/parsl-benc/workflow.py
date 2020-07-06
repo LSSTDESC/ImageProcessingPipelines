@@ -536,6 +536,7 @@ tracts_file = "{repo_dir}/rerun/{rerun}/tracts.list".format(repo_dir=configurati
 tractFavs = [4030,4031,4032,4033,4225,4226,4227,4228,4229,4230,4231,4232,4233,4234,4235,4430,4431,4432,4433,4434,4435,4436,4437,4438,4439,4637,4638,4639,4640,4641,4642,4643,4644,4645,4646,4647]   ## 36 centrally located tracts
 
 tractFavs = [4030,4031]   ## 2 centrally located tracts
+tractFavs = [4030]   ## 2 centrally located tracts
 
 
 if doSqlite:
