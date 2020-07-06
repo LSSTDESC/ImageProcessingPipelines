@@ -71,7 +71,7 @@ def coadd_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_id, f
         input_deps=[]
         if visit_futs:
             input_deps.append(visit_futs[visit])
-        per_visit_futures.append(make_coadd_temp_exp(repo_dir, rerun_in + ":" + rerun_out, tract_id, patch_id_no_parens, filter_id, visit, inputs=input_deps, obs_lsst_configs=configuration.obs_lsst_configs, wrap=wrap, stdout="{logbase}-visit-{visit}.stdout".format(logbase=logbase, visit=visit), stderr="{logbase}-visit-{visit}.stderr".format(logbase=logbase, visit=visit)))
+        per_visit_futures.append(make_coadd_temp_exp(repo_dir, rerun_in, rerun_out, tract_id, patch_id_no_parens, filter_id, visit, inputs=input_deps, obs_lsst_configs=configuration.obs_lsst_configs, wrap=wrap, stdout="{logbase}-visit-{visit}.stdout".format(logbase=logbase, visit=visit), stderr="{logbase}-visit-{visit}.stderr".format(logbase=logbase, visit=visit)))
 
     fut2 = assemble_coadd(repo_dir, rerun_out, tract_id, patch_id_no_parens, filter_id, visit_ids_for_dm, inputs=per_visit_futures, obs_lsst_configs=configuration.obs_lsst_configs, wrap=wrap, stdout="{logbase}.assemble_coadd.stdout".format(logbase=logbase), stderr="{logbase}.assemble_coadd.stderr".format(logbase=logbase))
 
@@ -80,12 +80,16 @@ def coadd_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_id, f
     return fut3
 
 @lsst_app1
-def make_coadd_temp_exp(repo_dir, rerun, tract_id, patch_id, filter_id, visit_id, obs_lsst_configs, inputs=None, wrap=None):
-    return wrap("makeCoaddTempExp.py {repo_dir} --rerun {rerun} --id tract={tract_id} patch='{patch_id}' filter={filter_id} --selectId visit={visit_id} --configfile {obs_lsst_configs}/makeCoaddTempExp.py --calib {repo_dir}/CALIB".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, visit_id=visit_id, obs_lsst_configs=obs_lsst_configs))
+def make_coadd_temp_exp(repo_dir, rerun_in, rerun_out, tract_id, patch_id, filter_id, visit_id, obs_lsst_configs, inputs=None, wrap=None):
+    f = "makeCoaddTempExp.py {repo_dir}/rerun/{rerun_in} --output {repo_dir}/rerun/{rerun_out} --id tract={tract_id} patch='{patch_id}' filter={filter_id} --selectId visit={visit_id} --configfile {obs_lsst_configs}/makeCoaddTempExp.py --calib {repo_dir}/CALIB".format(repo_dir=repo_dir, rerun_in=rerun_in, rerun_out=rerun_out, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, visit_id=visit_id, obs_lsst_configs=obs_lsst_configs)
+    w = wrap(f)
+    return w
 
 @lsst_app1
 def assemble_coadd(repo_dir, rerun, tract_id, patch_id, filter_id, visit_ids_for_dm, obs_lsst_configs, inputs=None, wrap=None):
-    return wrap("assembleCoadd.py {repo_dir} --rerun {rerun} --id tract={tract_id} patch='{patch_id}' filter={filter_id} --selectId visit={visit_ids_for_dm}  --configfile {obs_lsst_configs}/assembleCoadd.py --calib {repo_dir}/CALIB".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, visit_ids_for_dm=visit_ids_for_dm, obs_lsst_configs=obs_lsst_configs))
+    f = "assembleCoadd.py {repo_dir}/rerun/{rerun} --output {repo_dir}/rerun/{rerun} --id tract={tract_id} patch='{patch_id}' filter={filter_id} --selectId visit={visit_ids_for_dm}  --configfile {obs_lsst_configs}/assembleCoadd.py --calib {repo_dir}/CALIB".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, visit_ids_for_dm=visit_ids_for_dm, obs_lsst_configs=obs_lsst_configs)
+    w = wrap(f)
+    return w
 
 @lsst_app1
 def detect_coadd_sources(repo_dir, rerun, tract_id, patch_id, filter_id, visit_ids_for_dm, inputs=None, wrap=None):
