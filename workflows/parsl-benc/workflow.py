@@ -27,10 +27,10 @@ from lsst_apps import lsst_app1, lsst_app2
 
 
 ##### PROCESSING FLAGS ######
-doIngest = False     # switch to perform the ingest step, if True
-doSkyMap = False     # switch to perform sky map creation
-doSensor = False     # switch to perform sensor/raft level processing, if True
-doSqlite = True     # switch to perform the surprisingly time-consuming sqlite queries against the tracts_mapping db
+doIngest = False     # switch to enable the ingest step, if True
+doSkyMap = False     # switch to enable sky map creation
+doSensor = False     # switch to enable sensor/raft level processing, if True
+doSqlite = True     # switch to enable the surprisingly time-consuming sqlite queries against the tracts_mapping db
 #############################
 
 
@@ -634,7 +634,7 @@ def multiBand_driver(repo_dir, rerun, tract_id, patch_id, inputs=[], stdout=None
 tract_patch_visit_futures = []
 ntracts=0
 npatches=0
-logger.warn("WFLOW: Processing only selected tracts: ",tractFavs)
+logger.warn("WFLOW: Processing only selected tracts: ",str(tractFavs))
 #################################
 ### TEST AND DEVELOPMENT ONLY ###
 #################################

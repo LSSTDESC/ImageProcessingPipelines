@@ -72,7 +72,7 @@ cori_knl_1 = HighThroughputExecutor(
     heartbeat_threshold=180,      ## time-out betweeen batch and local nodes
     provider=SlurmProvider(
         "None",                   ## cori queue/partition/qos
-        nodes_per_block=50,       ## nodes per batch job
+        nodes_per_block=2,       ## nodes per batch job
         exclusive=True,
         init_blocks=0,            ## blocks (batch jobs) to start with (on spec)
         min_blocks=0,
@@ -113,7 +113,7 @@ cori_knl_2 = HighThroughputExecutor(
         scheduler_options="""#SBATCH --constraint=knl\n#SBATCH --qos=premium""",  ## cori queue
         launcher=SrunLauncher(overrides='-K0 -k --slurmd-debug=verbose'),
         cmd_timeout=300,          ## timeout (sec) for slurm commands (NERSC can be slow)
-        walltime="4:00:00",
+        walltime="9:00:00",
         worker_init=worker_init
     ),
 )
@@ -136,7 +136,7 @@ cori_shifter_debug_config = WorkflowConfig(
     #    repo_dir = "/global/cscratch1/sd/descdm/tomTest/end2endr",
     repo_dir = "/global/cscratch1/sd/descdm/DC2/Run2.2i-parsl/v19.0.0-v1",
     # A prefix for the 'rerun' directories within the DM repository
-    rerun_prefix="G31-",
+    rerun_prefix="G40-",
 
     # This is the location of the DM stack within the docker image
     dm_root="/opt/lsst/software/stack",
