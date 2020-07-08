@@ -28,7 +28,7 @@ from lsst_apps import lsst_app1, lsst_app2
 
 ##### PROCESSING FLAGS ######
 doIngest = False     # switch to enable the ingest step, if True
-doSkyMap = False     # switch to enable sky map creation
+doSkyMap = False     # switch to enable sky map creation, if True
 doSensor = False     # switch to enable sensor/raft level processing, if True
 doSqlite = True     # switch to enable the surprisingly time-consuming sqlite queries against the tracts_mapping db
 #############################
@@ -457,7 +457,7 @@ logger.info("WFLOW: Begin processing tracts/patches")
 ##      in the "rerun" naming.
 
 ## Override "rerun3" so that it points to the DC2 run 2.2i repo at NERSC
-rerun3 = 'run2.2i-calexp-v1'
+rerun3 = 'run2.2i-calexp-v1-copy'
 
 ##
 ##   2. Another change is the limitation on visitIDs present in the various sql queries.  This is
@@ -533,12 +533,19 @@ tracts_file = "{repo_dir}/rerun/{rerun}/tracts.list".format(repo_dir=configurati
 #################################
 ### TEST AND DEVELOPMENT ONLY ###
 #################################
-tractFavs = [4030,4031,4032,4033,4225,4226,4227,4228,4229,4230,4231,4232,4233,4234,4235,4430,4431,4432,4433,4434,4435,4436,4437,4438,4439,4637,4638,4639,4640,4641,4642,4643,4644,4645,4646,4647]   ## 36 centrally located tracts
+#tractFavs = [4030,4031,4032,4033,4225,4226,4227,4228,4229,4230,4231,4232,4233,4234,4235,4430,4431,4432,4433,4434,4435,4436,4437,4438,4439,4637,4638,4639,4640,4641,4642,4643,4644,4645,4646,4647]   ## 36 centrally located tracts
 
-tractFavs = [4030,4031]   ## 2 centrally located tracts
-tractFavs = [4030]   ## 2 centrally located tracts
+#tractFavs = [4030,4031,4032,4033,4225,4226,4227,4228,4229,4230]   ## 10 centrally located tracts
+tractFavs = [4030,4031,4032,4033,4225]   ## 5 centrally located tracts
+#tractFavs = [4030,4031]   ## 2 centrally located tracts
+#tractFavs = [4030]   ## 1 centrally located tract
+
+#################################
+### TEST AND DEVELOPMENT ONLY ###
+#################################
 
 
+## Extract metadata to drive following DM stack tasks
 if doSqlite:
     logger.info("WFLOW: Make tract list")
     tract_list_future = make_tract_list(
@@ -567,8 +574,7 @@ if doSqlite:
     tract_patch_futures = []
     for tract_id_unstripped in tract_lines:
         tract_id = tract_id_unstripped.strip()
-        if not int(tract_id) in tractFavs:
-            continue
+        if not int(tract_id) in tractFavs: continue  ####### TESTING ONLY #########
         logger.info("WFLOW: process tract {}".format(tract_id))
 
         # assemble a patch list for this tract, as in setup_patch
@@ -608,7 +614,8 @@ if doSqlite:
     # SQL from that somehow. Ask Johann about it? Is there some
     # non-trivial interaction of multiple filters here?
         sql = "SELECT DISTINCT visit FROM overlaps WHERE tract={tract_id} AND filter='{filter_id}' AND patch=\'{patch_id}\' and visit >= {vStart} and visit <= {vEnd};".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, vStart=vStart, vEnd=vEnd)
-        ## sqlite returns a list of visitIDs, one per line.  This needs to be converted into a single line of the form:
+        ## sqlite returns a list of visitIDs, one per line.  This needs to be converted
+        ## into a single line of the form:
         ##     --selectID visit=<visitID1>^<visitID2>^...
         return wrap('sqlite3 "file:{repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3?mode=ro" "{sql}" > {visit_file} ; cat {visit_file}  | tr \'\\n\' \'^\' | sed s\'/.$//\' | sed \'s/^/--selectId visit=/\' > {visit_file}.selectid'.format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, sql=sql, visit_file=visit_file))
 
@@ -620,25 +627,24 @@ else:
     pass ## End of doSqlite block
 
 
-@lsst_app1
-def coadd_driver(repo_dir, rerun, tract_id, patch_id, filter_id, visit_file, inputs=None, stdout=None, stderr=None, wrap=None):
-    # TODO: what does --doraise mean?
-    return wrap("coaddDriver.py {repo_dir} --rerun {rerun} --id tract={tract_id} patch='{patch_id}' filter={filter_id} @{visit_file} --cores 1 --batch-type none --doraise --longlog --calib {repo_dir}/CALIB".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, visit_file=visit_file))
+
+##### (7/6/2020) Rendered obselete by new coadd_parsl_driver in tracts.py
+# @lsst_app1
+# def coadd_driver(repo_dir, rerun, tract_id, patch_id, filter_id, visit_file, inputs=None, stdout=None, stderr=None, wrap=None):
+#     # TODO: what does --doraise mean?
+#     return wrap("coaddDriver.py {repo_dir} --rerun {rerun} --id tract={tract_id} patch='{patch_id}' filter={filter_id} @{visit_file} --cores 1 --batch-type none --doraise --longlog --calib {repo_dir}/CALIB".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, visit_file=visit_file))
 
 
 
 @lsst_app1
 def multiBand_driver(repo_dir, rerun, tract_id, patch_id, inputs=[], stdout=None, stderr=None, wrap=None):
-    return wrap("multiBandDriver.py {repo_dir} --rerun {rerun} --id tract={tract_id} patch='{patch_id}' filter=u,g,r,i,z,y --cores 1 --batch-type none --doraise --longlog".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id))
+    return wrap("multiBandDriver.py {repo_dir} --rerun {rerun} --id tract={tract_id} patch='{patch_id}' filter=u^g^r^i^z^y --cores 1 --batch-type none --doraise --longlog --calib {repo_dir}/CALIB".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id))
 
 
 tract_patch_visit_futures = []
 ntracts=0
 npatches=0
-logger.warn("WFLOW: Processing only selected tracts: ",str(tractFavs))
-#################################
-### TEST AND DEVELOPMENT ONLY ###
-#################################
+logger.warn("WFLOW: Processing only selected tracts: "+str(tractFavs))
 
 
 
@@ -671,8 +677,8 @@ for tract_id_unstripped in tract_lines:
         patch_id = patch_id_unstripped.strip()    ## This form used for sqlite queries, e.g., "(4, 1)"
         patch_idx = re.sub("[\(\) ]","",patch_id) ## This form used for DM stack tools, e.g., "4,1"
         patch_idl = re.sub(",","-",patch_idx)     ## This form used for log files, e.g., "4-1"
-        if patch_idl != "1-6": # favoured patch handling, for testing
-            continue
+        #if patch_idl != "1-6": ######## favoured patch handling, for testing #########
+        #    continue
         
         logger.info("WFLOW: generating visit list for tract {} patch {}".format(tract_id, patch_idx))
 
