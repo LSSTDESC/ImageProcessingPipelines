@@ -14,15 +14,16 @@ from configuration import WorkflowConfig
 from workflowutils import wrap_shifter_container
 
 
-cori_queue = "debug"
+# cori_queue = "debug"
+cori_queue = "priority"
 
 # aside from maxwalltime/discount/queue limit considerations, it is probably
 # better to increase max_blocks rather than compute_nodes to fit into schedule
 # more easily?
 max_blocks = 3
 
-compute_nodes = 8
-walltime = "00:29:30"
+compute_nodes = 1 
+walltime = "04:00:00"
 
 # this is the directory that the workflow is invoked in and is where output
 # files that don't go in the repo should be put.

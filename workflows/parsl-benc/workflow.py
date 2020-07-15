@@ -457,7 +457,7 @@ logger.info("WFLOW: Begin processing tracts/patches")
 ##      in the "rerun" naming.
 
 ## Override "rerun3" so that it points to the DC2 run 2.2i repo at NERSC
-rerun3 = 'run2.2i-calexp-v1-copy'
+rerun3 = 'run2.2i-calexp-v1'
 
 ##
 ##   2. Another change is the limitation on visitIDs present in the various sql queries.  This is
@@ -510,13 +510,13 @@ vEnd = 262622
 
 @lsst_app2
 def make_tract_list(repo_dir, rerun, vStart, vEnd, tracts_file,
-                    stdout=None, stderr=None, wrap=None):
+                    stdout=None, stderr=None, wrap=None, parsl_resource_specification=None):
     # this comes from srs/pipe_setups/setup_fullcoadd
     return wrap('sqlite3 {repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "SELECT DISTINCT tract FROM overlaps where visit >= {vStart} and visit <= {vEnd} order by tract asc;" > {tracts_file}'.format(repo_dir=repo_dir, rerun=rerun, vStart=vStart, vEnd=vEnd, tracts_file=tracts_file))
 
 
 @lsst_app2
-def make_patch_list_for_tract(repo_dir, rerun, tract, vStart, vEnd, patches_file, stdout=None, stderr=None, wrap=None):
+def make_patch_list_for_tract(repo_dir, rerun, tract, vStart, vEnd, patches_file, stdout=None, stderr=None, wrap=None, parsl_resource_specification=None):
     # this comes from srs/pipe_setups/setup_patch
     return wrap('sqlite3 "file:{repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3?mode=ro" "SELECT DISTINCT patch FROM overlaps WHERE tract={tract} and visit >= {vStart} and visit <= {vEnd};" > {patches_file}'.format(repo_dir=repo_dir, rerun=rerun, tract=tract, vStart=vStart, vEnd=vEnd, patches_file=patches_file))
 
@@ -536,9 +536,9 @@ tracts_file = "{repo_dir}/rerun/{rerun}/tracts.list".format(repo_dir=configurati
 #tractFavs = [4030,4031,4032,4033,4225,4226,4227,4228,4229,4230,4231,4232,4233,4234,4235,4430,4431,4432,4433,4434,4435,4436,4437,4438,4439,4637,4638,4639,4640,4641,4642,4643,4644,4645,4646,4647]   ## 36 centrally located tracts
 
 #tractFavs = [4030,4031,4032,4033,4225,4226,4227,4228,4229,4230]   ## 10 centrally located tracts
-tractFavs = [4030,4031,4032,4033,4225]   ## 5 centrally located tracts
+# tractFavs = [4030,4031,4032,4033,4225]   ## 5 centrally located tracts
 #tractFavs = [4030,4031]   ## 2 centrally located tracts
-#tractFavs = [4030]   ## 1 centrally located tract
+tractFavs = [4030]   ## 1 centrally located tract
 
 #################################
 ### TEST AND DEVELOPMENT ONLY ###
@@ -608,7 +608,8 @@ if doSqlite:
     @lsst_app2
     def visits_for_tract_patch_filter(repo_dir, rerun, tract_id, patch_id,
                                       filter_id, vStart, vEnd, visit_file,
-                                      stdout=None, stderr=None, wrap=None):
+                                      stdout=None, stderr=None, wrap=None,
+                                      parsl_resource_specification=None):
     # TODO: set_coaddDriver treats filter_id differently here:
     # it takes a *list* of filters not a single filter, and generates
     # SQL from that somehow. Ask Johann about it? Is there some
@@ -636,9 +637,9 @@ else:
 
 
 
-@lsst_app1
-def multiBand_driver(repo_dir, rerun, tract_id, patch_id, inputs=[], stdout=None, stderr=None, wrap=None):
-    return wrap("multiBandDriver.py {repo_dir} --rerun {rerun} --id tract={tract_id} patch='{patch_id}' filter=u^g^r^i^z^y --cores 1 --batch-type none --doraise --longlog --calib {repo_dir}/CALIB".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id))
+#@lsst_app1
+#def multiBand_driver(repo_dir, rerun, tract_id, patch_id, inputs=[], stdout=None, stderr=None, wrap=None, parsl_resource_specification=None):
+#    return wrap("multiBandDriver.py {repo_dir} --rerun {rerun} --id tract={tract_id} patch='{patch_id}' filter=u^g^r^i^z^y --cores 1 --batch-type none --doraise --longlog --calib {repo_dir}/CALIB".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id))
 
 
 tract_patch_visit_futures = []
@@ -677,8 +678,8 @@ for tract_id_unstripped in tract_lines:
         patch_id = patch_id_unstripped.strip()    ## This form used for sqlite queries, e.g., "(4, 1)"
         patch_idx = re.sub("[\(\) ]","",patch_id) ## This form used for DM stack tools, e.g., "4,1"
         patch_idl = re.sub(",","-",patch_idx)     ## This form used for log files, e.g., "4-1"
-        #if patch_idl != "1-6": ######## favoured patch handling, for testing #########
-        #    continue
+        if patch_idl != "1-6": ######## favoured patch handling, for testing #########
+            continue
         
         logger.info("WFLOW: generating visit list for tract {} patch {}".format(tract_id, patch_idx))
 
@@ -732,9 +733,8 @@ for tract_id_unstripped in tract_lines:
             #break ################################################### DEVELOPMENT ONLY!
             pass  ## end of loop over filters
 
-        fut3 = multiBand_driver(configuration.repo_dir, rerun4 + ":" + rerun5, tract_id, patch_idx, inputs=this_patch_futures,
-                                stdout=logdir+"multiband_for_tract_{}_patch_{}.stdout".format(tract_id, patch_idl),
-                                stderr=logdir+"multiband_for_tract_{}_patch_{}.stderr".format(tract_id, patch_idl),
+        fut3 = tracts.multiband_parsl_driver(configuration, rerun4, rerun5, tract_id, patch_idx, ["u","g", "r", "i", "z", "y"], inputs=this_patch_futures,
+                                logbase=logdir+"multiband_for_tract_{}_patch_{}".format(tract_id, patch_idl),
                                 wrap=configuration.wrap)
 
         tract_patch_visit_futures.append(fut3)
