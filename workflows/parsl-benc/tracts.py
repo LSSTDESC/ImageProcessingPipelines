@@ -128,8 +128,11 @@ def multiband_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_i
 
         measure_futs.append(measure_coadd_sources_fut)
 
+    merge_fut = merge_coadd_measurements(repo_dir, rerun_out, tract_id, patch_id_no_parens, obs_lsst_configs=configuration.obs_lsst_configs, wrap=wrap, inputs=measure_futs, stdout="{logbase}-merge-coadd-measurements.stdout".format(logbase=logbase), stderr="{logbase}-merge-coadd-measurements.stderr".format(logbase=logbase), parsl_resource_specification={"priority":6004})
+
     # TODO: should actually be a combine of the final steps that I haven't implemented yet
-    return combine(inputs=measure_futs)
+    # return combine(inputs=measure_futs)
+    return merge_fut
 
 @lsst_app1
 def merge_coadd_detections(repo_dir, rerun_in, rerun_out, tract_id, patch_id, obs_lsst_configs, wrap, filters, inputs=None, parsl_resource_specification=None):
@@ -142,4 +145,8 @@ def deblend_coadd_sources(repo_dir, rerun, tract_id, patch_id, filter_id, wrap, 
 @lsst_app1
 def measure_coadd_sources(repo_dir, rerun, tract_id, patch_id, filter_id, obs_lsst_configs, wrap, inputs=None, parsl_resource_specification=None):
     return wrap("measureCoaddSources.py {repo_dir} --rerun {rerun} --id tract={tract_id} patch='{patch_id}' filter={filter_id} --configfile {obs_lsst_configs}/measureCoaddSources.py".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, obs_lsst_configs=obs_lsst_configs))
+
+@lsst_app1
+def merge_coadd_measurements(repo_dir, rerun, tract_id, patch_id, obs_lsst_configs, wrap, inputs=None, parsl_resource_specification=None):
+    return wrap("mergeCoaddMeasurements.py {repo_dir}/rerun/{rerun} --output {repo_dir}/rerun/{rerun} --id tract={tract_id} patch='{patch_id}' filter=u^g^r^i^z^y  --configfile {obs_lsst_configs}/mergeCoaddMeasurements.py".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, obs_lsst_configs=obs_lsst_configs))
 
