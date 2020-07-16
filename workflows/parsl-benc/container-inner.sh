@@ -7,7 +7,7 @@ shift
 export DM_ROOT=/opt/lsst/software/stack
 source $DM_ROOT/loadLSST.bash
 setup lsst_distrib
-setup obs_lsst
+setup -r $DM_ROOT/obs_lsst -j
 
 export OMP_NUM_THREADS=1
 

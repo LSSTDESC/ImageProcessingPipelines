@@ -3,6 +3,7 @@ import re
 from workflowutils import read_and_strip
 from more_itertools import intersperse
 from concurrent.futures import Future
+from future_combinators import combine
 
 from parsl import python_app
 
@@ -119,10 +120,26 @@ def multiband_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_i
 
     merge_coadd_det_fut = merge_coadd_detections(repo_dir, rerun_in, rerun_out, tract_id, patch_id_no_parens, obs_lsst_configs = configuration.obs_lsst_configs, filters=filter_ids_for_dm, wrap=wrap, inputs=inputs,  stdout="{logbase}.merge_coadd_detections.stdout".format(logbase=logbase), stderr="{logbase}.merge_coadd_detections.stderr".format(logbase=logbase), parsl_resource_specification={"priority":6001})
 
-    # shoudl return eventual combine... 
-    return merge_coadd_det_fut
+    measure_futs = []
+    for filter_id in filter_list:
+        deblend_coadd_sources_fut = deblend_coadd_sources(repo_dir, rerun_out, tract_id, patch_id_no_parens, filter_id, wrap=wrap, inputs=[merge_coadd_det_fut], stdout="{logbase}-filter-{filter_id}-deblend_coadd_sources.stdout".format(logbase=logbase, filter_id=filter_id), stderr="{logbase}-filter-{filter_id}-deblend_coadd_sources.stderr".format(logbase=logbase, filter_id=filter_id), parsl_resource_specification={"priority":6002} )
+
+        measure_coadd_sources_fut = measure_coadd_sources(repo_dir, rerun_out, tract_id, patch_id_no_parens, filter_id, obs_lsst_configs=configuration.obs_lsst_configs, wrap=wrap, inputs=[deblend_coadd_sources_fut], stdout="{logbase}-filter-{filter_id}-measure_coadd_sources.stdout".format(logbase=logbase, filter_id=filter_id), stderr="{logbase}-filter-{filter_id}-measure_coadd_sources.stderr".format(logbase=logbase, filter_id=filter_id), parsl_resource_specification={"priority":6003})
+
+        measure_futs.append(measure_coadd_sources_fut)
+
+    # TODO: should actually be a combine of the final steps that I haven't implemented yet
+    return combine(inputs=measure_futs)
 
 @lsst_app1
 def merge_coadd_detections(repo_dir, rerun_in, rerun_out, tract_id, patch_id, obs_lsst_configs, wrap, filters, inputs=None, parsl_resource_specification=None):
     return wrap("mergeCoaddDetections.py {repo_dir}/rerun/{rerun_in} --output={repo_dir}/rerun/{rerun_out} --id tract={tract_id} patch='{patch_id}' filter={filters}  --configfile {obs_lsst_configs}/mergeCoaddDetections.py".format(repo_dir=repo_dir, rerun_in=rerun_in, rerun_out=rerun_out, tract_id=tract_id, patch_id=patch_id, obs_lsst_configs=obs_lsst_configs, filters=filters))
+
+@lsst_app1
+def deblend_coadd_sources(repo_dir, rerun, tract_id, patch_id, filter_id, wrap, inputs=None, parsl_resource_specification=None):
+    return wrap("deblendCoaddSources.py {repo_dir} --rerun {rerun} --id tract={tract_id} patch='{patch_id}' filter={filter_id}".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id))
+
+@lsst_app1
+def measure_coadd_sources(repo_dir, rerun, tract_id, patch_id, filter_id, obs_lsst_configs, wrap, inputs=None, parsl_resource_specification=None):
+    return wrap("measureCoaddSources.py {repo_dir} --rerun {rerun} --id tract={tract_id} patch='{patch_id}' filter={filter_id} --configfile {obs_lsst_configs}/measureCoaddSources.py".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, obs_lsst_configs=obs_lsst_configs))
 
