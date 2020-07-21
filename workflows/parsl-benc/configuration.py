@@ -10,7 +10,7 @@ from parsl.executors import ThreadPoolExecutor, HighThroughputExecutor
 from parsl.launchers import SrunLauncher
 from parsl.providers import SlurmProvider
 from parsl.utils import get_all_checkpoints
-from typing import Callable, List
+from typing import Callable, List, Optional
 
 from workflowutils import wrap_shifter_container
 
@@ -25,8 +25,8 @@ class WorkflowConfig:
     visit_max: int
 
     # only tracts contained in the intersection of the skymap and this list
-    # will be processed.
-    tract_subset: List[int]
+    # will be processed. Set to None to process all tracts.
+    tract_subset: Optional[List[int]]
 
     repo_dir: str
     rerun_prefix: str

@@ -498,8 +498,8 @@ if doSqlite:
     tract_patch_futures = []
     for tract_id_unstripped in tract_lines:
         tract_id = tract_id_unstripped.strip()
-        if not int(tract_id) in tract_subset:
-            continue  # TESTING ONLY
+        if tract_subset and not int(tract_id) in tract_subset:
+            continue
         logger.info("WFLOW: process tract {}".format(tract_id))
 
         # assemble a patch list for this tract, as in setup_patch
@@ -558,8 +558,8 @@ logger.warn("WFLOW: Processing only selected tracts: "+str(tract_subset))
 for tract_id_unstripped in tract_lines:
     tract_id = tract_id_unstripped.strip()
 
-    if not int(tract_id) in tract_subset:
-        continue     # TEST AND DEVELOPMENT
+    if tract_subset and not int(tract_id) in tract_subset:
+        continue
 
     ntracts += 1
     logger.info("WFLOW: generating patch list for tract {}".format(tract_id))
