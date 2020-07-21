@@ -81,9 +81,12 @@ rerun3 = rerun2 + "." + rerun3_name
 rerun4 = rerun3 + "." + rerun4_name
 rerun5 = rerun4 + "." + rerun5_name
 
-rerunM = configuration.rerun_prefix+'metadata'
-if not os.path.exists(os.path.join(configuration.repo_dir, 'rerun', rerunM)):
-    os.makedirs(os.path.join(configuration.repo_dir, 'rerun', rerunM))
+# Metadata is stored in the repo rerun subdirectory, but there
+# is nothing "rerun"-like about it.
+
+metadata_dir = os.path.join(configuration.repo_dir, 'rerun', configuration.rerun_prefix+'metadata')
+if not os.path.exists(metadata_dir):
+    os.makedirs(metadata_dir)
 
 logger.info("WFLOW: Output to rerun/"+rerun1+" (etc)")
 
@@ -478,26 +481,25 @@ vEnd = 262622
 
 
 @lsst_app2
-def make_tract_list(repo_dir, rerun, vStart, vEnd, tracts_file,
+def make_tract_list(repo_dir, metadata_dir, visit_min, visit_max, tracts_file,
                     stdout=None, stderr=None, wrap=None, parsl_resource_specification=None):
-    # this comes from srs/pipe_setups/setup_fullcoadd
-    return wrap('sqlite3 {repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3 "SELECT DISTINCT tract FROM overlaps where visit >= {vStart} and visit <= {vEnd} order by tract asc;" > {tracts_file}'.format(repo_dir=repo_dir, rerun=rerun, vStart=vStart, vEnd=vEnd, tracts_file=tracts_file))
+    return wrap('sqlite3 {metadata_dir}/tracts_mapping.sqlite3 "SELECT DISTINCT tract FROM overlaps where visit >= {visit_min} and visit <= {visit_max} order by tract asc;" > {tracts_file}'.format(metadata_dir=metadata_dir, visit_min=visit_min, visit_max=visit_max, tracts_file=tracts_file))
 
 
 @lsst_app2
-def make_patch_list_for_tract(repo_dir, rerun, tract, vStart, vEnd, patches_file, stdout=None, stderr=None, wrap=None, parsl_resource_specification=None):
+def make_patch_list_for_tract(metadata_dir, tract, visit_min, visit_max, patches_file, stdout=None, stderr=None, wrap=None, parsl_resource_specification=None):
     # this comes from srs/pipe_setups/setup_patch
-    return wrap('sqlite3 "file:{repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3?mode=ro" "SELECT DISTINCT patch FROM overlaps WHERE tract={tract} and visit >= {vStart} and visit <= {vEnd};" > {patches_file}'.format(repo_dir=repo_dir, rerun=rerun, tract=tract, vStart=vStart, vEnd=vEnd, patches_file=patches_file))
+    return wrap('sqlite3 "file:{metadata_dir}/tracts_mapping.sqlite3?mode=ro" "SELECT DISTINCT patch FROM overlaps WHERE tract={tract} and visit >= {visit_min} and visit <= {visit_max};" > {patches_file}'.format(metadata_dir=metadata_dir, tract=tract, visit_min=visit_min, visit_max=visit_max, patches_file=patches_file))
 
 
-tracts_file = "{repo_dir}/rerun/{rerun}/tracts.list".format(repo_dir=configuration.repo_dir, rerun=rerunM)
+tracts_file = "{metadata_dir}/tracts.list".format(repo_dir=configuration.repo_dir, metadata_dir=metadata_dir)
 
 # Extract metadata to drive following DM stack tasks
 if doSqlite:
     logger.info("WFLOW: Make tract list")
     tract_list_future = make_tract_list(
         configuration.repo_dir,
-        rerunM,
+        metadata_dir,
         vStart,
         vEnd,
         tracts_file,
@@ -523,10 +525,9 @@ if doSqlite:
         logger.info("WFLOW: process tract {}".format(tract_id))
 
         # assemble a patch list for this tract, as in setup_patch
-        patches_file = "{repo_dir}/rerun/{rerun}/patches-for-tract-{tract}.list".format(tract=tract_id, repo_dir=configuration.repo_dir, rerun=rerunM)
+        patches_file = "{metadata_dir}/patches-for-tract-{tract}.list".format(tract=tract_id, metadata_dir=metadata_dir)
         tract_patch_futures.append(make_patch_list_for_tract(
-            configuration.repo_dir,
-            rerunM,
+            metadata_dir,
             tract_id,
             vStart,
             vEnd,
@@ -550,19 +551,19 @@ if doSqlite:
     # doing this as a separate loop from the above loop rather than doing something useful with dependencies is ugly.
 
     @lsst_app2
-    def visits_for_tract_patch_filter(repo_dir, rerun, tract_id, patch_id,
-                                      filter_id, vStart, vEnd, visit_file,
+    def visits_for_tract_patch_filter(metadata_dir, tract_id, patch_id,
+                                      filter_id, visit_min, visit_max, visit_file,
                                       stdout=None, stderr=None, wrap=None,
                                       parsl_resource_specification=None):
         # TODO: set_coaddDriver treats filter_id differently here:
         # it takes a *list* of filters not a single filter, and generates
         # SQL from that somehow. Ask Johann about it? Is there some
         # non-trivial interaction of multiple filters here?
-        sql = "SELECT DISTINCT visit FROM overlaps WHERE tract={tract_id} AND filter='{filter_id}' AND patch=\'{patch_id}\' and visit >= {vStart} and visit <= {vEnd};".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, vStart=vStart, vEnd=vEnd)
+        sql = "SELECT DISTINCT visit FROM overlaps WHERE tract={tract_id} AND filter='{filter_id}' AND patch=\'{patch_id}\' and visit >= {visit_min} and visit <= {visit_max};".format(tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, visit_min=visit_min, visit_max=visit_max)
         # sqlite returns a list of visitIDs, one per line.  This needs to be converted
         # into a single line of the form:
         #     --selectID visit=<visitID1>^<visitID2>^...
-        return wrap('sqlite3 "file:{repo_dir}/rerun/{rerun}/tracts_mapping.sqlite3?mode=ro" "{sql}" > {visit_file} ; cat {visit_file}  | tr \'\\n\' \'^\' | sed s\'/.$//\' | sed \'s/^/--selectId visit=/\' > {visit_file}.selectid'.format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, sql=sql, visit_file=visit_file))
+        return wrap('sqlite3 "file:{metadata_dir}/tracts_mapping.sqlite3?mode=ro" "{sql}" > {visit_file} ; cat {visit_file}  | tr \'\\n\' \'^\' | sed s\'/.$//\' | sed \'s/^/--selectId visit=/\' > {visit_file}.selectid'.format(metadata_dir=metadata_dir, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, sql=sql, visit_file=visit_file))
 
 else:
     logger.info("Skipping SQLite3 block")
@@ -587,7 +588,7 @@ for tract_id_unstripped in tract_lines:
 
     # TODO: this filename should be coming from a File output object from
     # the earlier futures, and not hardcoded here and in patch list generator.
-    patches_file = "{repo_dir}/rerun/{rerun}/patches-for-tract-{tract}.list".format(tract=tract_id, repo_dir=configuration.repo_dir, rerun=rerunM)
+    patches_file = "{metadata_dir}/patches-for-tract-{tract}.list".format(tract=tract_id, repo_dir=configuration.repo_dir, metadata_dir=metadata_dir)
 
     # TODO: this idiom of reading and stripping is used in a few places
     #   - factor it
@@ -619,12 +620,11 @@ for tract_id_unstripped in tract_lines:
             # remove shell-fussy characters for filename. this avoids shell escaping. be careful that this still generates unique filenames.
             filename_patch_id = patch_id.replace(" ", "-").replace("(", "").replace(")", "").replace(",", "")
 
-            visit_file = "{repo_dir}/rerun/{rerun}/visits-for-tract-{tract_id}-patch-{filename_patch_id}-filter-{filter_id}.list".format(repo_dir=configuration.repo_dir, rerun=rerunM, tract_id=tract_id, patch_id=patch_id, filename_patch_id=filename_patch_id, filter_id=filter_id)
+            visit_file = "{metadata_dir}/visits-for-tract-{tract_id}-patch-{filename_patch_id}-filter-{filter_id}.list".format(metadata_dir=metadata_dir, tract_id=tract_id, patch_id=patch_id, filename_patch_id=filename_patch_id, filter_id=filter_id)
 
             # Slight variation depending on whether the sqlite query results have already been produced
             if doSqlite:
-                fut = visits_for_tract_patch_filter(configuration.repo_dir,
-                                                    rerunM,
+                fut = visits_for_tract_patch_filter(metadata_dir,
                                                     tract_id,
                                                     patch_id,
                                                     filter_id,
