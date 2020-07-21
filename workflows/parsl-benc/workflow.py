@@ -22,6 +22,7 @@ import ingest
 import tracts
 
 from lsst_apps import lsst_app1, lsst_app2
+from workflowutils import read_and_strip
 
 
 # PROCESSING FLAGS
@@ -276,17 +277,15 @@ if doSensor:
 
     ##########################################################################
 
-    with open(visit_file) as f:
-        visit_lines = f.readlines()
+    visit_lines = read_and_strip(visit_file)
 
     logger.info("WFLOW:  There were "+str(len(visit_lines))+" visits read from "+str(visit_file))
 
     nvisits = 0
     visit_futures = []
-    for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
+    for (n, visit_id) in zip(range(0, len(visit_lines)), visit_lines):
 
         nvisits += 1
-        visit_id = visit_id_unstripped.strip()
 
         if int(visit_id) < visit_min or int(visit_id) > visit_max:
             continue
@@ -314,17 +313,14 @@ if doSensor:
         # a local worker... so avoid doing that.
         # i.e. the monadness
 
-        with open(raft_list_fn) as f:
-            raft_lines = f.readlines()
+        raft_lines = read_and_strip(raft_list_fn)
 
-        rlist = [x.strip() for x in raft_lines]
-        logger.info("WFLOW: => There are " + str(len(rlist)) + " rafts to process:")
-        logger.info("WFLOW: "+str(rlist))
+        logger.info("WFLOW: => There are " + str(len(raft_lines)) + " rafts to process:")
+        logger.info("WFLOW: "+str(raft_lines))
 
         this_visit_single_frame_futs = []
 
-        for (m, raft_name_stripped) in zip(range(0, len(raft_lines)), raft_lines):
-            raft_name = raft_name_stripped.strip()
+        for (m, raft_name) in zip(range(0, len(raft_lines)), raft_lines):
             logger.info("WFLOW: visit {} raft {}".format(visit_id, raft_name))
 
             # this call is based on run_calexp shell script
@@ -491,12 +487,10 @@ if doSqlite:
         logger.error("WFLOW: Exception with make_tract_list.")
         # For the moment, just disregard the presence of failed tasks.
 
-    with open(tracts_file) as f:
-        tract_lines = f.readlines()
+    tract_lines = read_and_strip(tracts_file)
 
     tract_patch_futures = []
-    for tract_id_unstripped in tract_lines:
-        tract_id = tract_id_unstripped.strip()
+    for tract_id in tract_lines:
         if tract_subset and not int(tract_id) in tract_subset:
             continue
         logger.info("WFLOW: process tract {}".format(tract_id))
@@ -544,8 +538,7 @@ if doSqlite:
 
 else:
     logger.info("Skipping SQLite3 block")
-    with open(tracts_file) as f:
-        tract_lines = f.readlines()
+    tract_lines = read_and_strip(tracts_file)
     # End of doSqlite block
 
 
@@ -554,8 +547,7 @@ ntracts = 0
 npatches = 0
 logger.warn("WFLOW: Processing only selected tracts: "+str(tract_subset))
 
-for tract_id_unstripped in tract_lines:
-    tract_id = tract_id_unstripped.strip()
+for tract_id in tract_lines:
 
     if tract_subset and not int(tract_id) in tract_subset:
         continue
@@ -571,17 +563,16 @@ for tract_id_unstripped in tract_lines:
     #   - factor it
     # something like:   for stripped_lines_in_file("filename"):
     # for direct reading from file - where it returns a list...
-    with open(patches_file) as f:
-        patch_lines = f.readlines()
+    patch_lines = read_and_strip(patches_file)
 
     nplines = len(patch_lines)
     logger.info("WFLOW: tract {} contains {} patches".format(tract_id, nplines))
 
     npatches_per_tract = 0
-    for patch_id_unstripped in patch_lines:
+    for patch_id in patch_lines:
         npatches += 1
         npatches_per_tract += 1
-        patch_id = patch_id_unstripped.strip()     # This form used for sqlite queries, e.g., "(4, 1)"
+        # patch_id form used for sqlite queries, e.g., "(4, 1)"
         patch_idx = re.sub("[() ]", "", patch_id)  # This form used for DM stack tools, e.g., "4,1"
         patch_idl = re.sub(",", "-", patch_idx)    # This form used for log files, e.g., "4-1"
         if patch_idl != "1-6":  # favoured patch handling, for testing
