@@ -115,7 +115,6 @@ if doIngest:
     ingest_future = ingest.perform_ingest(configuration, logdir, rerun1)
 else:
     logger.info("WFLOW: Skip ingest")
-    pass
 
 
 # now equivalent of DC2DM_2_SINGLEFRAME_NERSC.xml
@@ -277,7 +276,6 @@ if doSensor:
 
     with open(visit_file) as f:
         visit_lines = f.readlines()
-        pass
 
     logger.info("WFLOW:  There were "+str(len(visit_lines))+" visits read from "+str(visit_file))
 
@@ -317,7 +315,7 @@ if doSensor:
 
         with open(raft_list_fn) as f:
             raft_lines = f.readlines()
-            pass
+
         rlist = [x.strip() for x in raft_lines]
         logger.info("WFLOW: => There are " + str(len(rlist)) + " rafts to process:")
         logger.info("WFLOW: "+str(rlist))
@@ -515,11 +513,9 @@ if doSqlite:
     except Exception:
         logger.error("WFLOW: Exception with make_tract_list.")
         # For the moment, just disregard the presence of failed tasks.
-        pass
 
     with open(tracts_file) as f:
         tract_lines = f.readlines()
-        pass
 
     tract_patch_futures = []
     for tract_id_unstripped in tract_lines:
@@ -540,7 +536,7 @@ if doSqlite:
             stdout=logdir+"make_patch_list_for_tract_{}.stdout".format(tract_id),
             stderr=logdir+"make_patch_list_for_tract_{}.stderr".format(tract_id),
             wrap=configuration.wrap_sql))
-        pass
+
     # instead of this wait(), make downstream depend on File objects that
     # are the patch list.
     concurrent.futures.wait(tract_patch_futures)
@@ -601,7 +597,7 @@ for tract_id_unstripped in tract_lines:
     # for direct reading from file - where it returns a list...
     with open(patches_file) as f:
         patch_lines = f.readlines()
-        pass
+
     nplines = len(patch_lines)
     logger.info("WFLOW: tract {} contains {} patches".format(tract_id, nplines))
 
