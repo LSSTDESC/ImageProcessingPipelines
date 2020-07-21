@@ -174,8 +174,6 @@ if doSensor:
     #  setup_calexp: use DB to make a visit file
     logger.info("WFLOW: Making visit file from raw_visit table")
 
-    # TODO: this is sql so should use the sqlwrapper
-
     @lsst_app2
     def make_visit_file(repo_dir, visit_file, stdout=None, stderr=None, wrap=None):
         return wrap(('sqlite3 {repo_dir}/registry.sqlite3 '
@@ -190,7 +188,7 @@ if doSensor:
         visit_file,
         stdout=logdir+"make_visit_file.stdout",
         stderr=logdir+"make_visit_file.stderr",
-        wrap=configuration.wrap)
+        wrap=configuration.wrap_sql)
 
     logger.info("WFLOW: Waiting for visit list generation to complete")
     visit_file_future.result()
