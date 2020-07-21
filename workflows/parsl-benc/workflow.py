@@ -482,11 +482,7 @@ if doSqlite:
         wrap=configuration.wrap)
 
     logger.info("WFLOW: Awaiting results from make_tract_list")
-    try:
-        tract_list_future.result()
-    except Exception:
-        logger.error("WFLOW: Exception with make_tract_list.")
-        # For the moment, just disregard the presence of failed tasks.
+    tract_list_future.result()
 
     tract_lines = read_and_strip(tracts_file)
 
