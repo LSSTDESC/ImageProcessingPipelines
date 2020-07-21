@@ -74,12 +74,31 @@ rerun2_name = "2"  # contains outputs of: singleFrameDriver
 rerun3_name = "3"  # ... etc
 rerun4_name = "20200716a"
 rerun5_name = "5"
+#
+#   2. Another change is the limitation on visitIDs present in the various sql queries.  This is
+#      to limit the scope of processing to only the Y01 data (the repo contains much more)
+
+# Define the beginning and ending visitIDs for DC2 Year 1 data
+visit_min = 230
+visit_max = 262622
+
 
 rerun1 = configuration.rerun_prefix+rerun1_name
 rerun2 = rerun1 + "." + rerun2_name
 rerun3 = rerun2 + "." + rerun3_name
 rerun4 = rerun3 + "." + rerun4_name
 rerun5 = rerun4 + "." + rerun5_name
+
+# 6/18/2020 IMPORTANT NOTES for DC2 Year 1 (partial) processing:
+#
+#
+#   1. The following code has been changed such that it *only* works for tract/patch processing against
+#      Y01 data repo, i.e., it will no longer perform sensor/raft processing properly due to changes
+#      in the "rerun" naming.
+
+# Override "rerun3" so that it points to the DC2 run 2.2i repo at NERSC
+rerun3 = 'run2.2i-calexp-v1'
+
 
 # Metadata is stored in the repo rerun subdirectory, but there
 # is nothing "rerun"-like about it.
@@ -426,25 +445,6 @@ else:
 
 # The following block performs tract/patch processing
 logger.info("WFLOW: Begin processing tracts/patches")
-
-# 6/18/2020 IMPORTANT NOTES for DC2 Year 1 (partial) processing:
-#
-#
-#   1. The following code has been changed such that it *only* works for tract/patch processing against
-#      Y01 data repo, i.e., it will no longer perform sensor/raft processing properly due to changes
-#      in the "rerun" naming.
-
-# Override "rerun3" so that it points to the DC2 run 2.2i repo at NERSC
-rerun3 = 'run2.2i-calexp-v1'
-
-#
-#   2. Another change is the limitation on visitIDs present in the various sql queries.  This is
-#      to limit the scope of processing to only the Y01 data (the repo contains much more)
-
-# Define the beginning and ending visitIDs for DC2 Year 1 data
-visit_min = 230
-visit_max = 262622
-
 
 # now we can do coadds. This is concurrent by tract, not by visit.
 # information about tracts comes from the result of tract2visit_mapper
