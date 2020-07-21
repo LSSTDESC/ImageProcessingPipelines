@@ -416,11 +416,7 @@ if doSensor:
     # This is a bottleneck for d/s tasks: a single failure will halt the entire workflow
 
     logger.info("WFLOW: Checking results of sensor/raft-oriented tasks")
-    try:
-        [future.result() for future in visit_futures]
-    except Exception:
-        logger.error("WFLOW: There were one or more exceptions.")
-    # End of loop over visits
+    [future.result() for future in visit_futures]
 else:
     logger.info("WFLOW: Skipping sensor/raft level processing")
 
