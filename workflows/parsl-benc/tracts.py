@@ -130,9 +130,12 @@ def multiband_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_i
 
     merge_fut = merge_coadd_measurements(repo_dir, rerun_out, tract_id, patch_id_no_parens, obs_lsst_configs=configuration.obs_lsst_configs, wrap=wrap, inputs=measure_futs, stdout="{logbase}-merge-coadd-measurements.stdout".format(logbase=logbase), stderr="{logbase}-merge-coadd-measurements.stderr".format(logbase=logbase), parsl_resource_specification={"priority":6004})
 
-    # TODO: should actually be a combine of the final steps that I haven't implemented yet
-    # return combine(inputs=measure_futs)
-    return merge_fut
+    forced_phot_coadd_futs = []
+    for filter_id in filter_list:
+        forced_phot_coadd_future = forced_phot_coadd(repo_dir, rerun_out, tract_id, patch_id_no_parens, filter_id, obs_lsst_configs=configuration.obs_lsst_configs, wrap=wrap, inputs=[merge_fut], stdout="{logbase}-filter-{filter_id}-forced_phot_coadd.stdout".format(filter_id=filter_id, logbase=logbase), stderr="{logbase}-filter-{filter_id}-forced_phot_coadd.stderr".format(filter_id=filter_id, logbase=logbase), parsl_resource_specification=None)
+        forced_phot_coadd_futs.append(forced_phot_coadd_future)
+
+    return combine(inputs=forced_phot_coadd_futs)
 
 @lsst_app1
 def merge_coadd_detections(repo_dir, rerun_in, rerun_out, tract_id, patch_id, obs_lsst_configs, wrap, filters, inputs=None, parsl_resource_specification=None):
@@ -149,4 +152,8 @@ def measure_coadd_sources(repo_dir, rerun, tract_id, patch_id, filter_id, obs_ls
 @lsst_app1
 def merge_coadd_measurements(repo_dir, rerun, tract_id, patch_id, obs_lsst_configs, wrap, inputs=None, parsl_resource_specification=None):
     return wrap("mergeCoaddMeasurements.py {repo_dir}/rerun/{rerun} --output {repo_dir}/rerun/{rerun} --id tract={tract_id} patch='{patch_id}' filter=u^g^r^i^z^y  --configfile {obs_lsst_configs}/mergeCoaddMeasurements.py".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, obs_lsst_configs=obs_lsst_configs))
+
+@lsst_app1
+def forced_phot_coadd(repo_dir, rerun, tract_id, patch_id, filter_id, obs_lsst_configs, wrap, inputs=None, stdout=None, stderr=None, parsl_resource_specification=None):
+        return wrap("forcedPhotCoadd.py {repo_dir}/rerun/{rerun} --output {repo_dir}/rerun/{rerun} --id tract={tract_id} patch='{patch_id}' filter={filter_id}  --configfile {obs_lsst_configs}/forcedPhotCoadd.py".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, obs_lsst_configs=obs_lsst_configs))
 
