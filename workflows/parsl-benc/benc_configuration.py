@@ -89,7 +89,7 @@ cori_shifter_debug_config = WorkflowConfig(
   # one appropriately wrapper for whichever container/environment is being used
   # with this configuration (for example, wrap_shifter_container writes the
   # command to a temporary file and then invokes that file inside shifter)
-  wrap=wrap_shifter_container,
+  wrap=partial(wrap_shifter_container, image_id="lsstdesc/desc-drp-stack:v19-dc2-run2.2-v4"),
   wrap_sql=wrap_no_op,
 
   parsl_config=Config(executors=[cori_queue_executor, local_executor],

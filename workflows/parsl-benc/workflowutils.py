@@ -1,4 +1,4 @@
-def wrap_shifter_container(cmd: str, run_dir: str = "./") -> str:
+def wrap_shifter_container(cmd: str, run_dir: str = "./", image_id: str = None) -> str:
     """given a command, creates a new command that runs the original
     command inside an LSST application container. There is a lot of
     dancing around with cwd, because cwd is not preserved across
@@ -16,7 +16,7 @@ def wrap_shifter_container(cmd: str, run_dir: str = "./") -> str:
         f.write(cmd)
         pass
 
-    return "echo $(date) wrap-shifter: about to start shifter; shifter --image=lsstdesc/desc-drp-stack:v19-dc2-run2.2-v4 {workflow_src_dir}/container-inner.sh {cwd} {cmd}".format(workflow_src_dir=workflow_src_dir, cmd=cmdfile, cwd=os.getcwd())
+    return "echo $(date) wrap-shifter: about to start shifter; shifter --image={image_id} {workflow_src_dir}/container-inner.sh {cwd} {cmd}".format(workflow_src_dir=workflow_src_dir, cmd=cmdfile, cwd=os.getcwd(), image_id=image_id)
 
 
 def read_and_strip(filename):
