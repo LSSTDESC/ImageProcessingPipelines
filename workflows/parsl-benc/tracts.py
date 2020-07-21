@@ -3,7 +3,7 @@ import re
 from workflowutils import read_and_strip
 from more_itertools import intersperse
 from concurrent.futures import Future
-from future_combinators import combine
+from future_combinators import combine, const_future
 
 from parsl import python_app
 
@@ -57,10 +57,7 @@ def coadd_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_id, f
     visits = read_and_strip(visit_file)
 
     if visits == []:  # skip if no visits
-        # put this definition in future_combinators TODO
-        trivial_future = Future()
-        trivial_future.set_result(None)
-        return trivial_future
+        return const_future(None)
 
     visit_ids_for_dm = ""
     for el in intersperse("^", visits):
