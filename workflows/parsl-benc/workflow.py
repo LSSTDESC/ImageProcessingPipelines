@@ -58,7 +58,7 @@ configuration = configuration.load_configuration()
 rerun1_name = "1"  # contains outputs of: ingest and skymap
 rerun2_name = "2"  # contains outputs of: singleFrameDriver
 rerun3_name = "3"  # ... etc
-rerun4_name = "20200716a"
+rerun4_name = "20200721"
 rerun5_name = "5"
 
 visit_min = configuration.visit_min
@@ -545,7 +545,7 @@ else:
 tract_patch_visit_futures = []
 ntracts = 0
 npatches = 0
-logger.warn("WFLOW: Processing only selected tracts: "+str(tract_subset))
+logger.warning("WFLOW: Processing only selected tracts: "+str(tract_subset))
 
 for tract_id in tract_lines:
 
