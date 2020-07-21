@@ -80,8 +80,7 @@ def perform_ingest(configuration, logdir, rerun):
                                                   stderr=logdir+"/filter_in_place.stderr",
                                                   wrap=configuration.wrap)
 
-    filtered_ingest_file_output_file = ingest_fut.outputs[0]
-
+    filtered_ingest_file_output_file = filtered_ingest_list_future.outputs[0]
 
     truncated_ingest_list = truncate_ingest_list(filtered_ingest_file_output_file,
                                                  configuration.trim_ingest_list,
