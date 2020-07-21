@@ -545,7 +545,9 @@ else:
 tract_patch_visit_futures = []
 ntracts = 0
 npatches = 0
-logger.warning("WFLOW: Processing only selected tracts: "+str(tract_subset))
+
+if tract_subset:
+    logger.warning("WFLOW: Processing only selected tracts: "+str(tract_subset))
 
 for tract_id in tract_lines:
 
