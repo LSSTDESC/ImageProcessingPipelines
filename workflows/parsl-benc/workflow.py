@@ -442,8 +442,8 @@ rerun3 = 'run2.2i-calexp-v1'
 #      to limit the scope of processing to only the Y01 data (the repo contains much more)
 
 # Define the beginning and ending visitIDs for DC2 Year 1 data
-vStart = 230
-vEnd = 262622
+visit_min = 230
+visit_max = 262622
 
 
 # now we can do coadds. This is concurrent by tract, not by visit.
@@ -500,8 +500,8 @@ if doSqlite:
     tract_list_future = make_tract_list(
         configuration.repo_dir,
         metadata_dir,
-        vStart,
-        vEnd,
+        visit_min,
+        visit_max,
         tracts_file,
         stdout=logdir+"make_tract_list.stdout",
         stderr=logdir+"make_tract_list.stderr",
@@ -529,8 +529,8 @@ if doSqlite:
         tract_patch_futures.append(make_patch_list_for_tract(
             metadata_dir,
             tract_id,
-            vStart,
-            vEnd,
+            visit_min,
+            visit_max,
             patches_file,
             stdout=logdir+"make_patch_list_for_tract_{}.stdout".format(tract_id),
             stderr=logdir+"make_patch_list_for_tract_{}.stderr".format(tract_id),
@@ -628,8 +628,8 @@ for tract_id_unstripped in tract_lines:
                                                     tract_id,
                                                     patch_id,
                                                     filter_id,
-                                                    vStart,
-                                                    vEnd,
+                                                    visit_min,
+                                                    visit_max,
                                                     visit_file,
                                                     stdout=logdir+"visit_for_tract_{}_patch_{}_filter_{}.stdout".format(tract_id, patch_id, filter_id),
                                                     stderr=logdir+"visit_for_tract_{}_patch_{}_filter_{}.stderr".format(tract_id, patch_id, filter_id),
