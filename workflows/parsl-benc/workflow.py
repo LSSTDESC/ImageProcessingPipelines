@@ -23,6 +23,7 @@ import tracts
 
 from lsst_apps import lsst_app1, lsst_app2
 from workflowutils import read_and_strip
+from future_combinators import combine
 
 
 # PROCESSING FLAGS
@@ -58,7 +59,7 @@ configuration = configuration.load_configuration()
 rerun1_name = "1"  # contains outputs of: ingest and skymap
 rerun2_name = "2"  # contains outputs of: singleFrameDriver
 rerun3_name = "3"  # ... etc
-rerun4_name = "20200721"
+rerun4_name = "20200721c"
 rerun5_name = "5"
 
 visit_min = configuration.visit_min
@@ -483,10 +484,13 @@ if doSqlite:
 
     logger.info("WFLOW: Awaiting results from make_tract_list")
     tract_list_future.result()
+    # we can do this blokcing result call here because
+    # there is no more work that can be submitted until
+    # we know the tract list
 
     tract_lines = read_and_strip(tracts_file)
 
-    tract_patch_futures = []
+    tract_patch_futures = {}
     for tract_id in tract_lines:
         if tract_subset and not int(tract_id) in tract_subset:
             continue
@@ -494,7 +498,7 @@ if doSqlite:
 
         # assemble a patch list for this tract, as in setup_patch
         patches_file = "{metadata_dir}/patches-for-tract-{tract}.list".format(tract=tract_id, metadata_dir=metadata_dir)
-        tract_patch_futures.append(make_patch_list_for_tract(
+        tract_patch_futures[tract_id] = make_patch_list_for_tract(
             metadata_dir,
             tract_id,
             visit_min,
@@ -502,11 +506,7 @@ if doSqlite:
             patches_file,
             stdout=logdir+"make_patch_list_for_tract_{}.stdout".format(tract_id),
             stderr=logdir+"make_patch_list_for_tract_{}.stderr".format(tract_id),
-            wrap=configuration.wrap_sql))
-
-    # instead of this wait(), make downstream depend on File objects that
-    # are the patch list.
-    concurrent.futures.wait(tract_patch_futures)
+            wrap=configuration.wrap_sql)
 
     # for each tract, for each patch, generate a list of visits that
     # overlap this tract/patch from the tract db - see srs/pipe_setups/?sky_corr
@@ -521,6 +521,7 @@ if doSqlite:
 else:
     logger.info("Skipping SQLite3 block")
     tract_lines = read_and_strip(tracts_file)
+    tract_patch_futures = {}
     # End of doSqlite block
 
 
@@ -548,18 +549,9 @@ npatches = 0
 if tract_subset:
     logger.warning("WFLOW: Processing only selected tracts: "+str(tract_subset))
 
-for tract_id in tract_lines:
-
-    if tract_subset and not int(tract_id) in tract_subset:
-        continue
-
-    ntracts += 1
-    logger.info("WFLOW: generating patch list for tract {}".format(tract_id))
-
-    # TODO: this filename should be coming from a File output object from
-    # the earlier futures, and not hardcoded here and in patch list generator.
-    patches_file = "{metadata_dir}/patches-for-tract-{tract}.list".format(tract=tract_id, repo_dir=configuration.repo_dir, metadata_dir=metadata_dir)
-
+@parsl.python_app(executors=['submit-node'], join=True)
+def process_patches(tract_id, patches_file, inputs=None):
+    global npatches
     # TODO: this idiom of reading and stripping is used in a few places
     #   - factor it
     # something like:   for stripped_lines_in_file("filename"):
@@ -569,6 +561,7 @@ for tract_id in tract_lines:
     nplines = len(patch_lines)
     logger.info("WFLOW: tract {} contains {} patches".format(tract_id, nplines))
 
+    this_tract_all_patches_futures = []
     npatches_per_tract = 0
     for patch_id in patch_lines:
         npatches += 1
@@ -652,8 +645,35 @@ for tract_id in tract_lines:
                                              logbase=logdir+"multiband_for_tract_{}_patch_{}".format(tract_id, patch_idl),
                                              wrap=configuration.wrap)
 
-        tract_patch_visit_futures.append(fut3)
+        this_tract_all_patches_futures.append(fut3)
+    return combine(inputs=this_tract_all_patches_futures)
 
+
+for tract_id in tract_lines:
+
+    if tract_subset and not int(tract_id) in tract_subset:
+        continue
+
+    ntracts += 1
+    logger.info("WFLOW: generating patch list for tract {}".format(tract_id))
+
+    # TODO: this filename should be coming from a File output object from
+    # the earlier futures, and not hardcoded here and in patch list generator.
+    patches_file = "{metadata_dir}/patches-for-tract-{tract}.list".format(tract=tract_id, repo_dir=configuration.repo_dir, metadata_dir=metadata_dir)
+
+
+    tract_patch_list_futures=[]
+    if tract_id in tract_patch_futures.keys():
+        logger.info("WFLOW: waiting for patches list for tract {} to be available".format(tract_id))
+        tract_patch_list_futures.append(tract_patch_futures[tract_id])
+    else:
+        logger.info("WFLOW: assuming patch list for tract {} has been generated some other way".format(tract_id))
+        # need to do this block before we can do a read...
+        # but actually that means this body should move into its own local
+
+    patches_fut = process_patches(tract_id, patches_file, inputs=tract_patch_list_futures)
+
+    terminal_futures.append(patches_fut)
     # johann: setup_coaddDriver, which takes the tract and the patches
     # provided by setup_patch, lists all the visits that intersect these
     # patches, compare if requested to a provided set of visits
@@ -661,7 +681,6 @@ for tract_id in tract_lines:
     # and then launch one final nested subtask for each filter.
     # This nested subtask runs coaddDriver.py
 
-terminal_futures += tract_patch_visit_futures
 concurrent.futures.wait(terminal_futures)
 
 logger.info("WFLOW: Awaiting results from terminal_futures")
