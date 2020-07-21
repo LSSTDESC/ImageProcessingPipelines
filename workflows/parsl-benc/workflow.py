@@ -28,12 +28,13 @@ from lsst_apps import lsst_app1, lsst_app2
 # The set of tracts that will be processed will be the intersection of this
 # list and the tracts actually in the repository
 
-# tractFavs = [4030,4031,4032,4033,4225,4226,4227,4228,4229,4230,4231,4232,4233,4234,4235,4430,4431,4432,4433,4434,4435,4436,4437,4438,4439,4637,4638,4639,4640,4641,4642,4643,4644,4645,4646,4647]   ## 36 centrally located tracts
+# tract_subset = [4030,4031,4032,4033,4225,4226,4227,4228,4229,4230,4231,4232,4233,4234,4235,4430,4431,4432,4433,4434,4435,4436,4437,4438,4439,4637,4638,4639,4640,4641,4642,4643,4644,4645,4646,4647]   ## 36 centrally located tracts
 
-# tractFavs = [4030,4031,4032,4033,4225,4226,4227,4228,4229,4230]   ## 10 centrally located tracts
-# tractFavs = [4030,4031,4032,4033,4225]   ## 5 centrally located tracts
-# tractFavs = [4030,4031]   ## 2 centrally located tracts
-tractFavs = [4030]   # 1 centrally located tract
+# tract_subset = [4030,4031,4032,4033,4225,4226,4227,4228,4229,4230]   ## 10 centrally located tracts
+# tract_subset = [4030,4031,4032,4033,4225]   ## 5 centrally located tracts
+# tract_subset = [4030,4031]   ## 2 centrally located tracts
+tract_subset = [4030]   # 1 centrally located tract
+
 
 #################################
 # TEST AND DEVELOPMENT ONLY
@@ -516,7 +517,7 @@ if doSqlite:
     tract_patch_futures = []
     for tract_id_unstripped in tract_lines:
         tract_id = tract_id_unstripped.strip()
-        if not int(tract_id) in tractFavs:
+        if not int(tract_id) in tract_subset:
             continue  # TESTING ONLY
         logger.info("WFLOW: process tract {}".format(tract_id))
 
@@ -571,12 +572,12 @@ else:
 tract_patch_visit_futures = []
 ntracts = 0
 npatches = 0
-logger.warn("WFLOW: Processing only selected tracts: "+str(tractFavs))
+logger.warn("WFLOW: Processing only selected tracts: "+str(tract_subset))
 
 for tract_id_unstripped in tract_lines:
     tract_id = tract_id_unstripped.strip()
 
-    if not int(tract_id) in tractFavs:
+    if not int(tract_id) in tract_subset:
         continue     # TEST AND DEVELOPMENT
 
     ntracts += 1
