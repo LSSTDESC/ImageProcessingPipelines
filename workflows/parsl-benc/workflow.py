@@ -18,7 +18,6 @@ import parsl
 
 import checkpointutil  # noqa: F401 - for import-time checkpoint config
 import configuration
-import future_combinators
 import ingest
 import tracts
 
@@ -654,18 +653,17 @@ for tract_id_unstripped in tract_lines:
             else:
                 iList = []
 
-            fut2_inner = tracts.coadd_parsl_driver(configuration,
-                                                   rerun3,
-                                                   rerun4,
-                                                   tract_id,
-                                                   patch_idx,
-                                                   filter_id,
-                                                   visit_file,
-                                                   None,
-                                                   inputs=iList,
-                                                   logbase=logdir+"coadd_for_tract_{}_patch_{}_filter_{}".format(tract_id, patch_idl, filter_id),
-                                                   wrap=configuration.wrap)
-            fut2 = future_combinators.JoinFuture(fut2_inner)
+            fut2 = tracts.coadd_parsl_driver(configuration,
+                                             rerun3,
+                                             rerun4,
+                                             tract_id,
+                                             patch_idx,
+                                             filter_id,
+                                             visit_file,
+                                             None,
+                                             inputs=iList,
+                                             logbase=logdir+"coadd_for_tract_{}_patch_{}_filter_{}".format(tract_id, patch_idl, filter_id),
+                                             wrap=configuration.wrap)
             # now we have a load of files like this:
             #   visits-for-tract-4232-patch-6,-4-filter-g.list
             # so for each of those files, launch coadd for this

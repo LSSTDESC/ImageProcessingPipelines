@@ -38,7 +38,7 @@ from lsst_apps import lsst_app1
 # this final future should be the end result future of coadd_parsl_driver
 
 
-@python_app(executors=['submit-node'])
+@python_app(executors=['submit-node'], join=True)
 def coadd_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_id, filter_id, visit_file, visit_futs, inputs=None,
                        wrap=None, logbase=""):
     """visit_futs should be:
