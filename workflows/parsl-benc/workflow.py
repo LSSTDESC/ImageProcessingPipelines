@@ -522,25 +522,27 @@ if doSqlite:
 
     # doing this as a separate loop from the above loop rather than doing something useful with dependencies is ugly.
 
-    @lsst_app2
-    def visits_for_tract_patch_filter(metadata_dir, tract_id, patch_id,
-                                      filter_id, visit_min, visit_max, visit_file,
-                                      stdout=None, stderr=None, wrap=None,
-                                      parsl_resource_specification=None):
-        # TODO: set_coaddDriver treats filter_id differently here:
-        # it takes a *list* of filters not a single filter, and generates
-        # SQL from that somehow. Ask Johann about it? Is there some
-        # non-trivial interaction of multiple filters here?
-        sql = "SELECT DISTINCT visit FROM overlaps WHERE tract={tract_id} AND filter='{filter_id}' AND patch=\'{patch_id}\' and visit >= {visit_min} and visit <= {visit_max};".format(tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, visit_min=visit_min, visit_max=visit_max)
-        # sqlite returns a list of visitIDs, one per line.  This needs to be converted
-        # into a single line of the form:
-        #     --selectID visit=<visitID1>^<visitID2>^...
-        return wrap('sqlite3 "file:{metadata_dir}/tracts_mapping.sqlite3?mode=ro" "{sql}" > {visit_file} ; cat {visit_file}  | tr \'\\n\' \'^\' | sed s\'/.$//\' | sed \'s/^/--selectId visit=/\' > {visit_file}.selectid'.format(metadata_dir=metadata_dir, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, sql=sql, visit_file=visit_file))
-
 else:
     logger.info("Skipping SQLite3 block")
     tract_lines = read_and_strip(tracts_file)
     # End of doSqlite block
+
+
+@lsst_app2
+def visits_for_tract_patch_filter(metadata_dir, tract_id, patch_id,
+                                  filter_id, visit_min, visit_max, visit_file,
+                                  stdout=None, stderr=None, wrap=None,
+                                  parsl_resource_specification=None):
+    # TODO: set_coaddDriver treats filter_id differently here:
+    # it takes a *list* of filters not a single filter, and generates
+    # SQL from that somehow. Ask Johann about it? Is there some
+    # non-trivial interaction of multiple filters here?
+    sql = "SELECT DISTINCT visit FROM overlaps WHERE tract={tract_id} AND filter='{filter_id}' AND patch=\'{patch_id}\' and visit >= {visit_min} and visit <= {visit_max};".format(tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, visit_min=visit_min, visit_max=visit_max)
+    # sqlite returns a list of visitIDs, one per line.  This needs to be converted
+    # into a single line of the form:
+    #     --selectID visit=<visitID1>^<visitID2>^...
+    return wrap('sqlite3 "file:{metadata_dir}/tracts_mapping.sqlite3?mode=ro" "{sql}" > {visit_file} ; cat {visit_file}  | tr \'\\n\' \'^\' | sed s\'/.$//\' | sed \'s/^/--selectId visit=/\' > {visit_file}.selectid'.format(metadata_dir=metadata_dir, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, sql=sql, visit_file=visit_file))
+
 
 
 tract_patch_visit_futures = []
