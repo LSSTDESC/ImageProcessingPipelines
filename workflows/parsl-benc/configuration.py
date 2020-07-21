@@ -118,11 +118,6 @@ cori_knl_2 = HighThroughputExecutor(
     ),
 )
 
-
-
-
-
-
 local_executor = ThreadPoolExecutor(max_threads=2, label="submit-node")
 
 cori_shifter_debug_config = WorkflowConfig(
@@ -174,4 +169,3 @@ cori_shifter_debug_config = WorkflowConfig(
 )
 
 configuration = cori_shifter_debug_config
-
