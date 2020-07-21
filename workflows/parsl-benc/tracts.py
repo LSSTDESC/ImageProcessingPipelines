@@ -2,7 +2,6 @@ import re
 
 from workflowutils import read_and_strip
 from more_itertools import intersperse
-from concurrent.futures import Future
 from future_combinators import combine, const_future
 
 from parsl import python_app

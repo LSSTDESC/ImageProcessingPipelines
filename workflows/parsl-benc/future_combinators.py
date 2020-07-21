@@ -1,5 +1,6 @@
 from parsl import python_app
 import logging
+from concurrent.futures import Future
 
 logger = logging.getLogger(__name__)
 
