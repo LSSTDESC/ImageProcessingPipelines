@@ -162,4 +162,4 @@ def merge_coadd_measurements(repo_dir, rerun, tract_id, patch_id, obs_lsst_confi
 
 @lsst_app1
 def forced_phot_coadd(repo_dir, rerun, tract_id, patch_id, filter_id, obs_lsst_configs, wrap, inputs=None, stdout=None, stderr=None, parsl_resource_specification=None):
-        return wrap("forcedPhotCoadd.py {repo_dir}/rerun/{rerun} --output {repo_dir}/rerun/{rerun} --id tract={tract_id} patch='{patch_id}' filter={filter_id}  --configfile {obs_lsst_configs}/forcedPhotCoadd.py".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, obs_lsst_configs=obs_lsst_configs))
+    return wrap("forcedPhotCoadd.py {repo_dir}/rerun/{rerun} --output {repo_dir}/rerun/{rerun} --id tract={tract_id} patch='{patch_id}' filter={filter_id}  --configfile {obs_lsst_configs}/forcedPhotCoadd.py".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, obs_lsst_configs=obs_lsst_configs))
