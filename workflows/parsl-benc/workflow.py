@@ -578,7 +578,7 @@ for tract_id in tract_lines:
         # patch_id form used for sqlite queries, e.g., "(4, 1)"
         patch_idx = re.sub("[() ]", "", patch_id)  # This form used for DM stack tools, e.g., "4,1"
         patch_idl = re.sub(",", "-", patch_idx)    # This form used for log files, e.g., "4-1"
-        if patch_subset and not patch_idl in patch_subset:  # favoured patch handling, for testing
+        if patch_subset and patch_idl not in patch_subset:  # favoured patch handling, for testing
             continue
 
         logger.info("WFLOW: generating visit list for tract {} patch {}".format(tract_id, patch_idx))
