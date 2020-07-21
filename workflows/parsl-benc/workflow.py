@@ -285,13 +285,12 @@ if doSensor:
     visit_futures = []
     for (n, visit_id_unstripped) in zip(range(0, len(visit_lines)), visit_lines):
 
-        ################################################################
-        if n > 4:
-            break     # DEBUG: limit number of visits processed
-        ################################################################
-
         nvisits += 1
         visit_id = visit_id_unstripped.strip()
+
+        if int(visit_id) < visit_min or int(visit_id) > visit_max:
+            continue
+
         logger.info("WFLOW: => Begin processing visit "+str(visit_id))
 
         # some of this stuff could probably be parallelised down to the per-sensor
