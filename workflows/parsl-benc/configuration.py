@@ -10,7 +10,7 @@ from parsl.executors import ThreadPoolExecutor, HighThroughputExecutor
 from parsl.launchers import SrunLauncher
 from parsl.providers import SlurmProvider
 from parsl.utils import get_all_checkpoints
-from typing import Callable
+from typing import Callable, List
 
 from workflowutils import wrap_shifter_container
 
@@ -23,6 +23,10 @@ class WorkflowConfig:
     # only visits numbered inside this range (inclusive) will be processed
     visit_min: int
     visit_max: int
+
+    # only tracts contained in the intersection of the skymap and this list
+    # will be processed.
+    tract_subset: List[int]
 
     repo_dir: str
     rerun_prefix: str
@@ -140,6 +144,15 @@ cori_shifter_debug_config = WorkflowConfig(
 
     visit_min = 230,
     visit_max = 262622,
+
+    # tract_subset = [4030,4031,4032,4033,4225,4226,4227,4228,4229,4230,4231,4232,4233,4234,4235,4430,4431,4432,4433,4434,4435,4436,4437,4438,4439,4637,4638,4639,4640,4641,4642,4643,4644,4645,4646,4647]   ## 36 centrally located tracts
+
+    # tract_subset = [4030,4031,4032,4033,4225,4226,4227,4228,4229,4230]   ## 10 centrally located tracts
+    # tract_subset = [4030,4031,4032,4033,4225]   ## 5 centrally located tracts
+    # tract_subset = [4030,4031]   ## 2 centrally located tracts
+    tract_subset = [4030],   # 1 centrally located tract
+
+
 
     # This is the location of the DM stack within the docker image
     dm_root="/opt/lsst/software/stack",
