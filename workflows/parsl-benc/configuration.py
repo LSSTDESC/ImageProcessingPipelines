@@ -19,6 +19,11 @@ from workflowutils import wrap_shifter_container
 class WorkflowConfig:
     ingest_source: str
     trim_ingest_list: int
+
+    # only visits numbered inside this range (inclusive) will be processed
+    visit_min: int
+    visit_max: int
+
     repo_dir: str
     rerun_prefix: str
     root_softs: str
@@ -132,6 +137,9 @@ cori_shifter_debug_config = WorkflowConfig(
     repo_dir = "/global/cscratch1/sd/descdm/DC2/Run2.2i-parsl/v19.0.0-v1",
     # A prefix for the 'rerun' directories within the DM repository
     rerun_prefix="G40-",
+
+    visit_min = 230,
+    visit_max = 262622,
 
     # This is the location of the DM stack within the docker image
     dm_root="/opt/lsst/software/stack",

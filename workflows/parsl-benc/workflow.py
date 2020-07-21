@@ -74,13 +74,9 @@ rerun2_name = "2"  # contains outputs of: singleFrameDriver
 rerun3_name = "3"  # ... etc
 rerun4_name = "20200716a"
 rerun5_name = "5"
-#
-#   2. Another change is the limitation on visitIDs present in the various sql queries.  This is
-#      to limit the scope of processing to only the Y01 data (the repo contains much more)
 
-# Define the beginning and ending visitIDs for DC2 Year 1 data
-visit_min = 230
-visit_max = 262622
+visit_min = configuration.visit_min
+visit_max = configuration.visit_max
 
 
 rerun1 = configuration.rerun_prefix+rerun1_name
