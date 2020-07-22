@@ -59,7 +59,7 @@ configuration = configuration.load_configuration()
 rerun1_name = "1"  # contains outputs of: ingest and skymap
 rerun2_name = "2"  # contains outputs of: singleFrameDriver
 rerun3_name = "3"  # ... etc
-rerun4_name = "20200721c"
+rerun4_name = "20200721d"
 rerun5_name = "5"
 
 visit_min = configuration.visit_min
