@@ -66,7 +66,7 @@ visit_min = configuration.visit_min
 visit_max = configuration.visit_max
 
 tract_subset = configuration.tract_subset
-patch_subset = ["1-6"]
+patch_subset = configuration.patch_subset
 
 rerun1 = configuration.rerun_prefix+rerun1_name
 rerun2 = rerun1 + "." + rerun2_name

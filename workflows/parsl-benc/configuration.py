@@ -28,6 +28,10 @@ class WorkflowConfig:
     # will be processed. Set to None to process all tracts.
     tract_subset: Optional[List[int]]
 
+    # only patches contained in the intersection of the skymap and this list
+    # will be processed. Set to None to process all patches.
+    patch_subset: Optional[List[int]]
+
     repo_dir: str
     rerun_prefix: str
     root_softs: str
@@ -146,12 +150,15 @@ cori_shifter_debug_config = WorkflowConfig(
     visit_max = 262622,
 
     # tract_subset = [4030,4031,4032,4033,4225,4226,4227,4228,4229,4230,4231,4232,4233,4234,4235,4430,4431,4432,4433,4434,4435,4436,4437,4438,4439,4637,4638,4639,4640,4641,4642,4643,4644,4645,4646,4647]   ## 36 centrally located tracts
-
     # tract_subset = [4030,4031,4032,4033,4225,4226,4227,4228,4229,4230]   ## 10 centrally located tracts
     # tract_subset = [4030,4031,4032,4033,4225]   ## 5 centrally located tracts
     # tract_subset = [4030,4031]   ## 2 centrally located tracts
+
+    # set to None to process all tracts
     tract_subset = [4030],   # 1 centrally located tract
 
+    # set to None to process all patches
+    patch_subset =  ["1-6"],
 
 
     # This is the location of the DM stack within the docker image
