@@ -27,9 +27,9 @@ from future_combinators import combine
 
 
 # PROCESSING FLAGS
-doIngest = False     # switch to enable the ingest step, if True
-doSkyMap = False     # switch to enable sky map creation, if True
-doSensor = False     # switch to enable sensor/raft level processing, if True
+doIngest = True      # switch to enable the ingest step, if True
+doSkyMap = True      # switch to enable sky map creation, if True
+doSensor = True      # switch to enable sensor/raft level processing, if True
 doSqlite = True      # switch to enable the surprisingly time-consuming sqlite queries against the tracts_mapping db
 
 
@@ -56,7 +56,7 @@ configuration = configuration.load_configuration()
 
 # The rerun name for each step should include the previous steps, automatically
 # so the step 6 rerun will be long.
-rerun1_name = "1"  # contains outputs of: ingest and skymap
+rerun1_name = "0727"  # contains outputs of: ingest and skymap
 rerun2_name = "2"  # contains outputs of: singleFrameDriver
 rerun3_name = "3"  # ... etc
 rerun4_name = "20200721d"
@@ -148,7 +148,7 @@ else:
 # map covers the right amount of the sky. Is that the case here? is so,
 # there needs to be a new dependency added.
 @lsst_app2
-def make_sky_map(repo_dir, rerun, stdout=None, stderr=None, wrap=None):
+def make_sky_map(repo_dir, rerun, stdout=None, stderr=None, wrap=None, parsl_resource_specification=None):
     return wrap("makeSkyMap.py {} --rerun {}".format(repo_dir, rerun))
 
 
@@ -158,7 +158,8 @@ if doSkyMap:
     skymap_future = make_sky_map(configuration.repo_dir, rerun1,
                                  stdout=logdir+"make_sky_map.stdout",
                                  stderr=logdir+"make_sky_map.stderr",
-                                 wrap=configuration.wrap)
+                                 wrap=configuration.wrap,
+                                 parsl_resource_specification={"priority": (1000,)})
 else:
     logger.warning("WFLOW: skipping makeSkyMap step")
 
@@ -177,17 +178,84 @@ else:
 ####################################################################################################
 
 
+
+@lsst_app2
+def make_visit_file(repo_dir, visit_file, stdout=None, stderr=None, wrap=None, parsl_resource_specification=None):
+    return wrap(('sqlite3 {repo_dir}/registry.sqlite3 '
+                 '"SELECT DISTINCT visit FROM raw_visit;" '
+                 '> {visit_file}').format(repo_dir=repo_dir,
+                                          visit_file=visit_file))
+
+@lsst_app2
+def raft_list_for_visit(repo_dir, visit_id, out_filename,
+                        stderr=None, stdout=None, wrap=None, parsl_resource_specification=None):
+    return wrap(("sqlite3 {repo_dir}/registry.sqlite3 "
+                 "'SELECT DISTINCT raftName FROM raw WHERE visit={visit_id}' "
+                 "> {out_filename}").format(repo_dir=repo_dir,
+                                            visit_id=visit_id,
+                                            out_filename=out_filename))
+
+# the parsl checkpointing for this won't detect if we ingested more stuff
+# to do with the specified visit - I'm not sure quite the right way to do
+# it, and I think its only useful in during workflow development when the
+# original ingest list might change? would need eg "files in each visit"
+# list to generate a per-visit input "version" id/hash
+@lsst_app1
+def check_ccd_astrometry(dm_root, repo_dir, rerun, visit, inputs=[],
+                         stderr=None, stdout=None, wrap=None, parsl_resource_specification=None):
+    # inputs=[] ignored but used for dependency handling
+    return wrap("{dm_root}/ImageProcessingPipelines/python/util/checkCcdAstrometry.py {repo_dir}/rerun/{rerun} "
+                "--id visit={visit} "
+                "--loglevel CameraMapper=warn".format(visit=visit,
+                                                      rerun=rerun,
+                                                      repo_dir=repo_dir,
+                                                      dm_root=dm_root))
+
+# the parsl checkpointing for this won't detect if we ingested more stuff
+# to do with the specified visit - see comments for check_ccd_astrometry
+@lsst_app2
+def tract2visit_mapper(dm_root, repo_dir, rerun, visit, inputs=[],
+                       stderr=None, stdout=None, wrap=None,
+                       parsl_resource_specification=None):
+    # TODO: this seems to be how $REGISTRIES is figured out (via $WORKDIR)
+    # perhaps? I'm unsure though
+    registries = "{repo_dir}/rerun/{rerun}".format(repo_dir=repo_dir,
+                                                   rerun=rerun)
+
+    # the srs workflow has a separate output database per visit, which is
+    # elsewhere merged into a single DB. That's awkward... there's probably
+    # a reason to do with concurrency or shared fs that needs digging into.
+    return wrap("mkdir -p {registries} && {dm_root}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir={repo_dir}/rerun/{rerun} --db={registries}/tracts_mapping.sqlite3 --visits={visit}".format(repo_dir=repo_dir, rerun=rerun, visit=visit, registries=registries, dm_root=dm_root))
+
+@lsst_app1
+def single_frame_driver(repo_dir, rerun, visit_id, raft_name,
+                        stdout=None, stderr=None, wrap=None,
+                        parsl_resource_specification=None):
+    # params for stream are WORKDIR=workdir, VISIT=visit_id
+    # this is going to be something like found in
+    # workflows/srs/pipe_setups/run_calexp
+    # run_calexp uses --cores as NSLOTS+1. I'm using cores 1 because I
+    # am not sure of the right parallelism here.
+
+    return wrap(("singleFrameDriver.py --batch-type none {repo_dir} "
+                 "--rerun {rerun} "
+                 "--id visit={visit} raftName={raft_name} "
+                 "--calib {repo_dir}/CALIB/ "
+                 "--clobber-versions --cores 1 --timeout 999999999 "
+                 "--loglevel CameraMapper=warn").format(repo_dir=repo_dir,
+                                                        rerun=rerun,
+                                                        visit=visit_id,
+                                                        raft_name=raft_name))
+
+
+@lsst_app1
+def sky_correction(repo_dir, rerun, visit, raft_name, inputs=[], stdout=None, stderr=None, wrap=None, parsl_resource_specification=None):
+    return wrap("skyCorrection.py {repo_dir}  --rerun {rerun} --id visit={visit} raftName={raft_name} --batch-type none --cores 1  --calib {repo_dir}/CALIB/ --timeout 999999999 --no-versions --loglevel CameraMapper=warn".format(repo_dir=repo_dir, rerun=rerun, visit=visit, raft_name=raft_name))
+
+
 if doSensor:
     #  setup_calexp: use DB to make a visit file
     logger.info("WFLOW: Making visit file from raw_visit table")
-
-    @lsst_app2
-    def make_visit_file(repo_dir, visit_file, stdout=None, stderr=None, wrap=None):
-        return wrap(('sqlite3 {repo_dir}/registry.sqlite3 '
-                     '"SELECT DISTINCT visit FROM raw_visit;" '
-                     '> {visit_file}').format(repo_dir=repo_dir,
-                                              visit_file=visit_file))
-
     visit_file = "{repo_dir}/rerun/{rerun}/all_visits_from_registry.list".format(
         repo_dir=configuration.repo_dir, rerun=rerun1)
     visit_file_future = make_visit_file(
@@ -195,7 +263,8 @@ if doSensor:
         visit_file,
         stdout=logdir+"make_visit_file.stdout",
         stderr=logdir+"make_visit_file.stderr",
-        wrap=configuration.wrap_sql)
+        wrap=configuration.wrap_sql,
+        parsl_resource_specification={"priority": (1000,)})
 
     logger.info("WFLOW: Waiting for visit list generation to complete")
     visit_file_future.result()
@@ -213,72 +282,6 @@ if doSensor:
     logger.info("WFLOW: makeSkyMap completed")
 
     logger.info("WFLOW: submitting task_calexps")
-
-    @lsst_app1
-    def single_frame_driver(repo_dir, rerun, visit_id, raft_name,
-                            stdout=None, stderr=None, wrap=None):
-        # params for stream are WORKDIR=workdir, VISIT=visit_id
-        # this is going to be something like found in
-        # workflows/srs/pipe_setups/run_calexp
-        # run_calexp uses --cores as NSLOTS+1. I'm using cores 1 because I
-        # am not sure of the right parallelism here.
-
-        return wrap(("singleFrameDriver.py --batch-type none {repo_dir} "
-                     "--rerun {rerun} "
-                     "--id visit={visit} raftName={raft_name} "
-                     "--calib {repo_dir}/CALIB/ "
-                     "--clobber-versions --cores 1 --timeout 999999999 "
-                     "--loglevel CameraMapper=warn").format(repo_dir=repo_dir,
-                                                            rerun=rerun,
-                                                            visit=visit_id,
-                                                            raft_name=raft_name))
-
-    @lsst_app2
-    def raft_list_for_visit(repo_dir, visit_id, out_filename,
-                            stderr=None, stdout=None, wrap=None):
-        return wrap(("sqlite3 {repo_dir}/registry.sqlite3 "
-                     "'SELECT DISTINCT raftName FROM raw WHERE visit={visit_id}' "
-                     "> {out_filename}").format(repo_dir=repo_dir,
-                                                visit_id=visit_id,
-                                                out_filename=out_filename))
-
-    # the parsl checkpointing for this won't detect if we ingested more stuff
-    # to do with the specified visit - I'm not sure quite the right way to do
-    # it, and I think its only useful in during workflow development when the
-    # original ingest list might change? would need eg "files in each visit"
-    # list to generate a per-visit input "version" id/hash
-    @lsst_app1
-    def check_ccd_astrometry(dm_root, repo_dir, rerun, visit, inputs=[],
-                             stderr=None, stdout=None, wrap=None):
-        # inputs=[] ignored but used for dependency handling
-        return wrap("{dm_root}/ImageProcessingPipelines/python/util/checkCcdAstrometry.py {repo_dir}/rerun/{rerun} "
-                    "--id visit={visit} "
-                    "--loglevel CameraMapper=warn".format(visit=visit,
-                                                          rerun=rerun,
-                                                          repo_dir=repo_dir,
-                                                          dm_root=dm_root))
-
-    # the parsl checkpointing for this won't detect if we ingested more stuff
-    # to do with the specified visit - see comments for check_ccd_astrometry
-    @lsst_app2
-    def tract2visit_mapper(dm_root, repo_dir, rerun, visit, inputs=[],
-                           stderr=None, stdout=None, wrap=None):
-        # TODO: this seems to be how $REGISTRIES is figured out (via $WORKDIR)
-        # perhaps? I'm unsure though
-        registries = "{repo_dir}/rerun/{rerun}".format(repo_dir=repo_dir,
-                                                       rerun=rerun)
-
-        # the srs workflow has a separate output database per visit, which is
-        # elsewhere merged into a single DB. That's awkward... there's probably
-        # a reason to do with concurrency or shared fs that needs digging into.
-        return wrap("mkdir -p {registries} && {dm_root}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir={repo_dir}/rerun/{rerun} --db={registries}/tracts_mapping.sqlite3 --visits={visit}".format(repo_dir=repo_dir, rerun=rerun, visit=visit, registries=registries, dm_root=dm_root))
-
-    @lsst_app1
-    def sky_correction(repo_dir, rerun, visit, raft_name, inputs=[], stdout=None, stderr=None, wrap=None):
-        return wrap("skyCorrection.py {repo_dir}  --rerun {rerun} --id visit={visit} raftName={raft_name} --batch-type none --cores 1  --calib {repo_dir}/CALIB/ --timeout 999999999 --no-versions --loglevel CameraMapper=warn".format(repo_dir=repo_dir, rerun=rerun, visit=visit, raft_name=raft_name))
-
-    ##########################################################################
-
     visit_lines = read_and_strip(visit_file)
 
     logger.info("WFLOW:  There were "+str(len(visit_lines))+" visits read from "+str(visit_file))
