@@ -159,7 +159,7 @@ if doSkyMap:
     skymap_future = make_sky_map(configuration.repo_dir, rerun1,
                                  stdout=logdir+"make_sky_map.stdout",
                                  stderr=logdir+"make_sky_map.stderr",
-                                 wrap=configuration.wrap,
+                                wrap=configuration.wrap,
                                  parsl_resource_specification={"priority": (1000,)})
 else:
     logger.warning("WFLOW: skipping makeSkyMap step")
@@ -171,6 +171,10 @@ if doIngest:
 else:
     logger.warning("WFLOW: skip data ingest.")
 
+if doSkyMap:
+    logger.info("WFLOW: waiting for makeSkyMap to complete")
+    skymap_future.result()
+    logger.info("WFLOW: makeSkyMap completed")
 
 ####################################################################################################
 ####################################################################################################
@@ -212,22 +216,11 @@ def tract2visit_mapper(dm_root, repo_dir, rerun, visit, inputs=[],
     # a reason to do with concurrency or shared fs that needs digging into.
     return wrap("mkdir -p {registries} && {dm_root}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir={repo_dir}/rerun/{rerun} --db={registries}/tracts_mapping.sqlite3 --visits={visit}".format(repo_dir=repo_dir, rerun=rerun, visit=visit, registries=registries, dm_root=dm_root))
 
-if doSensor:
-    #  setup_calexp: use DB to make a visit file
-    logger.info("WFLOW: Making visit file from raw_visit table")
-    visit_file = "{repo_dir}/rerun/{rerun}/all_visits_from_registry.list".format(
-        repo_dir=configuration.repo_dir, rerun=rerun1)
-    visit_file_future = make_visit_file(
-        configuration.repo_dir,
-        visit_file,
-        stdout=logdir+"make_visit_file.stdout",
-        stderr=logdir+"make_visit_file.stderr",
-        wrap=configuration.wrap_sql,
-        parsl_resource_specification={"priority": (1000,)})
-
-    logger.info("WFLOW: Waiting for visit list generation to complete")
-    visit_file_future.result()
-    logger.info("WFLOW: Visit list generation completed")
+# this must be called with visit_file_future passed into inputs to make it wait for
+# the visit_file named in visit_file to be ready. TODO: replace with parsl File based
+# futures
+@parsl.python_app(executors=['submit-node'], join=True)
+def process_visits(visit_file, inputs=None):
     # should make some comment here about how we have to explicitly wait for a
     # result here in the main workflow code, rather than using visit_file_future
     # as a dependency, because its used to generate more tasks (the
@@ -236,9 +229,6 @@ if doSensor:
     # for visualisation, and that there is some constraint on expressing
     # concurrency.
 
-    logger.info("WFLOW: waiting for makeSkyMap to complete")
-    skymap_future.result()
-    logger.info("WFLOW: makeSkyMap completed")
 
     logger.info("WFLOW: submitting task_calexps")
     visit_lines = read_and_strip(visit_file)
@@ -364,18 +354,32 @@ if doSensor:
         visit_futures.append(fut_tract2visit)
 
         # End of loop over rafts
+    logger.info("WFLOW: Finished task definitions for {} visits".format(nvisits))
+    return combine(inputs=visit_futures)
 
-    logger.info("WFLOW: Waiting for completion of all sensor/raft oriented tasks associated with "+str(nvisits)+" visits")
+
+
+if doSensor:
+    logger.info("WFLOW: Making visit file from raw_visit table")
+    visit_file = "{repo_dir}/rerun/{rerun}/all_visits_from_registry.list".format(
+        repo_dir=configuration.repo_dir, rerun=rerun1)
+    visit_file_future = make_visit_file(
+        configuration.repo_dir,
+        visit_file,
+        stdout=logdir+"make_visit_file.stdout",
+        stderr=logdir+"make_visit_file.stderr",
+        wrap=configuration.wrap_sql,
+        parsl_resource_specification={"priority": (1000,)})
+
+    visits_future = process_visits(visit_file, inputs=[visit_file_future])
+    logger.info("WFLOW: Waiting for completion of all sensor/raft oriented tasks")
 
     # wait for them all to complete ...
-    concurrent.futures.wait(visit_futures)
-    logger.info("WFLOW: sensor/raft-oriented tasks complete")
-
     # ... and throw exception here if any of them threw exceptions
     # This is a bottleneck for d/s tasks: a single failure will halt the entire workflow
+    visits_future.result()
+    logger.info("WFLOW: sensor/raft-oriented tasks complete")
 
-    logger.info("WFLOW: Checking results of sensor/raft-oriented tasks")
-    [future.result() for future in visit_futures]
 else:
     logger.info("WFLOW: Skipping sensor/raft level processing")
 
