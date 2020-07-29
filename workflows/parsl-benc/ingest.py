@@ -43,7 +43,7 @@ def ingest(file, repo_dir, rerun, stdout=None, stderr=None, wrap=None):
     There SRS workflow using @{chunk_of_ingest_list}, but I'm going to
     specify a single filename directly for now.
     """
-    return wrap("ingestDriver.py --batch-type none {repo_dir} @{arg1} --clobber-versions --cores 1 --mode link --rerun {rerun} -c clobber=True allowError=True register.ignore=True".format(repo_dir=repo_dir, arg1=file.filepath, rerun=rerun))
+    return wrap("ingestImages.py {repo_dir} @{arg1} --clobber-versions --mode link --rerun {rerun} -c clobber=True allowError=True register.ignore=True".format(repo_dir=repo_dir, arg1=file.filepath, rerun=rerun))
 
 
 def perform_ingest(configuration, logdir, rerun):
