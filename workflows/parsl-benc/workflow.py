@@ -217,29 +217,7 @@ def tract2visit_mapper(dm_root, repo_dir, rerun, visit, inputs=[],
     return wrap("mkdir -p {registries} && {dm_root}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir={repo_dir}/rerun/{rerun} --db={registries}/tracts_mapping.sqlite3 --visits={visit}".format(repo_dir=repo_dir, rerun=rerun, visit=visit, registries=registries, dm_root=dm_root))
 
 @parsl.python_app(executors=['submit-node'], join=True)
-def process_visit(visit_id):
-        logger.info("WFLOW: => Begin processing visit "+str(visit_id))
-
-        # some of this stuff could probably be parallelised down to the per-sensor
-        # level rather than per raft. finer granualarity but more overhead in
-        # starting up shifter.
-        # QUESTION: which bits can go to sensor level?
-        # QUESTION: how is efficiency here compared to losing efficiency by runs having wasted long-tail (wall and cpu) time?
-        raft_list_fn = "{repo_dir}/rerun/{rerun}/raft_list_for_visit.{visit_id}".format(repo_dir=configuration.repo_dir, rerun=rerun1, visit_id=visit_id)
-
-        raft_list_future = raft_list_for_visit(
-            configuration.repo_dir,
-            visit_id,
-            raft_list_fn,
-            stdout=logdir+raft_list_fn+".stdout",
-            stderr=logdir+raft_list_fn+".stderr",
-            wrap=configuration.wrap)
-
-        raft_list_future.result()
-        # this wait here means that we don't get parallelisation so much
-        # there are problems with launching tasks within tasks due to locking up
-        # a local worker... so avoid doing that.
-        # i.e. the monadness
+def process_visit_rafts(visit_id, raft_list_fn, inputs=None):
 
         raft_lines = read_and_strip(raft_list_fn)
 
@@ -276,8 +254,8 @@ def process_visit(visit_id):
                 inputs=[this_raft_single_frame_fut],
                 stdout=logdir+sky_correction_stdbase+".stdout",
                 stderr=logdir+sky_correction_stdbase+".stderr",
-                wrap=configuration.wrap),
-                parsl_resource_specification={"priority": (1200,visit_id)})
+                wrap=configuration.wrap,
+                parsl_resource_specification={"priority": (1200,visit_id)}))
 
         # now need to join based on all of this_visit_single_frame_futs... but not in sequential code
         # because otherwise we won't launch later visits until after we're done with this one, and
@@ -329,6 +307,28 @@ def process_visit(visit_id):
         terminal_futures.append(fut_check_ccd)
 
         return fut_tract2visit
+
+
+@parsl.python_app(executors=['submit-node'], join=True)
+def process_visit(visit_id):
+        logger.info("WFLOW: => Begin processing visit "+str(visit_id))
+
+        # some of this stuff could probably be parallelised down to the per-sensor
+        # level rather than per raft. finer granualarity but more overhead in
+        # starting up shifter.
+        # QUESTION: which bits can go to sensor level?
+        # QUESTION: how is efficiency here compared to losing efficiency by runs having wasted long-tail (wall and cpu) time?
+        raft_list_fn = "{repo_dir}/rerun/{rerun}/raft_list_for_visit.{visit_id}".format(repo_dir=configuration.repo_dir, rerun=rerun1, visit_id=visit_id)
+
+        raft_list_future = raft_list_for_visit(
+            configuration.repo_dir,
+            visit_id,
+            raft_list_fn,
+            stdout=logdir+raft_list_fn+".stdout",
+            stderr=logdir+raft_list_fn+".stderr",
+            wrap=configuration.wrap)
+
+        return process_visit_rafts(visit_id, raft_list_fn, inputs=[raft_list_future])
 
 
 # this must be called with visit_file_future passed into inputs to make it wait for
