@@ -20,6 +20,7 @@ import checkpointutil  # noqa: F401 - for import-time checkpoint config
 import configuration
 import ingest
 import tracts
+import visits
 
 from lsst_apps import lsst_app1, lsst_app2
 from workflowutils import read_and_strip
@@ -196,22 +197,6 @@ def raft_list_for_visit(repo_dir, visit_id, out_filename,
                                             out_filename=out_filename))
 
 # the parsl checkpointing for this won't detect if we ingested more stuff
-# to do with the specified visit - I'm not sure quite the right way to do
-# it, and I think its only useful in during workflow development when the
-# original ingest list might change? would need eg "files in each visit"
-# list to generate a per-visit input "version" id/hash
-@lsst_app1
-def check_ccd_astrometry(dm_root, repo_dir, rerun, visit, inputs=[],
-                         stderr=None, stdout=None, wrap=None, parsl_resource_specification=None):
-    # inputs=[] ignored but used for dependency handling
-    return wrap("{dm_root}/ImageProcessingPipelines/python/util/checkCcdAstrometry.py {repo_dir}/rerun/{rerun} "
-                "--id visit={visit} "
-                "--loglevel CameraMapper=warn".format(visit=visit,
-                                                      rerun=rerun,
-                                                      repo_dir=repo_dir,
-                                                      dm_root=dm_root))
-
-# the parsl checkpointing for this won't detect if we ingested more stuff
 # to do with the specified visit - see comments for check_ccd_astrometry
 @lsst_app2
 def tract2visit_mapper(dm_root, repo_dir, rerun, visit, inputs=[],
@@ -226,30 +211,6 @@ def tract2visit_mapper(dm_root, repo_dir, rerun, visit, inputs=[],
     # elsewhere merged into a single DB. That's awkward... there's probably
     # a reason to do with concurrency or shared fs that needs digging into.
     return wrap("mkdir -p {registries} && {dm_root}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir={repo_dir}/rerun/{rerun} --db={registries}/tracts_mapping.sqlite3 --visits={visit}".format(repo_dir=repo_dir, rerun=rerun, visit=visit, registries=registries, dm_root=dm_root))
-
-@lsst_app1
-def single_frame_driver(repo_dir, rerun, visit_id, raft_name,
-                        stdout=None, stderr=None, wrap=None,
-                        parsl_resource_specification=None):
-    # params for stream are WORKDIR=workdir, VISIT=visit_id
-    # this is going to be something like found in
-    # workflows/srs/pipe_setups/run_calexp
-    # run_calexp uses --cores as NSLOTS+1. I'm using cores 1 because I
-    # am not sure of the right parallelism here.
-
-    return wrap(("processCcd.py {repo_dir} "
-                 "--rerun {rerun} "
-                 "--id visit={visit} raftName={raft_name} "
-                 "--calib {repo_dir}/CALIB/ "
-                 "--clobber-versions").format(repo_dir=repo_dir,
-                                              rerun=rerun,
-                                              visit=visit_id,
-                                              raft_name=raft_name))
-
-@lsst_app1
-def sky_correction(repo_dir, rerun, visit, raft_name, inputs=[], stdout=None, stderr=None, wrap=None, parsl_resource_specification=None):
-    return wrap("skyCorrection.py {repo_dir}  --rerun {rerun} --id visit={visit} raftName={raft_name} --batch-type none --cores 1  --calib {repo_dir}/CALIB/ --timeout 999999999 --no-versions --loglevel CameraMapper=warn".format(repo_dir=repo_dir, rerun=rerun, visit=visit, raft_name=raft_name))
-
 
 if doSensor:
     #  setup_calexp: use DB to make a visit file
@@ -330,7 +291,7 @@ if doSensor:
             # assume visit_id really is a visit id... workflows/srs/pipe_setups/setup_calexp has a case where the visit file has two fields per line, and this is handled differently there. I have ignored that here.
             # raft_name is the $RAFTNAME environment variable in run_calexp in the XML workflows
             sfd_output_basename = "single_frame_driver.visit-{}.raft-{}".format(visit_id, raft_name)
-            this_raft_single_frame_fut = single_frame_driver(
+            this_raft_single_frame_fut = visits.single_frame_driver(
                 configuration.repo_dir,
                 rerun1 + ":" + rerun2,
                 visit_id,
@@ -342,7 +303,7 @@ if doSensor:
             # i've used so far -- so I'm using IN_DIR as used in previous steps
             # TODO: is that the right thing to do? otherwise how does IN_DIR and OUT_DIR differ?
             sky_correction_stdbase = "sky_correction.visit-{}.raft-{}".format(visit_id, raft_name)
-            this_visit_single_frame_futs.append(sky_correction(
+            this_visit_single_frame_futs.append(visits.sky_correction(
                 configuration.repo_dir,
                 rerun2 + ":" + rerun3,
                 visit_id,
@@ -366,7 +327,7 @@ if doSensor:
         # sequence rather than in parallel?
 
         check_ccd_stdbase = "check_ccd_astrometry.{}".format(visit_id)
-        fut_check_ccd = check_ccd_astrometry(
+        fut_check_ccd = visits.check_ccd_astrometry(
             configuration.dm_root,
             configuration.repo_dir,
             rerun3,
