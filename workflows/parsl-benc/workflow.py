@@ -262,7 +262,8 @@ def process_visit(visit_id):
                 raft_name,
                 stdout=logdir+sfd_output_basename+".stdout",
                 stderr=logdir+sfd_output_basename+".stderr",
-                wrap=configuration.wrap)
+                wrap=configuration.wrap,
+                parsl_resource_specification={"priority": (1100,visit_id)})
             # this is invoked in run_calexp with $OUT_DIR at the first parameter, but that's not something
             # i've used so far -- so I'm using IN_DIR as used in previous steps
             # TODO: is that the right thing to do? otherwise how does IN_DIR and OUT_DIR differ?
@@ -275,7 +276,8 @@ def process_visit(visit_id):
                 inputs=[this_raft_single_frame_fut],
                 stdout=logdir+sky_correction_stdbase+".stdout",
                 stderr=logdir+sky_correction_stdbase+".stderr",
-                wrap=configuration.wrap))
+                wrap=configuration.wrap),
+                parsl_resource_specification={"priority": (1200,visit_id)})
 
         # now need to join based on all of this_visit_single_frame_futs... but not in sequential code
         # because otherwise we won't launch later visits until after we're done with this one, and
@@ -315,7 +317,8 @@ def process_visit(visit_id):
             inputs=this_visit_single_frame_futs,
             stdout=logdir+tract2visit_mapper_stdbase+".stdout",
             stderr=logdir+tract2visit_mapper_stdbase+".stderr",
-            wrap=configuration.wrap)
+            wrap=configuration.wrap,
+            parsl_resource_specification={"priority": (1300,visit_id)})
 
         # This could go into terminal futures or we could explicitly wait for it
         # here. By waiting for it here, we ensure that the check has passed
