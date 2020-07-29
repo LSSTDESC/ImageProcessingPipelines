@@ -216,34 +216,8 @@ def tract2visit_mapper(dm_root, repo_dir, rerun, visit, inputs=[],
     # a reason to do with concurrency or shared fs that needs digging into.
     return wrap("mkdir -p {registries} && {dm_root}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir={repo_dir}/rerun/{rerun} --db={registries}/tracts_mapping.sqlite3 --visits={visit}".format(repo_dir=repo_dir, rerun=rerun, visit=visit, registries=registries, dm_root=dm_root))
 
-# this must be called with visit_file_future passed into inputs to make it wait for
-# the visit_file named in visit_file to be ready. TODO: replace with parsl File based
-# futures
 @parsl.python_app(executors=['submit-node'], join=True)
-def process_visits(visit_file, inputs=None):
-    # should make some comment here about how we have to explicitly wait for a
-    # result here in the main workflow code, rather than using visit_file_future
-    # as a dependency, because its used to generate more tasks (the
-    # monadicness I've referred to elsewhere)
-    # This means that it isn't, for example, captured in the dependency graph
-    # for visualisation, and that there is some constraint on expressing
-    # concurrency.
-
-
-    logger.info("WFLOW: submitting task_calexps")
-    visit_lines = read_and_strip(visit_file)
-
-    logger.info("WFLOW:  There were "+str(len(visit_lines))+" visits read from "+str(visit_file))
-
-    nvisits = 0
-    visit_futures = []
-    for (n, visit_id) in zip(range(0, len(visit_lines)), visit_lines):
-
-        nvisits += 1
-
-        if int(visit_id) < visit_min or int(visit_id) > visit_max:
-            continue
-
+def process_visit(visit_id):
         logger.info("WFLOW: => Begin processing visit "+str(visit_id))
 
         # some of this stuff could probably be parallelised down to the per-sensor
@@ -351,7 +325,38 @@ def process_visits(visit_file, inputs=None):
         # broken?
         terminal_futures.append(fut_check_ccd)
 
-        visit_futures.append(fut_tract2visit)
+        return fut_tract2visit
+
+
+# this must be called with visit_file_future passed into inputs to make it wait for
+# the visit_file named in visit_file to be ready. TODO: replace with parsl File based
+# futures
+@parsl.python_app(executors=['submit-node'], join=True)
+def process_visits(visit_file, inputs=None):
+    # should make some comment here about how we have to explicitly wait for a
+    # result here in the main workflow code, rather than using visit_file_future
+    # as a dependency, because its used to generate more tasks (the
+    # monadicness I've referred to elsewhere)
+    # This means that it isn't, for example, captured in the dependency graph
+    # for visualisation, and that there is some constraint on expressing
+    # concurrency.
+
+
+    logger.info("WFLOW: submitting task_calexps")
+    visit_lines = read_and_strip(visit_file)
+
+    logger.info("WFLOW:  There were "+str(len(visit_lines))+" visits read from "+str(visit_file))
+
+    nvisits = 0
+    visit_futures = []
+    for visit_id in visit_lines:
+
+        nvisits += 1
+
+        if int(visit_id) < visit_min or int(visit_id) > visit_max:
+            continue
+
+        visit_futures.append(process_visit(visit_id))
 
         # End of loop over rafts
     logger.info("WFLOW: Finished task definitions for {} visits".format(nvisits))
