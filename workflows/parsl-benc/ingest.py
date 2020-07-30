@@ -1,7 +1,7 @@
 import logging
-from lsst_apps import lsst_app1, lsst_app2
+from lsst_apps import lsst_app1
 
-from parsl import bash_app, python_app
+from parsl import python_app
 
 # TODO: in parsl, export File from parsl.data_provider top
 from parsl.data_provider.files import File

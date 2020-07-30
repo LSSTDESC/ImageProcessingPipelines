@@ -1,5 +1,6 @@
 from lsst_apps import lsst_app1
 
+
 @lsst_app1
 def single_frame_driver(repo_dir, rerun, visit_id, raft_name,
                         stdout=None, stderr=None, wrap=None,
@@ -18,6 +19,7 @@ def single_frame_driver(repo_dir, rerun, visit_id, raft_name,
                                               rerun=rerun,
                                               visit=visit_id,
                                               raft_name=raft_name))
+
 
 @lsst_app1
 def sky_correction(repo_dir, rerun, visit, raft_name, inputs=[], stdout=None, stderr=None, wrap=None, parsl_resource_specification=None):

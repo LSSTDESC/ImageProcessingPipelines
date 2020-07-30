@@ -22,7 +22,7 @@ import ingest
 import tracts
 import visits
 
-from lsst_apps import lsst_app1, lsst_app2
+from lsst_apps import lsst_app2
 from workflowutils import read_and_strip
 from future_combinators import combine
 
@@ -149,7 +149,7 @@ if doSkyMap:
     skymap_future = make_sky_map(configuration.repo_dir, rerun1,
                                  stdout=logdir+"make_sky_map.stdout",
                                  stderr=logdir+"make_sky_map.stderr",
-                                wrap=configuration.wrap,
+                                 wrap=configuration.wrap,
                                  parsl_resource_specification={"priority": (1000,)})
 else:
     logger.warning("WFLOW: skipping makeSkyMap step")
@@ -166,13 +166,6 @@ if doSkyMap:
     skymap_future.result()
     logger.info("WFLOW: makeSkyMap completed")
 
-####################################################################################################
-####################################################################################################
-# The following block performs sensor/raft raw data processing
-####################################################################################################
-####################################################################################################
-
-
 
 @lsst_app2
 def make_visit_file(repo_dir, visit_file, stdout=None, stderr=None, wrap=None, parsl_resource_specification=None):
@@ -180,6 +173,7 @@ def make_visit_file(repo_dir, visit_file, stdout=None, stderr=None, wrap=None, p
                  '"SELECT DISTINCT visit FROM raw_visit;" '
                  '> {visit_file}').format(repo_dir=repo_dir,
                                           visit_file=visit_file))
+
 
 @lsst_app2
 def raft_list_for_visit(repo_dir, visit_id, out_filename,
@@ -189,6 +183,7 @@ def raft_list_for_visit(repo_dir, visit_id, out_filename,
                  "> {out_filename}").format(repo_dir=repo_dir,
                                             visit_id=visit_id,
                                             out_filename=out_filename))
+
 
 # the parsl checkpointing for this won't detect if we ingested more stuff
 # to do with the specified visit - see comments for check_ccd_astrometry
@@ -206,120 +201,121 @@ def tract2visit_mapper(dm_root, repo_dir, rerun, visit, inputs=[],
     # a reason to do with concurrency or shared fs that needs digging into.
     return wrap("mkdir -p {registries} && {dm_root}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir={repo_dir}/rerun/{rerun} --db={registries}/tracts_mapping.sqlite3 --visits={visit}".format(repo_dir=repo_dir, rerun=rerun, visit=visit, registries=registries, dm_root=dm_root))
 
+
 @parsl.python_app(executors=['submit-node'], join=True)
 def process_visit_rafts(visit_id, raft_list_fn, inputs=None):
 
-        raft_lines = read_and_strip(raft_list_fn)
+    raft_lines = read_and_strip(raft_list_fn)
 
-        logger.info("WFLOW: => There are " + str(len(raft_lines)) + " rafts to process:")
-        logger.info("WFLOW: "+str(raft_lines))
+    logger.info("WFLOW: => There are " + str(len(raft_lines)) + " rafts to process:")
+    logger.info("WFLOW: "+str(raft_lines))
 
-        this_visit_single_frame_futs = []
-        this_visit_sky_correction_futs = []
+    this_visit_single_frame_futs = []
+    this_visit_sky_correction_futs = []
 
-        for (m, raft_name) in zip(range(0, len(raft_lines)), raft_lines):
-            logger.info("WFLOW: visit {} raft {}".format(visit_id, raft_name))
+    for (m, raft_name) in zip(range(0, len(raft_lines)), raft_lines):
+        logger.info("WFLOW: visit {} raft {}".format(visit_id, raft_name))
 
-            # this call is based on run_calexp shell script
-            # assume visit_id really is a visit id... workflows/srs/pipe_setups/setup_calexp has a case where the visit file has two fields per line, and this is handled differently there. I have ignored that here.
-            # raft_name is the $RAFTNAME environment variable in run_calexp in the XML workflows
-            sfd_output_basename = "single_frame_driver.visit-{}.raft-{}".format(visit_id, raft_name)
-            this_raft_single_frame_fut = visits.single_frame_driver(
-                configuration.repo_dir,
-                rerun1 + ":" + rerun2,
-                visit_id,
-                raft_name,
-                stdout=logdir+sfd_output_basename+".stdout",
-                stderr=logdir+sfd_output_basename+".stderr",
-                wrap=configuration.wrap,
-                parsl_resource_specification={"priority": (1200,visit_id)})
-            # this is invoked in run_calexp with $OUT_DIR at the first parameter, but that's not something
-            # i've used so far -- so I'm using IN_DIR as used in previous steps
-            # TODO: is that the right thing to do? otherwise how does IN_DIR and OUT_DIR differ?
-            sky_correction_stdbase = "sky_correction.visit-{}.raft-{}".format(visit_id, raft_name)
-            this_visit_sky_correction_futs.append(visits.sky_correction(
-                configuration.repo_dir,
-                rerun2 + ":" + rerun3,
-                visit_id,
-                raft_name,
-                inputs=[this_raft_single_frame_fut],
-                stdout=logdir+sky_correction_stdbase+".stdout",
-                stderr=logdir+sky_correction_stdbase+".stderr",
-                wrap=configuration.wrap,
-                parsl_resource_specification={"priority": (1100,visit_id)}))
-
-        # now need to join based on all of this_visit_single_frame_futs... but not in sequential code
-        # because otherwise we won't launch later visits until after we're done with this one, and
-        # lose parallelism
-        # question here: should these be done per-raft or per-visit?
-        # the workflow looks like you can rnu with a single vist-raft but
-        # then the subsequent
-        # steps don't take raft as a parameter? so what's the deal there?
-        # TODO: assume for now we need to wait for all rafts to be done,
-        # and process per visit
-
-        # TODO: which of these post-processing steps need to happen in
-        # sequence rather than in parallel?
-
-        check_ccd_stdbase = "check_ccd_astrometry.{}".format(visit_id)
-        fut_check_ccd = visits.check_ccd_astrometry(
-            configuration.dm_root,
+        # this call is based on run_calexp shell script
+        # assume visit_id really is a visit id... workflows/srs/pipe_setups/setup_calexp has a case where the visit file has two fields per line, and this is handled differently there. I have ignored that here.
+        # raft_name is the $RAFTNAME environment variable in run_calexp in the XML workflows
+        sfd_output_basename = "single_frame_driver.visit-{}.raft-{}".format(visit_id, raft_name)
+        this_raft_single_frame_fut = visits.single_frame_driver(
             configuration.repo_dir,
-            rerun3,
+            rerun1 + ":" + rerun2,
             visit_id,
-            inputs=this_visit_sky_correction_futs,
-            stdout=logdir+check_ccd_stdbase+".stdout",
-            stderr=logdir+check_ccd_stdbase+".stderr",
-            wrap=configuration.wrap)
-
-        # some caution on re-running this: the DB is additive, I think, so if there
-        # is stuff for this visit already in the DB from a previous run, it will be
-        # added to here, leaving potentially wrong stuff in there if we've changed
-        # things in the wrong way. That's a general note on adding in more stuff to
-        # a run, though?
-        tract2visit_mapper_stdbase = "tract2visit_mapper.{}".format(visit_id)
-        fut_tract2visit = tract2visit_mapper(
-            configuration.dm_root,
-            configuration.repo_dir,
-            rerun3,
-            visit_id,
-            inputs=this_visit_single_frame_futs,
-            stdout=logdir+tract2visit_mapper_stdbase+".stdout",
-            stderr=logdir+tract2visit_mapper_stdbase+".stderr",
+            raft_name,
+            stdout=logdir+sfd_output_basename+".stdout",
+            stderr=logdir+sfd_output_basename+".stderr",
             wrap=configuration.wrap,
-            parsl_resource_specification={"priority": (1200,visit_id)})
+            parsl_resource_specification={"priority": (1200, visit_id)})
+        # this is invoked in run_calexp with $OUT_DIR at the first parameter, but that's not something
+        # i've used so far -- so I'm using IN_DIR as used in previous steps
+        # TODO: is that the right thing to do? otherwise how does IN_DIR and OUT_DIR differ?
+        sky_correction_stdbase = "sky_correction.visit-{}.raft-{}".format(visit_id, raft_name)
+        this_visit_sky_correction_futs.append(visits.sky_correction(
+            configuration.repo_dir,
+            rerun2 + ":" + rerun3,
+            visit_id,
+            raft_name,
+            inputs=[this_raft_single_frame_fut],
+            stdout=logdir+sky_correction_stdbase+".stdout",
+            stderr=logdir+sky_correction_stdbase+".stderr",
+            wrap=configuration.wrap,
+            parsl_resource_specification={"priority": (1100, visit_id)}))
 
-        # This could go into terminal futures or we could explicitly wait for it
-        # here. By waiting for it here, we ensure that the check has passed
-        # before doing anything with the information.
-        # By not waiting for it, we increase parallelism, but we might encounter
-        # a downstream problem of some kind before discovering check_ccd is
-        # broken?
-        terminal_futures.append(fut_check_ccd)
+    # now need to join based on all of this_visit_single_frame_futs... but not in sequential code
+    # because otherwise we won't launch later visits until after we're done with this one, and
+    # lose parallelism
+    # question here: should these be done per-raft or per-visit?
+    # the workflow looks like you can rnu with a single vist-raft but
+    # then the subsequent
+    # steps don't take raft as a parameter? so what's the deal there?
+    # TODO: assume for now we need to wait for all rafts to be done,
+    # and process per visit
 
-        return combine(inputs=[fut_tract2visit] + this_visit_sky_correction_futs)
+    # TODO: which of these post-processing steps need to happen in
+    # sequence rather than in parallel?
+
+    check_ccd_stdbase = "check_ccd_astrometry.{}".format(visit_id)
+    fut_check_ccd = visits.check_ccd_astrometry(
+        configuration.dm_root,
+        configuration.repo_dir,
+        rerun3,
+        visit_id,
+        inputs=this_visit_sky_correction_futs,
+        stdout=logdir+check_ccd_stdbase+".stdout",
+        stderr=logdir+check_ccd_stdbase+".stderr",
+        wrap=configuration.wrap)
+
+    # some caution on re-running this: the DB is additive, I think, so if there
+    # is stuff for this visit already in the DB from a previous run, it will be
+    # added to here, leaving potentially wrong stuff in there if we've changed
+    # things in the wrong way. That's a general note on adding in more stuff to
+    # a run, though?
+    tract2visit_mapper_stdbase = "tract2visit_mapper.{}".format(visit_id)
+    fut_tract2visit = tract2visit_mapper(
+        configuration.dm_root,
+        configuration.repo_dir,
+        rerun3,
+        visit_id,
+        inputs=this_visit_single_frame_futs,
+        stdout=logdir+tract2visit_mapper_stdbase+".stdout",
+        stderr=logdir+tract2visit_mapper_stdbase+".stderr",
+        wrap=configuration.wrap,
+        parsl_resource_specification={"priority": (1200, visit_id)})
+
+    # This could go into terminal futures or we could explicitly wait for it
+    # here. By waiting for it here, we ensure that the check has passed
+    # before doing anything with the information.
+    # By not waiting for it, we increase parallelism, but we might encounter
+    # a downstream problem of some kind before discovering check_ccd is
+    # broken?
+    terminal_futures.append(fut_check_ccd)
+
+    return combine(inputs=[fut_tract2visit] + this_visit_sky_correction_futs)
 
 
 @parsl.python_app(executors=['submit-node'], join=True)
 def process_visit(visit_id):
-        logger.info("WFLOW: => Begin processing visit "+str(visit_id))
+    logger.info("WFLOW: => Begin processing visit "+str(visit_id))
 
-        # some of this stuff could probably be parallelised down to the per-sensor
-        # level rather than per raft. finer granualarity but more overhead in
-        # starting up shifter.
-        # QUESTION: which bits can go to sensor level?
-        # QUESTION: how is efficiency here compared to losing efficiency by runs having wasted long-tail (wall and cpu) time?
-        raft_list_fn = "{repo_dir}/rerun/{rerun}/raft_list_for_visit.{visit_id}".format(repo_dir=configuration.repo_dir, rerun=rerun1, visit_id=visit_id)
+    # some of this stuff could probably be parallelised down to the per-sensor
+    # level rather than per raft. finer granualarity but more overhead in
+    # starting up shifter.
+    # QUESTION: which bits can go to sensor level?
+    # QUESTION: how is efficiency here compared to losing efficiency by runs having wasted long-tail (wall and cpu) time?
+    raft_list_fn = "{repo_dir}/rerun/{rerun}/raft_list_for_visit.{visit_id}".format(repo_dir=configuration.repo_dir, rerun=rerun1, visit_id=visit_id)
 
-        raft_list_future = raft_list_for_visit(
-            configuration.repo_dir,
-            visit_id,
-            raft_list_fn,
-            stdout=logdir+raft_list_fn+".stdout",
-            stderr=logdir+raft_list_fn+".stderr",
-            wrap=configuration.wrap)
+    raft_list_future = raft_list_for_visit(
+        configuration.repo_dir,
+        visit_id,
+        raft_list_fn,
+        stdout=logdir+raft_list_fn+".stdout",
+        stderr=logdir+raft_list_fn+".stderr",
+        wrap=configuration.wrap)
 
-        return process_visit_rafts(visit_id, raft_list_fn, inputs=[raft_list_future])
+    return process_visit_rafts(visit_id, raft_list_fn, inputs=[raft_list_future])
 
 
 # this must be called with visit_file_future passed into inputs to make it wait for
@@ -334,7 +330,6 @@ def process_visits(visit_file, inputs=None):
     # This means that it isn't, for example, captured in the dependency graph
     # for visualisation, and that there is some constraint on expressing
     # concurrency.
-
 
     logger.info("WFLOW: submitting task_calexps")
     visit_lines = read_and_strip(visit_file)
@@ -355,7 +350,6 @@ def process_visits(visit_file, inputs=None):
         # End of loop over rafts
     logger.info("WFLOW: Finished task definitions for {} visits".format(nvisits))
     return combine(inputs=visit_futures)
-
 
 
 if doSensor:
@@ -506,13 +500,13 @@ def visits_for_tract_patch_filter(metadata_dir, tract_id, patch_id,
     return wrap('sqlite3 "file:{metadata_dir}/tracts_mapping.sqlite3?mode=ro" "{sql}" > {visit_file} ; cat {visit_file}  | tr \'\\n\' \'^\' | sed s\'/.$//\' | sed \'s/^/--selectId visit=/\' > {visit_file}.selectid'.format(metadata_dir=metadata_dir, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, sql=sql, visit_file=visit_file))
 
 
-
 tract_patch_visit_futures = []
 ntracts = 0
 npatches = 0
 
 if tract_subset:
     logger.warning("WFLOW: Processing only selected tracts: "+str(tract_subset))
+
 
 @parsl.python_app(executors=['submit-node'], join=True)
 def process_patches(tract_id, patches_file, inputs=None):
@@ -626,8 +620,7 @@ for tract_id in tract_lines:
     # the earlier futures, and not hardcoded here and in patch list generator.
     patches_file = "{metadata_dir}/patches-for-tract-{tract}.list".format(tract=tract_id, repo_dir=configuration.repo_dir, metadata_dir=metadata_dir)
 
-
-    tract_patch_list_futures=[]
+    tract_patch_list_futures = []
     if tract_id in tract_patch_futures.keys():
         logger.info("WFLOW: waiting for patches list for tract {} to be available".format(tract_id))
         tract_patch_list_futures.append(tract_patch_futures[tract_id])
