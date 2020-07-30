@@ -75,16 +75,6 @@ rerun3 = rerun2 + "." + rerun3_name
 rerun4 = rerun3 + "." + rerun4_name
 rerun5 = rerun4 + "." + rerun5_name
 
-# 6/18/2020 IMPORTANT NOTES for DC2 Year 1 (partial) processing:
-#
-#
-#   1. The following code has been changed such that it *only* works for tract/patch processing against
-#      Y01 data repo, i.e., it will no longer perform sensor/raft processing properly due to changes
-#      in the "rerun" naming.
-
-# Override "rerun3" so that it points to the DC2 run 2.2i repo at NERSC
-rerun3 = 'run2.2i-calexp-v1'
-
 
 # Metadata is stored in the repo rerun subdirectory, but there
 # is nothing "rerun"-like about it.
