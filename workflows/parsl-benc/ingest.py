@@ -1,4 +1,5 @@
 import logging
+from lsst_apps import lsst_app1, lsst_app2
 
 from parsl import bash_app, python_app
 
@@ -8,19 +9,19 @@ from parsl.data_provider.files import File
 logger = logging.getLogger("parsl.dm.ingest")
 
 
-@bash_app(executors=["batch-1"], cache=True, ignore_for_cache=['stdout', 'stderr', 'wrap'])
-def create_ingest_file_list(pipe_scripts_dir, ingest_source, outputs=[], stdout=None, stderr=None, wrap=None):
+@lsst_app1
+def create_ingest_file_list(pipe_scripts_dir, ingest_source, outputs=[], stdout=None, stderr=None, wrap=None, parsl_resource_specification=None):
     outfile = outputs[0]
     return wrap("{pipe_scripts_dir}/createIngestFileList.py {ingest_source} --recursive --ext .fits && mv filesToIngest.txt {out_fn}".format(pipe_scripts_dir=pipe_scripts_dir, ingest_source=ingest_source, out_fn=outfile.filepath))
 
 
-@bash_app(executors=["batch-2"], cache=True, ignore_for_cache=['stdout', 'stderr', 'wrap'])
+@python_app(executors=["submit-node"])
 def filter_in_place(ingest_file, outputs=[], stdout=None, stderr=None, wrap=None):
-    return wrap("grep --invert-match 466748_R43_S21 {} > filter-filesToIngest.tmp && mv filter-filesToIngest.tmp {}".format(ingest_file.filepath, outputs[0].filepath))
+    return "grep --invert-match 466748_R43_S21 {} > filter-filesToIngest.tmp && mv filter-filesToIngest.tmp {}".format(ingest_file.filepath, outputs[0].filepath)
 
 
 # for testing, truncated this list heavilty
-@python_app(executors=["batch-2"], cache=True, ignore_for_cache=['stdout', 'stderr'])
+@python_app(executors=["submit-node"])
 def truncate_ingest_list(file_of_files_to_ingest, n, outputs=[], stdout=None, stderr=None):
     with open(file_of_files_to_ingest.filepath) as f:
         files_to_ingest = f.readlines()
@@ -32,8 +33,8 @@ def truncate_ingest_list(file_of_files_to_ingest, n, outputs=[], stdout=None, st
     logger.info("wrote truncated list")
 
 
-@bash_app(executors=['batch-1'], cache=True, ignore_for_cache=['stdout', 'stderr', 'wrap'])
-def ingest(file, repo_dir, rerun, stdout=None, stderr=None, wrap=None):
+@lsst_app1
+def ingest(file, repo_dir, rerun, stdout=None, stderr=None, wrap=None, parsl_resource_specification=None):
     # parsl.AUTO_LOGNAME does not work with checkpointing: see https://github.com/Parsl/parsl/issues/1293
     # def ingest(file, repo_dir, stdout=parsl.AUTO_LOGNAME, stderr=parsl.AUTO_LOGNAME):
     """This comes from workflows/srs/pipe_setups/setup_ingest.
