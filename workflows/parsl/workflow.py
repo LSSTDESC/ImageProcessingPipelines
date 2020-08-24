@@ -1,13 +1,6 @@
 #!/usr/bin/env python
 # workflow.py - Main Parsl script for DESC DRP workflow
 
-# To run:
-# initial conda setup on cori:
-# $ ./initialize/initConda.sh
-
-# to run the workflow, assuming above setup has been done:
-# $ ./runWorkflow.sh CONFIG_FILE_NAME
-
 import concurrent.futures
 import functools
 import logging
@@ -27,17 +20,20 @@ from workflowutils import read_and_strip
 from future_combinators import combine
 
 
+#############################
+## Setup and Initialization
+#############################
 # PROCESSING FLAGS
-doIngest = True      # switch to enable the ingest step, if True
-doSkyMap = True      # switch to enable sky map creation, if True
-doSensor = True      # switch to enable sensor/raft level processing, if True
+doIngest = False     # switch to enable the ingest step, if True
+doSkyMap = False     # switch to enable sky map creation, if True
+doSensor = False     # switch to enable sensor/raft level processing, if True
 doSqlite = True      # switch to enable the surprisingly time-consuming sqlite queries against the tracts_mapping db
 
 
 # Establish logging
 logger = logging.getLogger("parsl.workflow")
 parsl.set_stream_logger(level=logging.INFO)
-logger.info("WFLOW: Parsl driver for DM pipeline")
+logger.info("WFLOW: Parsl driver for DM (DRP) pipeline")
 
 # Read in workflow configuration
 configuration = configuration.load_configuration()
@@ -57,10 +53,10 @@ configuration = configuration.load_configuration()
 
 # The rerun name for each step should include the previous steps, automatically
 # so the step 6 rerun will be long.
-rerun1_name = "0727"  # contains outputs of: ingest and skymap
+rerun1_name = "1"  # contains outputs of: ingest and skymap
 rerun2_name = "2"  # contains outputs of: singleFrameDriver
 rerun3_name = "3"  # ... etc
-rerun4_name = "20200721d"
+rerun4_name = "4"
 rerun5_name = "5"
 
 visit_min = configuration.visit_min
@@ -82,6 +78,7 @@ rerun5 = rerun4 + "." + rerun5_name
 metadata_dir = os.path.join(configuration.repo_dir, 'rerun', configuration.rerun_prefix+'metadata')
 if not os.path.exists(metadata_dir):
     os.makedirs(metadata_dir)
+    
 
 logger.info("WFLOW: Output to rerun/"+rerun1+" (etc)")
 
@@ -102,6 +99,11 @@ logger.info("WFLOW: Log directory is " + logdir)
 # results used by subsequent steps)
 terminal_futures = []
 
+
+
+####################################
+## Prepare for Ingest and Sky Map
+####################################
 # INGEST
 # (old) ingest_future = ingest.perform_ingest(configuration)
 # (new) ingest_future = ingest.perform_ingest(configuration, logdir)
@@ -112,7 +114,7 @@ terminal_futures = []
 if doIngest:
     ingest_future = ingest.perform_ingest(configuration, logdir, rerun1)
 else:
-    logger.info("WFLOW: Skip ingest")
+    logger.warning("WFLOW: Skip ingest")
 
 
 # now equivalent of DC2DM_2_SINGLEFRAME_NERSC.xml
@@ -140,7 +142,7 @@ else:
 # there needs to be a new dependency added.
 @lsst_app2
 def make_sky_map(repo_dir, rerun, stdout=None, stderr=None, wrap=None, parsl_resource_specification=None):
-    return wrap("makeSkyMap.py {} --rerun {}".format(repo_dir, rerun))
+    return wrap("/usr/bin/time -v makeSkyMap.py {} --rerun {}".format(repo_dir, rerun))
 
 
 # TODO: this can run in parallel with ingest
@@ -154,22 +156,38 @@ if doSkyMap:
 else:
     logger.warning("WFLOW: skipping makeSkyMap step")
 
+
+
+###################################
+## Ingest
+###################################
 if doIngest:
     logger.info("WFLOW: waiting for ingest(s) to complete")
     ingest_future.result()
     logger.info("WFLOW: ingest(s) completed")
 else:
     logger.warning("WFLOW: skip data ingest.")
+    pass
 
+
+
+###################################
+## Sky Map
+###################################
 if doSkyMap:
     logger.info("WFLOW: waiting for makeSkyMap to complete")
     skymap_future.result()
     logger.info("WFLOW: makeSkyMap completed")
+    pass
 
 
+
+###################################
+## Prepare Sensor/Raft processing
+###################################
 @lsst_app2
 def make_visit_file(repo_dir, visit_file, stdout=None, stderr=None, wrap=None, parsl_resource_specification=None):
-    return wrap(('sqlite3 {repo_dir}/registry.sqlite3 '
+    return wrap(('/usr/bin/time -v sqlite3 {repo_dir}/registry.sqlite3 '
                  '"SELECT DISTINCT visit FROM raw_visit;" '
                  '> {visit_file}').format(repo_dir=repo_dir,
                                           visit_file=visit_file))
@@ -178,7 +196,7 @@ def make_visit_file(repo_dir, visit_file, stdout=None, stderr=None, wrap=None, p
 @lsst_app2
 def raft_list_for_visit(repo_dir, visit_id, out_filename,
                         stderr=None, stdout=None, wrap=None, parsl_resource_specification=None):
-    return wrap(("sqlite3 {repo_dir}/registry.sqlite3 "
+    return wrap(("/usr/bin/time -v sqlite3 {repo_dir}/registry.sqlite3 "
                  "'SELECT DISTINCT raftName FROM raw WHERE visit={visit_id}' "
                  "> {out_filename}").format(repo_dir=repo_dir,
                                             visit_id=visit_id,
@@ -199,7 +217,7 @@ def tract2visit_mapper(dm_root, repo_dir, rerun, visit, inputs=[],
     # the srs workflow has a separate output database per visit, which is
     # elsewhere merged into a single DB. That's awkward... there's probably
     # a reason to do with concurrency or shared fs that needs digging into.
-    return wrap("mkdir -p {registries} && {dm_root}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir={repo_dir}/rerun/{rerun} --db={registries}/tracts_mapping.sqlite3 --visits={visit}".format(repo_dir=repo_dir, rerun=rerun, visit=visit, registries=registries, dm_root=dm_root))
+    return wrap("mkdir -p {registries} && /usr/bin/time -v {dm_root}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir={repo_dir}/rerun/{rerun} --db={registries}/tracts_mapping.sqlite3 --visits={visit}".format(repo_dir=repo_dir, rerun=rerun, visit=visit, registries=registries, dm_root=dm_root))
 
 
 @parsl.python_app(executors=['submit-node'], join=True)
@@ -352,6 +370,10 @@ def process_visits(visit_file, inputs=None):
     return combine(inputs=visit_futures)
 
 
+
+###########################
+## Sensor/Raft processing
+###########################
 if doSensor:
     logger.info("WFLOW: Making visit file from raw_visit table")
     visit_file = "{repo_dir}/rerun/{rerun}/all_visits_from_registry.list".format(
@@ -374,11 +396,40 @@ if doSensor:
     logger.info("WFLOW: sensor/raft-oriented tasks complete")
 
 else:
-    logger.info("WFLOW: Skipping sensor/raft level processing")
+    logger.warning("WFLOW: Skipping sensor/raft level processing")
+    pass
 
 
-# The following block performs tract/patch processing
-logger.info("WFLOW: Begin processing tracts/patches")
+
+
+
+#######################################
+## Prepare tract/patch processing
+#######################################
+
+logger.info("WFLOW: Setup tract/patch processing")
+
+####################################################################################################
+##
+## 6/18/2020 IMPORTANT NOTES for DC2 Year 1 (partial) processing:
+##
+##
+##   1. The following code has been changed such that it *only* works for tract/patch processing against
+##      Y01 data repo, i.e., it will no longer perform sensor/raft processing properly due to changes
+##      in the "rerun" naming.
+
+## Override "rerun3" so that it points to the DC2 run 2.2i repo at NERSC
+rerun3 = 'run2.2i-calexp-v1-copy'    ## This directory contains all calexp data in $SCRATCH (not CFS)
+
+##
+##   2. Another change is the limitation on visitIDs present in the various sql queries.  This is
+##      to limit the scope of processing to only the Y01 data (the repo contains much more)
+
+## Define the beginning and ending visitIDs for DC2 Year 1 data   <===== NOW DONE IN THE configuration.py
+#vStart = 230
+#vEnd = 262622
+
+####################################################################################################
 
 # now we can do coadds. This is concurrent by tract, not by visit.
 # information about tracts comes from the result of tract2visit_mapper
@@ -417,13 +468,13 @@ logger.info("WFLOW: Begin processing tracts/patches")
 @lsst_app2
 def make_tract_list(repo_dir, metadata_dir, visit_min, visit_max, tracts_file,
                     stdout=None, stderr=None, wrap=None, parsl_resource_specification=None):
-    return wrap('sqlite3 {metadata_dir}/tracts_mapping.sqlite3 "SELECT DISTINCT tract FROM overlaps where visit >= {visit_min} and visit <= {visit_max} order by tract asc;" > {tracts_file}'.format(metadata_dir=metadata_dir, visit_min=visit_min, visit_max=visit_max, tracts_file=tracts_file))
+    return wrap('/usr/bin/time -v sqlite3 {metadata_dir}/tracts_mapping.sqlite3 "SELECT DISTINCT tract FROM overlaps where visit >= {visit_min} and visit <= {visit_max} order by tract asc;" > {tracts_file}'.format(metadata_dir=metadata_dir, visit_min=visit_min, visit_max=visit_max, tracts_file=tracts_file))
 
 
 @lsst_app2
 def make_patch_list_for_tract(metadata_dir, tract, visit_min, visit_max, patches_file, stdout=None, stderr=None, wrap=None, parsl_resource_specification=None):
     # this comes from srs/pipe_setups/setup_patch
-    return wrap('sqlite3 "file:{metadata_dir}/tracts_mapping.sqlite3?mode=ro" "SELECT DISTINCT patch FROM overlaps WHERE tract={tract} and visit >= {visit_min} and visit <= {visit_max};" > {patches_file}'.format(metadata_dir=metadata_dir, tract=tract, visit_min=visit_min, visit_max=visit_max, patches_file=patches_file))
+    return wrap('/usr/bin/time -v sqlite3 "file:{metadata_dir}/tracts_mapping.sqlite3?mode=ro" "SELECT DISTINCT patch FROM overlaps WHERE tract={tract} and visit >= {visit_min} and visit <= {visit_max};" > {patches_file}'.format(metadata_dir=metadata_dir, tract=tract, visit_min=visit_min, visit_max=visit_max, patches_file=patches_file))
 
 
 tracts_file = "{metadata_dir}/tracts.list".format(repo_dir=configuration.repo_dir, metadata_dir=metadata_dir)
@@ -497,7 +548,7 @@ def visits_for_tract_patch_filter(metadata_dir, tract_id, patch_id,
     # sqlite returns a list of visitIDs, one per line.  This needs to be converted
     # into a single line of the form:
     #     --selectID visit=<visitID1>^<visitID2>^...
-    return wrap('sqlite3 "file:{metadata_dir}/tracts_mapping.sqlite3?mode=ro" "{sql}" > {visit_file} ; cat {visit_file}  | tr \'\\n\' \'^\' | sed s\'/.$//\' | sed \'s/^/--selectId visit=/\' > {visit_file}.selectid'.format(metadata_dir=metadata_dir, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, sql=sql, visit_file=visit_file))
+    return wrap('/usr/bin/time -v sqlite3 "file:{metadata_dir}/tracts_mapping.sqlite3?mode=ro" "{sql}" > {visit_file} ; cat {visit_file}  | tr \'\\n\' \'^\' | sed s\'/.$//\' | sed \'s/^/--selectId visit=/\' > {visit_file}.selectid'.format(metadata_dir=metadata_dir, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, sql=sql, visit_file=visit_file))
 
 
 tract_patch_visit_futures = []
@@ -531,7 +582,7 @@ def process_patches(tract_id, patches_file, inputs=None):
         if patch_subset and patch_idl not in patch_subset:  # favoured patch handling, for testing
             continue
 
-        logger.info("WFLOW: generating visit list for tract {} patch {}".format(tract_id, patch_idx))
+        logger.info("WFLOW: setup coadd processing for tract {} patch {}".format(tract_id, patch_idx))
 
         this_patch_futures = []
 
@@ -593,7 +644,9 @@ def process_patches(tract_id, patches_file, inputs=None):
             #    coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog
 
             this_patch_futures.append(fut2)
+            pass
 
+        logger.info("WFLOW: setup multiband processing for tract {} patch {}".format(tract_id, patch_idx))
         fut3 = tracts.multiband_parsl_driver(configuration,
                                              rerun4,
                                              rerun5,
@@ -605,9 +658,17 @@ def process_patches(tract_id, patches_file, inputs=None):
                                              wrap=configuration.wrap)
 
         this_tract_all_patches_futures.append(fut3)
+        pass
+    
     return combine(inputs=this_tract_all_patches_futures)
+    ### end of process_patches()
 
 
+
+    
+##############################
+## Tract/Patch processing
+##############################
 for tract_id in tract_lines:
 
     if tract_subset and not int(tract_id) in tract_subset:
@@ -629,6 +690,7 @@ for tract_id in tract_lines:
         # need to do this block before we can do a read...
         # but actually that means this body should move into its own local
 
+    logger.info("WFLOW: begin processing patches for tract {}".format(tract_id))
     patches_fut = process_patches(tract_id, patches_file, inputs=tract_patch_list_futures)
 
     terminal_futures.append(patches_fut)
@@ -638,11 +700,14 @@ for tract_id in tract_lines:
     # (critical to only coadd a given number of years for instance),
     # and then launch one final nested subtask for each filter.
     # This nested subtask runs coaddDriver.py
+    pass
 
-concurrent.futures.wait(terminal_futures)
 
+########################
+## Finale
+########################
 logger.info("WFLOW: Awaiting results from terminal_futures")
 logger.info("WFLOW: #tracts = "+str(ntracts)+", #patches = "+str(npatches))
+concurrent.futures.wait(terminal_futures)
 [future.result() for future in terminal_futures]
-
 logger.info("WFLOW: Reached the end of the parsl driver for DM pipeline")

@@ -7,3 +7,7 @@ lsst_app1 = bash_app(executors=["batch-1"],
 lsst_app2 = bash_app(executors=["batch-2"],
                      cache=True,
                      ignore_for_cache=["stdout", "stderr", "wrap", "parsl_resource_specification"])
+
+lsst_app3 = bash_app(executors=["batch-3"],
+                     cache=True,
+                     ignore_for_cache=["stdout", "stderr", "wrap", "parsl_resource_specification"])
