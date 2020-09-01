@@ -25,6 +25,6 @@ if [[ $? == 0 ]]; then
 	echo "successful execution of ${cmd}"
     else
 	echo "failure in execution of ${cmd}" 
-	exit rc
+	exit $rc
     fi
 fi
