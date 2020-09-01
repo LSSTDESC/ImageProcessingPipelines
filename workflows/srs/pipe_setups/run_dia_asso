@@ -1,0 +1,13 @@
+#!/bin/bash
+
+### run DIA association on the tract and set of patches provided as input
+
+if [[ $SITE == "LSST-IN2P3" ]]
+then
+    echo "launching monitoring script..... output will be under $(dirname ${SGE_STDOUT_PATH})"
+    /pbs/home/d/descprod/bin/joremon.sh
+fi
+
+cmd="associationDriver.py ${OUT_DIR} --rerun ${RERUN2} --id tract=${TRACT} patch=${PATCH} filter=${FILTERS//,/^} --cores=$((NSLOTS+1)) --longlog"
+echo $cmd;$cmd
+

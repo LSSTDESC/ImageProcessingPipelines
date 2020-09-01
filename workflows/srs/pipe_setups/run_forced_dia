@@ -1,0 +1,3 @@
+#!/bin/bash
+
+forcedPhotCcdDiaDriver.py ${IN_DIR} --rerun ${RERUN} --id visit=${VISIT} --cores $((NSLOTS+1)) --timeout 999999999

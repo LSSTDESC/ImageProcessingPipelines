@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [[ $SITE == "LSST-IN2P3" ]]
+then
+    echo "launching monitoring script..... output will be under $(dirname ${SGE_STDOUT_PATH})"
+    /pbs/home/d/descprod/bin/joremon.sh 
+fi
+
+cmd="forcedPhotCoaddDiaDriver.py  ${IN_DIR} --rerun ${RERUN} --id tract=${TRACT} filter=${FILT} --cores $((NSLOTS+1))"
+echo $cmd;$cmd;
