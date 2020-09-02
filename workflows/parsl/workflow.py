@@ -200,11 +200,13 @@ def raft_list_for_visit(repo_dir, visit_id, out_filename,
 # the parsl checkpointing for this won't detect if we ingested more stuff
 # to do with the specified visit - see comments for check_ccd_astrometry
 @lsst_app2
-def tract2visit_mapper(dm_root, repo_dir, rerun, visit, inputs=[],
+def tract2visit_mapper(dm_root, repo_dir, metadata, visit, inputs=[],
                        stderr=None, stdout=None, wrap=None,
                        parsl_resource_specification=None):
     # TODO: this seems to be how $REGISTRIES is figured out (via $WORKDIR)
     # perhaps? I'm unsure though
+    
+    rerun = os.path.basename(metadata)   # Note that metadata_dir is an absolute path
     registries = "{repo_dir}/rerun/{rerun}".format(repo_dir=repo_dir,
                                                    rerun=rerun)
 
@@ -244,6 +246,9 @@ def process_visit_rafts(visit_id, raft_list_fn, inputs=None):
             stderr=logdir+sfd_output_basename+".stderr",
             wrap=configuration.wrap,
             parsl_resource_specification={"priority": (1200, visit_id)})
+        
+        this_visit_single_frame_futs.append(this_raft_single_frame_fut)
+        
         # this is invoked in run_calexp with $OUT_DIR at the first parameter, but that's not something
         # i've used so far -- so I'm using IN_DIR as used in previous steps
         # TODO: is that the right thing to do? otherwise how does IN_DIR and OUT_DIR differ?
