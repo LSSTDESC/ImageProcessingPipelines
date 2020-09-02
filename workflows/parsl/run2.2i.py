@@ -41,7 +41,7 @@ cori_knl_1 = HighThroughputExecutor(
     label='batch-1',
     address=address_by_hostname(),
     worker_debug=True,
-    max_workers=50,               ## workers(user tasks)/node
+    max_workers=25,               ## workers(user tasks)/node
     #cores_per_worker=30,          ## threads/user task
 
     # this overrides the default HighThroughputExecutor process workers
@@ -54,7 +54,8 @@ cori_knl_1 = HighThroughputExecutor(
     provider=SlurmProvider(
         "None",                   ## cori queue/partition/qos
 #        nodes_per_block=40,       ## nodes per batch job
-        nodes_per_block=10,       ## nodes per batch job
+#        nodes_per_block=10,       ## nodes per batch job
+        nodes_per_block=1,       ## nodes per batch job
         exclusive=True,
         init_blocks=0,            ## blocks (batch jobs) to start with (on spec)
         min_blocks=0,
@@ -148,14 +149,19 @@ cori_shifter_debug_config = WorkflowConfig(
     #    repo_dir = "/global/cscratch1/sd/bxc/parslTest/test0",
     #    repo_dir = "/global/cscratch1/sd/descdm/tomTest/DRPtest1",
     #    repo_dir = "/global/cscratch1/sd/descdm/tomTest/end2endr",
-    repo_dir = "/global/cscratch1/sd/descdm/DC2/Run2.2i-parsl/v19.0.0-v1",
-
+    #repo_dir = "/global/cscratch1/sd/descdm/DC2/Run2.2i-parsl/v19.0.0-v1",  # Run 2.2i data
+    repo_dir = "/global/cscratch1/sd/descdm/DC2/DR2/repo",   # Jim's Run3.1 data repo
+    
     # A prefix for the 'rerun' directories to use within the DM repository
-    rerun_prefix="G51-",
+    rerun_prefix="Tom-",
 
     ## Define the beginning and ending visitIDs for DC2 Year 1 data
-    visit_min = 230,
-    visit_max = 262622,
+#    visit_min = 230,
+#    visit_max = 2208,   # This *should* result in 100 visits
+#    visit_max = 262622,
+
+    visit_min = 0,           ## Everything
+    visit_max = 999999999,
 
 
     # set to None to process all tracts
@@ -163,12 +169,19 @@ cori_shifter_debug_config = WorkflowConfig(
     #tract_subset = [4030,4031,4032,4033,4225,4226,4227,4228,4229,4230]   ## 10 centrally located tracts
     #tract_subset = [4030,4031,4032,4033,4225],   ## 5 centrally located tracts
     #tract_subset = [4030,4031]   ## 2 centrally located tracts
-    tract_subset = [4030],   # 1 centrally located tract
+    #tract_subset = [4030],   # 1 centrally located tract
+    tract_subset = None,
 
     # set to None to process all patches
-    patch_subset =  ["1-6"],
-    #patch_subset = None,
+    #patch_subset =  ["1-6"],
+    patch_subset = None,
 
+    # Enable/Disable parts of the workflow
+    doIngest = False,     # switch to enable the ingest step, if True
+    doSkyMap = True,     # switch to enable sky map creation, if True
+    doSensor = True,     # switch to enable sensor/raft level processing, if True
+    doSqlite = True,      # switch to enable the surprisingly time-consuming sqlite queries against the tracts_mapping db
+    
 
     # This is the location of the DM stack within the docker image
     dm_root="/opt/lsst/software/stack",

@@ -4,7 +4,7 @@
 import concurrent.futures
 import functools
 import logging
-import os
+import os,sys
 import re
 
 import parsl
@@ -23,13 +23,6 @@ from future_combinators import combine
 #############################
 ## Setup and Initialization
 #############################
-# PROCESSING FLAGS
-doIngest = False     # switch to enable the ingest step, if True
-doSkyMap = False     # switch to enable sky map creation, if True
-doSensor = False     # switch to enable sensor/raft level processing, if True
-doSqlite = True      # switch to enable the surprisingly time-consuming sqlite queries against the tracts_mapping db
-
-
 # Establish logging
 logger = logging.getLogger("parsl.workflow")
 parsl.set_stream_logger(level=logging.INFO)
@@ -49,6 +42,12 @@ configuration = configuration.load_configuration()
 # because they need to be linear (unless there is interesting rerun-merging
 # magic)
 # This approach then limits concurrency, perhaps?
+
+# PROCESSING FLAGS
+doIngest = configuration.doIngest     # switch to enable the ingest step
+doSkyMap = configuration.doSkyMap     # switch to enable sky map creation
+doSensor = configuration.doSensor     # switch to enable sensor/raft level processing
+doSqlite = configuration.doSqlite     # switch to enable various sqlite queries
 
 
 # The rerun name for each step should include the previous steps, automatically
@@ -102,7 +101,7 @@ terminal_futures = []
 
 
 ####################################
-## Prepare for Ingest and Sky Map
+## Ingest and Sky Map
 ####################################
 # INGEST
 # (old) ingest_future = ingest.perform_ingest(configuration)
@@ -158,9 +157,9 @@ else:
 
 
 
-###################################
-## Ingest
-###################################
+#############################################
+## Wait for completion of Ingest and Sky Map
+#############################################
 if doIngest:
     logger.info("WFLOW: waiting for ingest(s) to complete")
     ingest_future.result()
@@ -169,11 +168,6 @@ else:
     logger.warning("WFLOW: skip data ingest.")
     pass
 
-
-
-###################################
-## Sky Map
-###################################
 if doSkyMap:
     logger.info("WFLOW: waiting for makeSkyMap to complete")
     skymap_future.result()
@@ -225,7 +219,7 @@ def process_visit_rafts(visit_id, raft_list_fn, inputs=None):
 
     raft_lines = read_and_strip(raft_list_fn)
 
-    logger.info("WFLOW: => There are " + str(len(raft_lines)) + " rafts to process:")
+    logger.info("WFLOW: => Visit "+str(visit_id)+" has " + str(len(raft_lines)) + " rafts to process:")
     logger.info("WFLOW: "+str(raft_lines))
 
     this_visit_single_frame_futs = []
@@ -238,9 +232,12 @@ def process_visit_rafts(visit_id, raft_list_fn, inputs=None):
         # assume visit_id really is a visit id... workflows/srs/pipe_setups/setup_calexp has a case where the visit file has two fields per line, and this is handled differently there. I have ignored that here.
         # raft_name is the $RAFTNAME environment variable in run_calexp in the XML workflows
         sfd_output_basename = "single_frame_driver.visit-{}.raft-{}".format(visit_id, raft_name)
+        inrepo = os.path.join(configuration.repo_dir,'rerun',rerun1)
+        outrepo = os.path.join(configuration.repo_dir,'rerun',rerun2)
         this_raft_single_frame_fut = visits.single_frame_driver(
             configuration.repo_dir,
-            rerun1 + ":" + rerun2,
+            inrepo,
+            outrepo,
             visit_id,
             raft_name,
             stdout=logdir+sfd_output_basename+".stdout",
@@ -253,7 +250,8 @@ def process_visit_rafts(visit_id, raft_list_fn, inputs=None):
         sky_correction_stdbase = "sky_correction.visit-{}.raft-{}".format(visit_id, raft_name)
         this_visit_sky_correction_futs.append(visits.sky_correction(
             configuration.repo_dir,
-            rerun2 + ":" + rerun3,
+            inrepo,
+            outrepo,
             visit_id,
             raft_name,
             inputs=[this_raft_single_frame_fut],
@@ -295,7 +293,7 @@ def process_visit_rafts(visit_id, raft_list_fn, inputs=None):
     fut_tract2visit = tract2visit_mapper(
         configuration.dm_root,
         configuration.repo_dir,
-        rerun3,
+        metadata_dir,
         visit_id,
         inputs=this_visit_single_frame_futs,
         stdout=logdir+tract2visit_mapper_stdbase+".stdout",
@@ -400,7 +398,18 @@ else:
     pass
 
 
-
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#logger.info("WFLOW: Stop workflow before tract/patch processing.")
+#sys.exit(0)
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 #######################################
@@ -494,7 +503,7 @@ if doSqlite:
 
     logger.info("WFLOW: Awaiting results from make_tract_list")
     tract_list_future.result()
-    # we can do this blokcing result call here because
+    # we can do this blocking result call here because
     # there is no more work that can be submitted until
     # we know the tract list
 
