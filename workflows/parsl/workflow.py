@@ -327,8 +327,8 @@ def process_visit(visit_id):
         configuration.repo_dir,
         visit_id,
         raft_list_fn,
-        stdout=logdir+raft_list_fn+".stdout",
-        stderr=logdir+raft_list_fn+".stderr",
+        stdout=os.path.join(logdir,os.path.basename(raft_list_fn))+".stdout",
+        stderr=os.path.join(logdir,os.path.basename(raft_list_fn))+".stderr",
         wrap=configuration.wrap)
 
     return process_visit_rafts(visit_id, raft_list_fn, inputs=[raft_list_future])
@@ -403,8 +403,8 @@ else:
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-#logger.info("WFLOW: Stop workflow before tract/patch processing.")
-#sys.exit(0)
+logger.info("WFLOW: Stop workflow before tract/patch processing.")
+sys.exit(0)
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
