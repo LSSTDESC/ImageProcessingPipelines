@@ -262,6 +262,8 @@ def process_visit_rafts(visit_id, raft_list_fn, inputs=None):
         # i've used so far -- so I'm using IN_DIR as used in previous steps
         # TODO: is that the right thing to do? otherwise how does IN_DIR and OUT_DIR differ?
         sky_correction_stdbase = "sky_correction.visit-{}.raft-{}".format(visit_id, raft_name)
+        inrepo = os.path.join(configuration.repo_dir,'rerun',rerun2)
+        outrepo = os.path.join(configuration.repo_dir,'rerun',rerun3)
         this_visit_sky_correction_futs.append(visits.sky_correction(
             configuration.repo_dir,
             inrepo,

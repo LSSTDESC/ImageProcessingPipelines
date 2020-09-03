@@ -153,7 +153,7 @@ cori_shifter_debug_config = WorkflowConfig(
     repo_dir = "/global/cscratch1/sd/descdm/DC2/DR2/repo",   # Jim's Run3.1 data repo
     
     # A prefix for the 'rerun' directories to use within the DM repository
-    rerun_prefix="Tom-",
+    rerun_prefix="Tom2-",
 
     ## Define the beginning and ending visitIDs for DC2 Year 1 data
 #    visit_min = 230,

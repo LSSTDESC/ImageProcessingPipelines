@@ -24,15 +24,15 @@ def single_frame_driver(repo_dir, inrepo, outrepo, visit_id, raft_name,
 
 @lsst_app1
 def sky_correction(repo_dir, inrepo, outrepo, visit, raft_name, inputs=[], stdout=None, stderr=None, wrap=None, parsl_resource_specification=None):
-    return wrap("skyCorrection.py {inrepo}"
+    return wrap("skyCorrection.py {inrepo} "
                 "--output {outrepo} "
-                "--id visit={visit} raftName={raft_name}"
+                "--id visit={visit} raftName={raft_name} "
                 "--batch-type none "
                 "--cores 1  "
                 "--calib {repo_dir}/CALIB/ "
                 "--timeout 999999999 "
                 "--no-versions "
-                "--loglevel CameraMapper=warn".format(repo_dir=repo_dir,
+                "--loglevel CameraMapper=warn ".format(repo_dir=repo_dir,
                                                       inrepo=inrepo,
                                                       outrepo=outrepo,
                                                       visit=visit,
@@ -45,7 +45,7 @@ def check_ccd_astrometry(dm_root, repo_dir, rerun, visit, inputs=[],
     # inputs=[] ignored but used for dependency handling
     return wrap("{dm_root}/ImageProcessingPipelines/python/util/checkCcdAstrometry.py {repo_dir}/rerun/{rerun} "
                 "--id visit={visit} "
-                "--loglevel CameraMapper=warn".format(visit=visit,
+                "--loglevel CameraMapper=warn ".format(visit=visit,
                                                       rerun=rerun,
                                                       repo_dir=repo_dir,
                                                       dm_root=dm_root))
