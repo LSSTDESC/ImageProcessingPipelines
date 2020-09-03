@@ -180,7 +180,8 @@ if doSkyMap:
 ## Prepare Sensor/Raft processing
 ###################################
 @lsst_app2
-def make_visit_file(repo_dir, visit_file, stdout=None, stderr=None, wrap=None, parsl_resource_specification=None):
+def make_visit_file(repo_dir, visit_file, stdout=None, stderr=None, wrap=None,
+                    parsl_resource_specification=None):
     return wrap(('/usr/bin/time -v sqlite3 {repo_dir}/registry.sqlite3 '
                  '"SELECT DISTINCT visit FROM raw_visit;" '
                  '> {visit_file}').format(repo_dir=repo_dir,
@@ -200,20 +201,28 @@ def raft_list_for_visit(repo_dir, visit_id, out_filename,
 # the parsl checkpointing for this won't detect if we ingested more stuff
 # to do with the specified visit - see comments for check_ccd_astrometry
 @lsst_app2
-def tract2visit_mapper(dm_root, repo_dir, metadata, visit, inputs=[],
+def tract2visit_mapper(dm_root, repo_dir, rerun, metadata, visit, inputs=[],
                        stderr=None, stdout=None, wrap=None,
                        parsl_resource_specification=None):
     # TODO: this seems to be how $REGISTRIES is figured out (via $WORKDIR)
     # perhaps? I'm unsure though
-    
-    rerun = os.path.basename(metadata)   # Note that metadata_dir is an absolute path
+    #logger.info("WFLOW [tract2visit_mapper]: Visit_id = "+str(visit))
+
     registries = "{repo_dir}/rerun/{rerun}".format(repo_dir=repo_dir,
                                                    rerun=rerun)
 
     # the srs workflow has a separate output database per visit, which is
     # elsewhere merged into a single DB. That's awkward... there's probably
     # a reason to do with concurrency or shared fs that needs digging into.
-    return wrap("mkdir -p {registries} && /usr/bin/time -v {dm_root}/ImageProcessingPipelines/python/util/tract2visit_mapper.py --indir={repo_dir}/rerun/{rerun} --db={registries}/tracts_mapping.sqlite3 --visits={visit}".format(repo_dir=repo_dir, rerun=rerun, visit=visit, registries=registries, dm_root=dm_root))
+#    return wrap(("mkdir -p {metadata} && "
+    return wrap(("/usr/bin/time -v "
+                 "{dm_root}/ImageProcessingPipelines/python/util/tract2visit_mapper.py "
+                 "--indir={registries} "
+                 "--db={metadata}/tracts_mapping.sqlite3 "
+                 "--visits={visit}").format(metadata=metadata,
+                                            dm_root=dm_root,
+                                            registries=registries,
+                                            visit=visit))
 
 
 @parsl.python_app(executors=['submit-node'], join=True)
@@ -221,14 +230,14 @@ def process_visit_rafts(visit_id, raft_list_fn, inputs=None):
 
     raft_lines = read_and_strip(raft_list_fn)
 
-    logger.info("WFLOW: => Visit "+str(visit_id)+" has " + str(len(raft_lines)) + " rafts to process:")
-    logger.info("WFLOW: "+str(raft_lines))
+    logger.info("WFLOW [process_visit_rafts]: => Visit "+str(visit_id)+" has " + str(len(raft_lines)) + " rafts to process:")
+    logger.info("WFLOW [process_visit_rafts]: "+str(raft_lines))
 
     this_visit_single_frame_futs = []
     this_visit_sky_correction_futs = []
 
     for (m, raft_name) in zip(range(0, len(raft_lines)), raft_lines):
-        logger.info("WFLOW: visit {} raft {}".format(visit_id, raft_name))
+        logger.info("WFLOW [process_visit_rafts]: visit {} raft {}".format(visit_id, raft_name))
 
         # this call is based on run_calexp shell script
         # assume visit_id really is a visit id... workflows/srs/pipe_setups/setup_calexp has a case where the visit file has two fields per line, and this is handled differently there. I have ignored that here.
@@ -298,6 +307,7 @@ def process_visit_rafts(visit_id, raft_list_fn, inputs=None):
     fut_tract2visit = tract2visit_mapper(
         configuration.dm_root,
         configuration.repo_dir,
+        rerun2,
         metadata_dir,
         visit_id,
         inputs=this_visit_single_frame_futs,
@@ -319,7 +329,7 @@ def process_visit_rafts(visit_id, raft_list_fn, inputs=None):
 
 @parsl.python_app(executors=['submit-node'], join=True)
 def process_visit(visit_id):
-    logger.info("WFLOW: => Begin processing visit "+str(visit_id))
+    logger.info("WFLOW [process_visit]: => Begin processing visit "+str(visit_id))
 
     # some of this stuff could probably be parallelised down to the per-sensor
     # level rather than per raft. finer granualarity but more overhead in
@@ -352,10 +362,10 @@ def process_visits(visit_file, inputs=None):
     # for visualisation, and that there is some constraint on expressing
     # concurrency.
 
-    logger.info("WFLOW: submitting task_calexps")
+    logger.info("WFLOW [process_visits]: submitting task_calexps")
     visit_lines = read_and_strip(visit_file)
 
-    logger.info("WFLOW:  There were "+str(len(visit_lines))+" visits read from "+str(visit_file))
+    logger.info("WFLOW [process_visits]:  There were "+str(len(visit_lines))+" visits read from "+str(visit_file))
 
     nvisits = 0
     visit_futures = []
@@ -369,7 +379,7 @@ def process_visits(visit_file, inputs=None):
         visit_futures.append(process_visit(visit_id))
 
         # End of loop over rafts
-    logger.info("WFLOW: Finished task definitions for {} visits".format(nvisits))
+    logger.info("WFLOW [process_visits]: Finished task definitions for {} visits".format(nvisits))
     return combine(inputs=visit_futures)
 
 
@@ -403,6 +413,15 @@ else:
     pass
 
 
+
+
+
+
+
+
+
+
+
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -415,6 +434,16 @@ sys.exit(0)
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+
+
+
+
+
+
 
 
 #######################################

@@ -54,8 +54,8 @@ cori_knl_1 = HighThroughputExecutor(
     provider=SlurmProvider(
         "None",                   ## cori queue/partition/qos
 #        nodes_per_block=40,       ## nodes per batch job
-#        nodes_per_block=10,       ## nodes per batch job
-        nodes_per_block=1,       ## nodes per batch job
+        nodes_per_block=20,       ## nodes per batch job
+#        nodes_per_block=1,       ## nodes per batch job
         exclusive=True,
         init_blocks=0,            ## blocks (batch jobs) to start with (on spec)
         min_blocks=0,
