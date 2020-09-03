@@ -33,6 +33,7 @@ def sky_correction(repo_dir, inrepo, outrepo, visit, raft_name, inputs=[], stdou
                 "--timeout 999999999 "
                 "--no-versions "
                 "--loglevel CameraMapper=warn".format(repo_dir=repo_dir,
+                                                      inrepo=inrepo,
                                                       outrepo=outrepo,
                                                       visit=visit,
                                                       raft_name=raft_name))
