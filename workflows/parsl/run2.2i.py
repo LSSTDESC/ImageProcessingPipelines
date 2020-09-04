@@ -54,8 +54,8 @@ cori_knl_1 = HighThroughputExecutor(
     provider=SlurmProvider(
         "None",                   ## cori queue/partition/qos
 #        nodes_per_block=40,       ## nodes per batch job
-        nodes_per_block=20,       ## nodes per batch job
-#        nodes_per_block=1,       ## nodes per batch job
+#        nodes_per_block=20,       ## nodes per batch job
+        nodes_per_block=1,       ## nodes per batch job
         exclusive=True,
         init_blocks=0,            ## blocks (batch jobs) to start with (on spec)
         min_blocks=0,
@@ -177,10 +177,13 @@ cori_shifter_debug_config = WorkflowConfig(
     patch_subset = None,
 
     # Enable/Disable parts of the workflow
-    doIngest = False,     # switch to enable the ingest step, if True
-    doSkyMap = True,     # switch to enable sky map creation, if True
-    doSensor = True,     # switch to enable sensor/raft level processing, if True
-    doSqlite = True,      # switch to enable the surprisingly time-consuming sqlite queries against the tracts_mapping db
+    ## NOTE: these are mostly set for development; use with care
+    doIngest    = False,   # switch to enable the ingest step
+    doSkyMap    = False,   # switch to enable sky map creation
+    doSensor    = True,   # switch to enable sensor/raft level processing
+    doSqlite    = False,   # switch to enable sqlite queries for tract-level tasks
+    doCoadd     = False,   # switch to enable Coadd tasks
+    doMultiband = False,   # switch to enable Multiband tasks
     
 
     # This is the location of the DM stack within the docker image

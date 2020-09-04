@@ -44,10 +44,12 @@ configuration = configuration.load_configuration()
 # This approach then limits concurrency, perhaps?
 
 # PROCESSING FLAGS
-doIngest = configuration.doIngest     # switch to enable the ingest step
-doSkyMap = configuration.doSkyMap     # switch to enable sky map creation
-doSensor = configuration.doSensor     # switch to enable sensor/raft level processing
-doSqlite = configuration.doSqlite     # switch to enable various sqlite queries
+doIngest = configuration.doIngest       # switch to enable raw image data ingest tasks
+doSkyMap = configuration.doSkyMap       # switch to enable sky map creation
+doSensor = configuration.doSensor       # switch to enable sensor/raft level tasks
+doSqlite = configuration.doSqlite       # switch to enable various sqlite queries
+doCoadd  = configuration.doCoadd        # switch to enable Coadd tasks
+doMultiband = configuration.doMultiband # swtich to enable Multiband tasks
 
 
 # The rerun name for each step should include the previous steps, automatically
@@ -417,37 +419,6 @@ else:
 
 
 
-
-
-
-
-
-
-
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-logger.info("WFLOW: Stop workflow before tract/patch processing.")
-sys.exit(0)
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-
-
-
-
-
-
-
-
-
-
 #######################################
 ## Prepare tract/patch processing
 #######################################
@@ -464,7 +435,7 @@ logger.info("WFLOW: Setup tract/patch processing")
 ##      in the "rerun" naming.
 
 ## Override "rerun3" so that it points to the DC2 run 2.2i repo at NERSC
-rerun3 = 'run2.2i-calexp-v1-copy'    ## This directory contains all calexp data in $SCRATCH (not CFS)
+#rerun3 = 'run2.2i-calexp-v1-copy'    ## This directory contains all calexp data in $SCRATCH (not CFS)
 
 ##
 ##   2. Another change is the limitation on visitIDs present in the various sql queries.  This is
@@ -524,7 +495,7 @@ def make_patch_list_for_tract(metadata_dir, tract, visit_min, visit_max, patches
 
 tracts_file = "{metadata_dir}/tracts.list".format(repo_dir=configuration.repo_dir, metadata_dir=metadata_dir)
 
-# Extract metadata to drive following DM stack tasks
+# Extract metadata to drive following tract-level DM stack tasks
 if doSqlite:
     logger.info("WFLOW: Make tract list")
     tract_list_future = make_tract_list(
@@ -574,10 +545,10 @@ if doSqlite:
     # doing this as a separate loop from the above loop rather than doing something useful with dependencies is ugly.
 
 else:
-    logger.info("Skipping SQLite3 block")
+    logger.info("Skipping SQLite3 queries for tract-level tasks")
     tract_lines = read_and_strip(tracts_file)
     tract_patch_futures = {}
-    # End of doSqlite block
+    pass # End of doSqlite block
 
 
 @lsst_app2
@@ -602,7 +573,7 @@ npatches = 0
 
 if tract_subset:
     logger.warning("WFLOW: Processing only selected tracts: "+str(tract_subset))
-
+    pass
 
 @parsl.python_app(executors=['submit-node'], join=True)
 def process_patches(tract_id, patches_file, inputs=None):
@@ -663,18 +634,23 @@ def process_patches(tract_id, patches_file, inputs=None):
                 iList = [fut]
             else:
                 iList = []
+                pass
 
-            fut2 = tracts.coadd_parsl_driver(configuration,
-                                             rerun3,
-                                             rerun4,
-                                             tract_id,
-                                             patch_idx,
-                                             filter_id,
-                                             visit_file,
-                                             None,
-                                             inputs=iList,
-                                             logbase=logdir+"coadd_for_tract_{}_patch_{}_filter_{}".format(tract_id, patch_idl, filter_id),
-                                             wrap=configuration.wrap)
+            if doCoadd:
+                fut2 = tracts.coadd_parsl_driver(configuration,
+                                                 rerun3,
+                                                 rerun4,
+                                                 tract_id,
+                                                 patch_idx,
+                                                 filter_id,
+                                                 visit_file,
+                                                 None,
+                                                 inputs=iList,
+                                                 logbase=logdir+"coadd_for_tract_{}_patch_{}_filter_{}".format(tract_id, patch_idl, filter_id),
+                                                 wrap=configuration.wrap)
+            else:
+                log.warning('WFLOW: Skipping Coadd tasks')
+                pass
             # now we have a load of files like this:
             #   visits-for-tract-4232-patch-6,-4-filter-g.list
             # so for each of those files, launch coadd for this
@@ -691,19 +667,21 @@ def process_patches(tract_id, patches_file, inputs=None):
             this_patch_futures.append(fut2)
             pass
 
-        logger.info("WFLOW: setup multiband processing for tract {} patch {}".format(tract_id, patch_idx))
-        fut3 = tracts.multiband_parsl_driver(configuration,
-                                             rerun4,
-                                             rerun5,
-                                             tract_id,
-                                             patch_idx,
-                                             ["u", "g", "r", "i", "z", "y"],
-                                             inputs=this_patch_futures,
-                                             logbase=logdir+"multiband_for_tract_{}_patch_{}".format(tract_id, patch_idl),
-                                             wrap=configuration.wrap)
-
-        this_tract_all_patches_futures.append(fut3)
-        pass
+        if doMultiband:
+            logger.info("WFLOW: setup multiband processing for tract {} patch {}".format(tract_id, patch_idx))
+            fut3 = tracts.multiband_parsl_driver(configuration,
+                                                 rerun4,
+                                                 rerun5,
+                                                 tract_id,
+                                                 patch_idx,
+                                                 ["u", "g", "r", "i", "z", "y"],
+                                                 inputs=this_patch_futures,
+                                                 logbase=logdir+"multiband_for_tract_{}_patch_{}".format(tract_id, patch_idl),
+                                                 wrap=configuration.wrap)
+            this_tract_all_patches_futures.append(fut3)
+            pass
+        else:
+            log.warning('WFLOW: Skipping Multiband tasks')
     
     return combine(inputs=this_tract_all_patches_futures)
     ### end of process_patches()
@@ -714,37 +692,40 @@ def process_patches(tract_id, patches_file, inputs=None):
 ##############################
 ## Tract/Patch processing
 ##############################
-for tract_id in tract_lines:
+if doCoadd or doMultiband:
+    for tract_id in tract_lines:
 
-    if tract_subset and not int(tract_id) in tract_subset:
-        continue
+        if tract_subset and not int(tract_id) in tract_subset: continue
 
-    ntracts += 1
-    logger.info("WFLOW: generating patch list for tract {}".format(tract_id))
+        ntracts += 1
+        logger.info("WFLOW: generating patch list for tract {}".format(tract_id))
 
-    # TODO: this filename should be coming from a File output object from
-    # the earlier futures, and not hardcoded here and in patch list generator.
-    patches_file = "{metadata_dir}/patches-for-tract-{tract}.list".format(tract=tract_id, repo_dir=configuration.repo_dir, metadata_dir=metadata_dir)
+        # TODO: this filename should be coming from a File output object from
+        # the earlier futures, and not hardcoded here and in patch list generator.
+        patches_file = "{metadata_dir}/patches-for-tract-{tract}.list".format(tract=tract_id, repo_dir=configuration.repo_dir, metadata_dir=metadata_dir)
 
-    tract_patch_list_futures = []
-    if tract_id in tract_patch_futures.keys():
-        logger.info("WFLOW: waiting for patches list for tract {} to be available".format(tract_id))
-        tract_patch_list_futures.append(tract_patch_futures[tract_id])
-    else:
-        logger.info("WFLOW: assuming patch list for tract {} has been generated some other way".format(tract_id))
-        # need to do this block before we can do a read...
-        # but actually that means this body should move into its own local
+        tract_patch_list_futures = []
+        if tract_id in tract_patch_futures.keys():
+            logger.info("WFLOW: waiting for patches list for tract {} to be available".format(tract_id))
+            tract_patch_list_futures.append(tract_patch_futures[tract_id])
+        else:
+            logger.info("WFLOW: assuming patch list for tract {} has been generated some other way".format(tract_id))
+            # need to do this block before we can do a read...
+            # but actually that means this body should move into its own local
 
-    logger.info("WFLOW: begin processing patches for tract {}".format(tract_id))
-    patches_fut = process_patches(tract_id, patches_file, inputs=tract_patch_list_futures)
+        logger.info("WFLOW: begin processing patches for tract {}".format(tract_id))
+        patches_fut = process_patches(tract_id, patches_file, inputs=tract_patch_list_futures)
 
-    terminal_futures.append(patches_fut)
-    # johann: setup_coaddDriver, which takes the tract and the patches
-    # provided by setup_patch, lists all the visits that intersect these
-    # patches, compare if requested to a provided set of visits
-    # (critical to only coadd a given number of years for instance),
-    # and then launch one final nested subtask for each filter.
-    # This nested subtask runs coaddDriver.py
+        terminal_futures.append(patches_fut)
+        # johann: setup_coaddDriver, which takes the tract and the patches
+        # provided by setup_patch, lists all the visits that intersect these
+        # patches, compare if requested to a provided set of visits
+        # (critical to only coadd a given number of years for instance),
+        # and then launch one final nested subtask for each filter.
+        # This nested subtask runs coaddDriver.py
+        pass
+else:
+    log.warning('WFLOW: Skipping Coadd and Multiband processing')
     pass
 
 
