@@ -56,7 +56,7 @@ def coadd_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_id, f
     visits = read_and_strip(visit_file)
 
     if visits == []:  # skip if no visits
-        return const_future("")
+        return const_future(None)
 
     visit_ids_for_dm = ""
     for el in intersperse("^", visits):
@@ -112,7 +112,7 @@ def multiband_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_i
     # forcedPhotCoadd (per filter) - depends on mergeCoaddMeasurements
     # 'combine' - future combinator to generate the final status future
 
-    filter_list = inputs
+    filter_list = [f for f in inputs if f is not None]
 
     filter_ids_for_dm = ""
     for el in intersperse("^", filter_list):
