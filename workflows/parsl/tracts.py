@@ -2,7 +2,7 @@ import re
 
 from workflowutils import read_and_strip
 from more_itertools import intersperse
-from future_combinators import combine, const_future
+from future_combinators import combine, const_future, const_future_app
 
 from parsl import python_app
 
@@ -56,7 +56,7 @@ def coadd_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_id, f
     visits = read_and_strip(visit_file)
 
     if visits == []:  # skip if no visits
-        return const_future(None)
+        return const_future("")
 
     visit_ids_for_dm = ""
     for el in intersperse("^", visits):
@@ -74,7 +74,8 @@ def coadd_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_id, f
 
     fut3 = detect_coadd_sources(repo_dir, rerun_out, tract_id, patch_id_no_parens, filter_id, visit_file, inputs=[fut2], wrap=wrap, stdout="{logbase}.detect_coadd_sources.stdout".format(logbase=logbase), stderr="{logbase}.detect_coadd_sources.stderr".format(logbase=logbase), parsl_resource_specification={"priority": (5020, tract_id, patch_id_no_parens, filter_id)})
 
-    return fut3
+    # all of this is done, return the filter ID
+    return const_future_app(filter_id, inputs=[fut3])
 
 
 @lsst_app1
@@ -97,7 +98,7 @@ def detect_coadd_sources(repo_dir, rerun, tract_id, patch_id, filter_id, visit_i
 
 
 @python_app(executors=['submit-node'], join=True)
-def multiband_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_id_no_parens, filter_list, logbase="", inputs=[], wrap=None):
+def multiband_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_id_no_parens, logbase="", inputs=[], wrap=None):
     """This is a parsl-level replacement for multiBandDriver.py. There is no single final
     task for multiband driver - instead there is one per filter. So the future returned
     by this is a `combine` of those final filter tasks. Something following on from this
@@ -111,10 +112,15 @@ def multiband_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_i
     # forcedPhotCoadd (per filter) - depends on mergeCoaddMeasurements
     # 'combine' - future combinator to generate the final status future
 
+    filter_list = inputs
+
     filter_ids_for_dm = ""
     for el in intersperse("^", filter_list):
         filter_ids_for_dm += el
 
+    # TODO: does "inputs" need to be passed in here? all the dependencies have been 
+    # satisfied because we're inside an app which took those inputs as dependencies
+    # too? benc thinks no.
     merge_coadd_det_fut = merge_coadd_detections(repo_dir, rerun_in, rerun_out, tract_id, patch_id_no_parens, obs_lsst_configs=configuration.obs_lsst_configs, filters=filter_ids_for_dm, wrap=wrap, inputs=inputs,  stdout="{logbase}.merge_coadd_detections.stdout".format(logbase=logbase), stderr="{logbase}.merge_coadd_detections.stderr".format(logbase=logbase), parsl_resource_specification={"priority": (6001, tract_id, patch_id_no_parens)})
 
     measure_futs = []

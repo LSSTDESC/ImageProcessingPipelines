@@ -533,7 +533,9 @@ def process_patches(tract_id, patches_file, inputs=None):
 
         logger.info("WFLOW: generating visit list for tract {} patch {}".format(tract_id, patch_idx))
 
-        this_patch_futures = []
+        # this will be List[Future[str]] - futures containing which filters should be
+        # further processed by multiband driver
+        this_patch_futures = [] 
 
         for filter_id in ["g", "r", "i", "z", "y", "u"]:
             logger.info("WFLOW: generating visit list for tract {} patch {} filter {}".format(tract_id, patch_id, filter_id))
@@ -599,7 +601,6 @@ def process_patches(tract_id, patches_file, inputs=None):
                                              rerun5,
                                              tract_id,
                                              patch_idx,
-                                             ["u", "g", "r", "i", "z", "y"],
                                              inputs=this_patch_futures,
                                              logbase=logdir+"multiband_for_tract_{}_patch_{}".format(tract_id, patch_idl),
                                              wrap=configuration.wrap)

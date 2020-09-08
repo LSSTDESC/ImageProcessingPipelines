@@ -21,3 +21,7 @@ def const_future(val):
     f = Future()
     f.set_result(val)
     return f
+
+@python_app
+def const_future_app(val, inputs=[]):
+    return val
