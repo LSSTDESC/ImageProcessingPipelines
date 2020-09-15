@@ -52,26 +52,26 @@ doCoadd  = configuration.doCoadd        # switch to enable Coadd tasks
 doMultiband = configuration.doMultiband # swtich to enable Multiband tasks
 
 
-# The rerun name for each step should include the previous steps, automatically
-# so the step 6 rerun will be long.
-rerun1_name = "1"  # contains outputs of: ingest and skymap
-rerun2_name = "2"  # contains outputs of: singleFrameDriver
-rerun3_name = "3"  # ... etc
-rerun4_name = "4"
-rerun5_name = "5"
+# # The rerun name for each step should include the previous steps, automatically
+# # so the step 6 rerun will be long.
+# rerun1_name = "1"  # contains outputs of: ingestImages and skyMap
+# rerun2_name = "2"  # contains outputs of: singleFrameDriver
+# rerun3_name = "3"  # contains outputs of: skyCorrection and checkCcdAstrometry
+# rerun4_name = "4"  # contains outputs of: coaddDriver
+# rerun5_name = "5"  # contains outputs of: multiBandDriver
 
-visit_min = configuration.visit_min
-visit_max = configuration.visit_max
+# rerun1 = configuration.rerun_prefix+rerun1_name
+# rerun2 = rerun1 + "." + rerun2_name
+# rerun3 = rerun2 + "." + rerun3_name
+# rerun4 = rerun3 + "." + rerun4_name
+# rerun5 = rerun4 + "." + rerun5_name
 
-tract_subset = configuration.tract_subset
-patch_subset = configuration.patch_subset
-
-rerun1 = configuration.rerun_prefix+rerun1_name
-rerun2 = rerun1 + "." + rerun2_name
-rerun3 = rerun2 + "." + rerun3_name
-rerun4 = rerun3 + "." + rerun4_name
-rerun5 = rerun4 + "." + rerun5_name
-
+## *NEW* rerun style for DR2 processing
+rerun1 = configuration.rerun_prefix+'ingest'
+rerun2 = configuration.rerun_prefix+'singleFrame'
+rerun3 = configuration.rerun_prefix+'skyCorr'
+rerun4 = configuration.rerun_prefix+'coadd'
+rerun5 = configuration.rerun_prefix+'multiband'
 
 # Metadata is stored in the repo rerun subdirectory, but there
 # is nothing "rerun"-like about it.
@@ -82,6 +82,15 @@ if not os.path.exists(metadata_dir):
     
 
 logger.info("WFLOW: Output to rerun/"+rerun1+" (etc)")
+
+## Additional configuration
+visit_min = configuration.visit_min
+visit_max = configuration.visit_max
+
+tract_subset = configuration.tract_subset
+patch_subset = configuration.patch_subset
+
+
 
 # Initialize Parsl
 parsl.load(configuration.parsl_config)
@@ -427,24 +436,14 @@ logger.info("WFLOW: Setup tract/patch processing")
 
 ####################################################################################################
 ##
-## 6/18/2020 IMPORTANT NOTES for DC2 Year 1 (partial) processing:
+##    U G L Y   OVERRIDES
 ##
 ##
-##   1. The following code has been changed such that it *only* works for tract/patch processing against
-##      Y01 data repo, i.e., it will no longer perform sensor/raft processing properly due to changes
-##      in the "rerun" naming.
-
-## Override "rerun3" so that it points to the DC2 run 2.2i repo at NERSC
-#rerun3 = 'run2.2i-calexp-v1-copy'    ## This directory contains all calexp data in $SCRATCH (not CFS)
-
+##   1. Override the input rerun directory for subsequent steps for testing purposes only!
 ##
-##   2. Another change is the limitation on visitIDs present in the various sql queries.  This is
-##      to limit the scope of processing to only the Y01 data (the repo contains much more)
-
-## Define the beginning and ending visitIDs for DC2 Year 1 data   <===== NOW DONE IN THE configuration.py
-#vStart = 230
-#vEnd = 262622
-
+rerun3 = 'Tom2-1.2.3'
+##
+##
 ####################################################################################################
 
 # now we can do coadds. This is concurrent by tract, not by visit.
@@ -592,7 +591,7 @@ def process_patches(tract_id, patches_file, inputs=None):
     for patch_id in patch_lines:
         npatches += 1
         npatches_per_tract += 1
-        # patch_id form used for sqlite queries, e.g., "(4, 1)"
+        # patch_id                                   This form used for sqlite queries, e.g., "(4, 1)"
         patch_idx = re.sub("[() ]", "", patch_id)  # This form used for DM stack tools, e.g., "4,1"
         patch_idl = re.sub(",", "-", patch_idx)    # This form used for log files, e.g., "4-1"
         if patch_subset and patch_idl not in patch_subset:  # favoured patch handling, for testing
@@ -637,6 +636,7 @@ def process_patches(tract_id, patches_file, inputs=None):
                 pass
 
             if doCoadd:
+                # Perform coadd tasks
                 fut2 = tracts.coadd_parsl_driver(configuration,
                                                  rerun3,
                                                  rerun4,
@@ -648,6 +648,7 @@ def process_patches(tract_id, patches_file, inputs=None):
                                                  inputs=iList,
                                                  logbase=logdir+"coadd_for_tract_{}_patch_{}_filter_{}".format(tract_id, patch_idl, filter_id),
                                                  wrap=configuration.wrap)
+                this_patch_futures.append(fut2)
             else:
                 log.warning('WFLOW: Skipping Coadd tasks')
                 pass
@@ -664,8 +665,7 @@ def process_patches(tract_id, patches_file, inputs=None):
 
             #    coaddDriver.py ${OUT_DIR} --rerun ${RERUN1}:${RERUN2}-grizy --id tract=${TRACT} patch=${PATCH} filter=$FILT @${visit_file} --cores $((NSLOTS+1)) --doraise --longlog
 
-            this_patch_futures.append(fut2)
-            pass
+
 
         if doMultiband:
             logger.info("WFLOW: setup multiband processing for tract {} patch {}".format(tract_id, patch_idx))
@@ -679,10 +679,11 @@ def process_patches(tract_id, patches_file, inputs=None):
                                                  logbase=logdir+"multiband_for_tract_{}_patch_{}".format(tract_id, patch_idl),
                                                  wrap=configuration.wrap)
             this_tract_all_patches_futures.append(fut3)
-            pass
         else:
-            log.warning('WFLOW: Skipping Multiband tasks')
-    
+            logger.warning("WFLOW: skipping multiBand processing")
+            this_tract_all_patches_futures.extend(this_patch_futures)
+            pass
+        pass
     return combine(inputs=this_tract_all_patches_futures)
     ### end of process_patches()
 
@@ -733,7 +734,7 @@ else:
 ## Finale
 ########################
 logger.info("WFLOW: Awaiting results from terminal_futures")
-logger.info("WFLOW: #tracts = "+str(ntracts)+", #patches = "+str(npatches))
+#logger.info("WFLOW: #tracts = "+str(ntracts)+", #patches = "+str(npatches))
 concurrent.futures.wait(terminal_futures)
 [future.result() for future in terminal_futures]
 logger.info("WFLOW: Reached the end of the parsl driver for DM pipeline")

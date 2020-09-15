@@ -180,10 +180,10 @@ cori_shifter_debug_config = WorkflowConfig(
     ## NOTE: these are mostly set for development; use with care
     doIngest    = False,   # switch to enable the ingest step
     doSkyMap    = False,   # switch to enable sky map creation
-    doSensor    = True,   # switch to enable sensor/raft level processing
-    doSqlite    = False,   # switch to enable sqlite queries for tract-level tasks
-    doCoadd     = False,   # switch to enable Coadd tasks
-    doMultiband = False,   # switch to enable Multiband tasks
+    doSensor    = False,   # switch to enable sensor/raft level processing
+    doSqlite    = True,   # switch to enable sqlite queries for tract-level tasks
+    doCoadd     = True,   # switch to enable Coadd tasks
+    doMultiband = True,   # switch to enable Multiband tasks
     
 
     # This is the location of the DM stack within the docker image

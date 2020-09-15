@@ -1,3 +1,4 @@
+import os
 import re
 
 from workflowutils import read_and_strip
@@ -8,6 +9,11 @@ from parsl import python_app
 
 from lsst_apps import lsst_app1
 from lsst_apps import lsst_app3
+
+
+import logging
+logger = logging.getLogger("parsl.workflow")
+
 
 # coadd_parsl_driver should behave like coadd_driver as much as is reasonable
 # but implemented as multiple parsl tasks with increased concurrency. There might
@@ -39,7 +45,8 @@ from lsst_apps import lsst_app3
 
 
 @python_app(executors=['submit-node'], join=True)
-def coadd_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_id, filter_id, visit_file, visit_futs, inputs=None,
+def coadd_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_id, filter_id,
+                       visit_file, visit_futs, inputs=None,
                        wrap=None, logbase=""):
     """visit_futs should be:
          a dict of visit id -> visit processing completed future,
@@ -56,6 +63,8 @@ def coadd_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_id, f
 
     visits = read_and_strip(visit_file)
 
+    logger.info("WFLOWx: There are "+str(len(visits))+" visits for filter/tract/patch "+str(filter_id)+'/'+str(tract_id)+'/'+str(patch_id))
+
     if visits == []:  # skip if no visits
         return const_future(None)
 
@@ -69,7 +78,24 @@ def coadd_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_id, f
         input_deps = []
         if visit_futs:
             input_deps.append(visit_futs[visit])
-        per_visit_futures.append(make_coadd_temp_exp(repo_dir, rerun_in, rerun_out, tract_id, patch_id_no_parens, filter_id, visit, inputs=input_deps, obs_lsst_configs=configuration.obs_lsst_configs, wrap=wrap, stdout="{logbase}-visit-{visit}.stdout".format(logbase=logbase, visit=visit), stderr="{logbase}-visit-{visit}.stderr".format(logbase=logbase, visit=visit), parsl_resource_specification={"priority": (5000, tract_id, patch_id_no_parens, filter_id)}))
+            pass
+        #### 9/11/2020 [POSSIBLY TEMPORARY] Check if warp files exist ####
+        # warpath = configuration.repo_dir/rerun/<rerun>/deepCoadd/<filter>/<tract>/<patch>
+        # w1 = <warpath>/psfMatchedWarp-<filter>-<tract>-<patch>-<visit>.fits
+        # w2 = <warpath>/warp-<filter>-<tract>-<patch>-<visit>.fits
+        # e.g. /global/cscratch1/sd/descdm/DC2/DR2/repo/rerun/Tom3-1.2.3.4/deepCoadd/u/5063/6,4/warp-u-5063-6,4-2249.fits
+        warpath = os.path.join(configuration.repo_dir,'rerun',rerun_out,'deepCoadd',filter_id,tract_id,patch_id)
+        fpart = '-'.join([filter_id,tract_id,patch_id,str(visit)])
+        w1 = os.path.join(warpath,'psfMatchedWarp-' + fpart + '.fits')
+        w2 = os.path.join(warpath,'warp-' + fpart + '.fits')
+        logger.info('WFLOWx: Searching for warp files for: '+fpart+'\n'+w1+'\n'+w2)
+        if not os.path.exists(w1) and not os.path.exists(w2):
+            logger.info('WFLOWx: makeCoaddTempExp for '+fpart)
+            per_visit_futures.append(make_coadd_temp_exp(repo_dir, rerun_in, rerun_out, tract_id, patch_id_no_parens, filter_id, visit, inputs=input_deps, obs_lsst_configs=configuration.obs_lsst_configs, wrap=wrap, stdout="{logbase}-visit-{visit}.stdout".format(logbase=logbase, visit=visit), stderr="{logbase}-visit-{visit}.stderr".format(logbase=logbase, visit=visit), parsl_resource_specification={"priority": (5000, tract_id, patch_id_no_parens, filter_id)}))
+        else:
+            logger.info('WFLOWx: Warp files already exist, skipping makeCoaddTempExp...')
+            pass
+        pass
 
     fut2 = assemble_coadd(repo_dir, rerun_out, tract_id, patch_id_no_parens, filter_id, visit_ids_for_dm, inputs=per_visit_futures, obs_lsst_configs=configuration.obs_lsst_configs, wrap=wrap, stdout="{logbase}.assemble_coadd.stdout".format(logbase=logbase), stderr="{logbase}.assemble_coadd.stderr".format(logbase=logbase), parsl_resource_specification={"priority": (5010, tract_id, patch_id_no_parens, filter_id)})
 
@@ -78,11 +104,13 @@ def coadd_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_id, f
     return fut3
 
 
+
 @lsst_app3
 def make_coadd_temp_exp(repo_dir, rerun_in, rerun_out, tract_id, patch_id, filter_id, visit_id, obs_lsst_configs, inputs=None, wrap=None, parsl_resource_specification=None):
     f = "/usr/bin/time -v makeCoaddTempExp.py {repo_dir}/rerun/{rerun_in} --output {repo_dir}/rerun/{rerun_out} --id tract={tract_id} patch='{patch_id}' filter={filter_id} --selectId visit={visit_id} --configfile {obs_lsst_configs}/makeCoaddTempExp.py --calib {repo_dir}/CALIB".format(repo_dir=repo_dir, rerun_in=rerun_in, rerun_out=rerun_out, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, visit_id=visit_id, obs_lsst_configs=obs_lsst_configs)
     w = wrap(f)
     return w
+
 
 
 @lsst_app1
