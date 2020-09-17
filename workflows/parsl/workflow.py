@@ -68,7 +68,7 @@ doMultiband = configuration.doMultiband # swtich to enable Multiband tasks
 
 ## *NEW* rerun style for DR2 processing
 rerun1 = configuration.rerun_prefix+'ingest'
-rerun2 = configuration.rerun_prefix+'singleFrame'
+rerun2 = configuration.rerun_prefix+'procCcd'
 rerun3 = configuration.rerun_prefix+'skyCorr'
 rerun4 = configuration.rerun_prefix+'coadd'
 rerun5 = configuration.rerun_prefix+'multiband'
@@ -439,9 +439,9 @@ logger.info("WFLOW: Setup tract/patch processing")
 ##    U G L Y   OVERRIDES
 ##
 ##
-##   1. Override the input rerun directory for subsequent steps for testing purposes only!
+##   1. Override the input rerun directory for subsequent steps.
 ##
-rerun3 = 'Tom2-1.2.3'
+rerun3 = 'dr2-calexp'    ## Location of calibrated exposures for DR2
 ##
 ##
 ####################################################################################################

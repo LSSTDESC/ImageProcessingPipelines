@@ -186,13 +186,14 @@ cori_shifter_debug_config = WorkflowConfig(
     doMultiband = True,   # switch to enable Multiband tasks
     
 
-    # This is the location of the DM stack within the docker image
+    # This is the location of the DM stack within the docker (shifter) image
     dm_root="/opt/lsst/software/stack",
 
     ## This is the location of non-DM stack software needed by the workflow
     ## The SRS workflow may have added such software to its own task config area
     #  root_softs="/global/homes/b/bxc/dm/",
-    root_softs="/global/homes/d/descdm/tomTest/DRPtest/",
+#    root_softs="/global/homes/d/descdm/tomTest/DRPtest/",
+    root_softs="/global/cscratch1/sd/descdm/ParslRun/",
   # what is ROOT_SOFTS in general? this has come from the SRS workflow,
   # probably the path to this workflow's repo, up one level.
 
@@ -201,10 +202,10 @@ cori_shifter_debug_config = WorkflowConfig(
   # one appropriately wrapped for whichever container/environment is being used
   # with this configuration (for example, wrap_shifter_container writes the
   # command to a temporary file and then invokes that file inside shifter)
-    #wrap=wrap_shifter_container,
-    #wrap_sql=wrap_shifter_container,
+  #  wrap=wrap_shifter_container,
+  #  wrap_sql=wrap_shifter_container,
 
-#disabled 8/21/2020    wrap=partial(wrap_shifter_container, image_id="lsstdesc/desc-drp-stack:v19-dc2-run2.2-v4"),
+  ## Specify the shifter image to use
     wrap=partial(wrap_shifter_container, image_id="lsstdesc/desc-drp-stack:v19-dc2-run2.2-v5"),
     wrap_sql=wrap_no_op,
 
