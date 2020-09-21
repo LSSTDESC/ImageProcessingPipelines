@@ -52,9 +52,9 @@ cori_knl_1 = HighThroughputExecutor(
     heartbeat_threshold=180,      ## time-out betweeen batch and local nodes
     provider=SlurmProvider(
         "None",                   ## cori queue/partition/qos
-        nodes_per_block=40,       ## nodes per batch job
+#        nodes_per_block=40,       ## nodes per batch job
 #        nodes_per_block=20,       ## nodes per batch job
-#        nodes_per_block=1,       ## nodes per batch job
+        nodes_per_block=5,       ## nodes per batch job
         exclusive=True,
         init_blocks=0,            ## blocks (batch jobs) to start with (on spec)
         min_blocks=0,
@@ -118,8 +118,8 @@ cori_knl_3 = HighThroughputExecutor(
     heartbeat_threshold=180,      ## time-out betweeen batch and local nodes
     provider=SlurmProvider(
         "None",                   ## cori queue/partition/qos
-        nodes_per_block=40,       ## nodes per batch job
-#        nodes_per_block=1,       ## nodes per batch job
+#        nodes_per_block=40,       ## nodes per batch job
+        nodes_per_block=5,       ## nodes per batch job
         exclusive=True,
         init_blocks=0,            ## blocks (batch jobs) to start with (on spec)
         min_blocks=0,
@@ -169,8 +169,8 @@ cori_shifter_debug_config = WorkflowConfig(
     #tract_subset = [4030,4031,4032,4033,4225],   ## 5 centrally located tracts
     #tract_subset = [4030,4031]   ## 2 centrally located tracts
     #tract_subset = [4030],   # 1 centrally located tract
-    #tract_subset = [5063],    # 1 tract overlapping the DDF
-    tract_subset = None,
+    tract_subset = [5063],    # 1 tract overlapping the DDF
+    #tract_subset = None,
 
     # set to None to process all patches
     #patch_subset =  ["1-6"],
@@ -181,6 +181,7 @@ cori_shifter_debug_config = WorkflowConfig(
     doIngest    = False,   # switch to enable the ingest step
     doSkyMap    = False,   # switch to enable sky map creation
     doSensor    = False,   # switch to enable sensor/raft level processing
+    #doSqlite    = False,   # switch to enable sqlite queries for tract-level tasks
     doSqlite    = True,   # switch to enable sqlite queries for tract-level tasks
     doCoadd     = True,   # switch to enable Coadd tasks
     doMultiband = True,   # switch to enable Multiband tasks
@@ -197,7 +198,6 @@ cori_shifter_debug_config = WorkflowConfig(
   # what is ROOT_SOFTS in general? this has come from the SRS workflow,
   # probably the path to this workflow's repo, up one level.
 
-
   # This specifies a function (str -> str) which rewrites a bash command into
   # one appropriately wrapped for whichever container/environment is being used
   # with this configuration (for example, wrap_shifter_container writes the
@@ -206,7 +206,15 @@ cori_shifter_debug_config = WorkflowConfig(
   #  wrap_sql=wrap_shifter_container,
 
   ## Specify the shifter image to use
-    wrap=partial(wrap_shifter_container, image_id="lsstdesc/desc-drp-stack:v19-dc2-run2.2-v5"),
+    ## NOTE: Due to limitations with NERSC's docker image server, use the image_id hash rather than its name
+    ##       To discover the hash, run the command "$ shifterimg lookup <image name>"
+    ## Image name = lsstdesc/desc-drp-stack:v19-dc2-run2.2-v5
+    ##     corresponds to
+    ## Hash = 2d1db8fd83d62956ca0fbbe544c7f194f7aee72c106afd58ad2f1094d4c77435
+    ##
+    ## --image=id:$(shifterimg lookup <image name>)
+    ## OLD WAY  wrap=partial(wrap_shifter_container, image_id="lsstdesc/desc-drp-stack:v19-dc2-run2.2-v5"),
+    wrap=partial(wrap_shifter_container, image_id="id:2d1db8fd83d62956ca0fbbe544c7f194f7aee72c106afd58ad2f1094d4c77435"),
     wrap_sql=wrap_no_op,
 
 

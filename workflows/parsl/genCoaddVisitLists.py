@@ -1,10 +1,7 @@
 ## genCoaddVisitLists.py - Perform query against the tracts_mapping.sqlite3 database
-
-## Python dependencies: sqlite3
-
+##
 ## T.Glanzman - Autumn 2020
 __version__ = "1.0.0"
-
 
 import sys,os
 import sqlite3
@@ -65,10 +62,11 @@ def genCoaddVisitLists(repoDir,dbDir,dbFile,skyCorrDir,tractID,patchID,filterID,
     ##    2) one line in --selectID format with visits separated by '^'
 
     if debug > 0: print('visitList = ',visitList)
-    with open(visitFile,'w') as fd:
+    fullVisitFile = os.path.join(repoDir,'rerun',dbDir,visitFile)
+    with open(fullVisitFile,'w') as fd:
         print("\n".join(str(i) for i in visitList), file=fd)
         pass
-    visitFile2 = visitFile+".selectid"
+    visitFile2 = fullVisitFile+".selectid"
     with open(visitFile2,'w') as fd:
         print("--selectId visit="+"^".join(str(i) for i in visitList), file=fd)
         pass
