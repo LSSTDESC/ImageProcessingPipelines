@@ -88,12 +88,14 @@ def coadd_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_id, f
         fpart = '-'.join([filter_id,tract_id,patch_id,str(visit)])
         w1 = os.path.join(warpath,'psfMatchedWarp-' + fpart + '.fits')
         w2 = os.path.join(warpath,'warp-' + fpart + '.fits')
-        logger.info('WFLOWx: Searching for warp files for: '+fpart+'\n'+w1+'\n'+w2)
-        if not os.path.exists(w1) and not os.path.exists(w2):
-            logger.info('WFLOWx: makeCoaddTempExp for '+fpart)
-            per_visit_futures.append(make_coadd_temp_exp(repo_dir, rerun_in, rerun_out, tract_id, patch_id_no_parens, filter_id, visit, inputs=input_deps, obs_lsst_configs=configuration.obs_lsst_configs, wrap=wrap, stdout="{logbase}-visit-{visit}.stdout".format(logbase=logbase, visit=visit), stderr="{logbase}-visit-{visit}.stderr".format(logbase=logbase, visit=visit), parsl_resource_specification={"priority": (5000, tract_id, patch_id_no_parens, filter_id)}))
+        logger.info('WFLOWx: Searching for warp files for: '+fpart)
+        logger.info('WFLOWx: w1 = '+w1)
+        logger.info('WFLOWx: w2 = '+w2)
+        if os.path.exists(w1) and os.path.exists(w2):
+            logger.info('WFLOWx: Warp files already exist for: '+fpart+', skipping makeCoaddTempExp...')
         else:
-            logger.info('WFLOWx: Warp files already exist, skipping makeCoaddTempExp...')
+            logger.info('WFLOWx: makeCoaddTempExp for: '+fpart)
+            per_visit_futures.append(make_coadd_temp_exp(repo_dir, rerun_in, rerun_out, tract_id, patch_id_no_parens, filter_id, visit, inputs=input_deps, obs_lsst_configs=configuration.obs_lsst_configs, wrap=wrap, stdout="{logbase}-visit-{visit}.stdout".format(logbase=logbase, visit=visit), stderr="{logbase}-visit-{visit}.stderr".format(logbase=logbase, visit=visit), parsl_resource_specification={"priority": (5000, tract_id, patch_id_no_parens, filter_id)}))
             pass
         pass
 
@@ -108,6 +110,10 @@ def coadd_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_id, f
 @lsst_app3
 def make_coadd_temp_exp(repo_dir, rerun_in, rerun_out, tract_id, patch_id, filter_id, visit_id, obs_lsst_configs, inputs=None, wrap=None, parsl_resource_specification=None):
     f = "/usr/bin/time -v makeCoaddTempExp.py {repo_dir}/rerun/{rerun_in} --output {repo_dir}/rerun/{rerun_out} --id tract={tract_id} patch='{patch_id}' filter={filter_id} --selectId visit={visit_id} --configfile {obs_lsst_configs}/makeCoaddTempExp.py --calib {repo_dir}/CALIB".format(repo_dir=repo_dir, rerun_in=rerun_in, rerun_out=rerun_out, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, visit_id=visit_id, obs_lsst_configs=obs_lsst_configs)
+
+    # TEST to see of removing the --calib spec allows one to use the DR2 repo
+#    f = "/usr/bin/time -v makeCoaddTempExp.py {repo_dir}/rerun/{rerun_in} --output {repo_dir}/rerun/{rerun_out} --id tract={tract_id} patch='{patch_id}' filter={filter_id} --selectId visit={visit_id} --configfile {obs_lsst_configs}/makeCoaddTempExp.py ".format(repo_dir=repo_dir, rerun_in=rerun_in, rerun_out=rerun_out, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, visit_id=visit_id, obs_lsst_configs=obs_lsst_configs)
+
     w = wrap(f)
     return w
 
