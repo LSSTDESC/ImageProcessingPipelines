@@ -68,11 +68,11 @@ def genCoaddVisitLists(repoDir,dbRerun,dbFile,skyCorrRerun,tractID,patchID,filte
     if debug > 0: print('visitList = ',visitList)
     fullVisitFile = os.path.join(repoDir,'rerun',dbRerun,visitFile)
     with open(fullVisitFile,'w') as fd:
-        print("\n".join(str(i) for i in visitList), file=fd)
+        if len(visitList) > 0: print("\n".join(str(i) for i in visitList), file=fd)
         pass
     visitFile2 = fullVisitFile+".selectid"
     with open(visitFile2,'w') as fd:
-        print("--selectId visit="+"^".join(str(i) for i in visitList), file=fd)
+        if len(visitList) > 0: print("--selectId visit="+"^".join(str(i) for i in visitList), file=fd)
         pass
 
     ## All done.

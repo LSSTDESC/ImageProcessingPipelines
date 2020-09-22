@@ -573,7 +573,8 @@ else:
 
 
 
-@lsst_app2
+###@lsst_app2
+@parsl.python_app(executors=["batch-2"], cache=True)
 def visits_for_tract_patch_filter(repo_dir, metadata_dir, skycorr_dir, tract_id, patch_id,
                                   filter_id, visit_min, visit_max, visit_file,
                                   stdout=None, stderr=None, wrap=None,
