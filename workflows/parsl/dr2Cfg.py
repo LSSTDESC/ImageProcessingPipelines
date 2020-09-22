@@ -181,7 +181,6 @@ cori_shifter_debug_config = WorkflowConfig(
     doIngest    = False,   # switch to enable the ingest step
     doSkyMap    = False,   # switch to enable sky map creation
     doSensor    = False,   # switch to enable sensor/raft level processing
-    #doSqlite    = False,   # switch to enable sqlite queries for tract-level tasks
     doSqlite    = True,   # switch to enable sqlite queries for tract-level tasks
     doCoadd     = True,   # switch to enable Coadd tasks
     doMultiband = True,   # switch to enable Multiband tasks

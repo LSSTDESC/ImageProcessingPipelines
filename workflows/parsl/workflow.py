@@ -14,6 +14,7 @@ import configuration
 import ingest
 import tracts
 import visits
+import genCoaddVisitLists
 
 from lsst_apps import lsst_app2
 from workflowutils import read_and_strip
@@ -90,6 +91,7 @@ visit_max = configuration.visit_max
 tract_subset = configuration.tract_subset
 patch_subset = configuration.patch_subset
 
+repo_dir = configuration.repo_dir
 
 
 # Initialize Parsl
@@ -550,20 +552,47 @@ else:
     pass # End of doSqlite block
 
 
+###### Original, replaced 9/21/2020 with python script to look for skyCorr data
+# @lsst_app2
+# def visits_for_tract_patch_filter(metadata_dir, tract_id, patch_id,
+#                                   filter_id, visit_min, visit_max, visit_file,
+#                                   stdout=None, stderr=None, wrap=None,
+#                                   parsl_resource_specification=None):
+#     # TODO: set_coaddDriver treats filter_id differently here:
+#     # it takes a *list* of filters not a single filter, and generates
+#     # SQL from that somehow. Ask Johann about it? Is there some
+#     # non-trivial interaction of multiple filters here?
+#     sql = "SELECT DISTINCT visit FROM overlaps WHERE tract={tract_id} AND filter='{filter_id}' AND patch=\'{patch_id}\' and visit >= {visit_min} and visit <= {visit_max};".format(tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, visit_min=visit_min, visit_max=visit_max)
+#     # sqlite returns a list of visitIDs, one per line.  This needs to be converted
+#     # into a single line of the form:
+#     #     --selectID visit=<visitID1>^<visitID2>^...
+#     return wrap('/usr/bin/time -v sqlite3 "file:{metadata_dir}/tracts_mapping.sqlite3?mode=ro" "{sql}" > {visit_file} ; cat {visit_file}  | tr \'\\n\' \'^\' | sed s\'/.$//\' | sed \'s/^/--selectId visit=/\' > {visit_file}.selectid'.format(metadata_dir=metadata_dir, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, sql=sql, visit_file=visit_file))
+
+
+
+
+
+
 @lsst_app2
-def visits_for_tract_patch_filter(metadata_dir, tract_id, patch_id,
+def visits_for_tract_patch_filter(repo_dir, metadata_dir, skycorr_dir, tract_id, patch_id,
                                   filter_id, visit_min, visit_max, visit_file,
                                   stdout=None, stderr=None, wrap=None,
                                   parsl_resource_specification=None):
-    # TODO: set_coaddDriver treats filter_id differently here:
-    # it takes a *list* of filters not a single filter, and generates
-    # SQL from that somehow. Ask Johann about it? Is there some
-    # non-trivial interaction of multiple filters here?
-    sql = "SELECT DISTINCT visit FROM overlaps WHERE tract={tract_id} AND filter='{filter_id}' AND patch=\'{patch_id}\' and visit >= {visit_min} and visit <= {visit_max};".format(tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, visit_min=visit_min, visit_max=visit_max)
-    # sqlite returns a list of visitIDs, one per line.  This needs to be converted
-    # into a single line of the form:
-    #     --selectID visit=<visitID1>^<visitID2>^...
-    return wrap('/usr/bin/time -v sqlite3 "file:{metadata_dir}/tracts_mapping.sqlite3?mode=ro" "{sql}" > {visit_file} ; cat {visit_file}  | tr \'\\n\' \'^\' | sed s\'/.$//\' | sed \'s/^/--selectId visit=/\' > {visit_file}.selectid'.format(metadata_dir=metadata_dir, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, sql=sql, visit_file=visit_file))
+    import os
+    import genCoaddVisitLists
+
+    metaRerun = os.path.basename(metadata_dir)
+    dbFile = 'tracts_mapping.sqlite3'
+    visitFile = os.path.basename(visit_file)
+
+    return genCoaddVisitLists.genCoaddVisitLists(repo_dir,metaRerun,dbFile,skycorr_dir,
+                                      tract_id,patch_id,filter_id,
+                                      visit_min,visit_max,visitFile,debug=False)
+
+
+
+
+
 
 
 tract_patch_visit_futures = []
@@ -611,15 +640,17 @@ def process_patches(tract_id, patches_file, inputs=None):
 
             # Slight variation depending on whether the sqlite query results have already been produced
             if doSqlite:
-                fut = visits_for_tract_patch_filter(metadata_dir,
+                fut = visits_for_tract_patch_filter(repo_dir,
+                                                    metadata_dir,
+                                                    rerun3,
                                                     tract_id,
                                                     patch_id,
                                                     filter_id,
                                                     visit_min,
                                                     visit_max,
                                                     visit_file,
-                                                    stdout=logdir+"visit_for_tract_{}_patch_{}_filter_{}.stdout".format(tract_id, patch_id, filter_id),
-                                                    stderr=logdir+"visit_for_tract_{}_patch_{}_filter_{}.stderr".format(tract_id, patch_id, filter_id),
+                                                    stdout=logdir+"visit_for_tract_{}_patch_{}_filter_{}.stdout".format(tract_id, patch_idl, filter_id),
+                                                    stderr=logdir+"visit_for_tract_{}_patch_{}_filter_{}.stderr".format(tract_id, patch_idl, filter_id),
                                                     wrap=configuration.wrap_sql)
                 # TODO: this visit_file should become an input/output File
                 # object to give the dependency instead of relying on

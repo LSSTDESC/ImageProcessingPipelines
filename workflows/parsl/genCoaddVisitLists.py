@@ -11,7 +11,7 @@ import logging
 logger = logging.getLogger("parsl.workflow")
 
 
-def genCoaddVisitLists(repoDir,dbDir,dbFile,skyCorrDir,tractID,patchID,filterID,visitMin,visitMax,visitFile,debug=False):
+def genCoaddVisitLists(repoDir,dbRerun,dbFile,skyCorrRerun,tractID,patchID,filterID,visitMin,visitMax,visitFile,debug=False):
     ## produce two coadd visit lists
     
     ## Prepare DB query
@@ -19,12 +19,12 @@ def genCoaddVisitLists(repoDir,dbDir,dbFile,skyCorrDir,tractID,patchID,filterID,
     if debug > 0:print('sql = ',sql)
 
     ## Connect to database
-    db=os.path.join(repoDir,'rerun',dbDir,dbFile)
+    db=os.path.join(repoDir,'rerun',dbRerun,dbFile)
     if debug > 0:print('db = ',db)
     con = sqlite3.connect(db)
     cur = con.cursor()                       ## create a 'cursor'
 
-    ## Perform database query
+    ## Query database for all visits (for tract/patch/filter and within a visit range)
     result = cur.execute(sql)
     rows = result.fetchall()   # <-- This is a list of db rows in the result set
     if debug > 0: print('rows = ',rows)
@@ -34,8 +34,12 @@ def genCoaddVisitLists(repoDir,dbDir,dbFile,skyCorrDir,tractID,patchID,filterID,
     for row in rows:
         visit = row[0]
         if debug > 0: print('Candidate visit = ',visit)
-        ## KLUDGE ## Select visits if and only if there are sky correction data for all relevant sensors
-        ## Query database for list of sensors
+        
+        ## KLUDGE ## Select visits if and only if there are sky
+        ## correction data for all relevant sensors
+
+        ## Query database for list of sensors in this visit
+        ##   Then check that skyCorrection data exists for each sensor involved
         sql = f"SELECT DISTINCT detector FROM overlaps WHERE tract={tractID} AND filter='{filterID}' AND patch=\'{patchID}\' and visit={visit};"
         result = cur.execute(sql)
         dets = result.fetchall()
@@ -45,7 +49,7 @@ def genCoaddVisitLists(repoDir,dbDir,dbFile,skyCorrDir,tractID,patchID,filterID,
             det = f'{line[0]:03}'
             if debug > 0: print('type(det) = ',type(det))
             if debug > 0: print('Check if skyCorr for det = ',det)
-            skyFilePattern = os.path.join(repoDir,'rerun',skyCorrDir,'skyCorr',f'{visit:08}-'+filterID,'*','skyCorr_'+f'{visit:08}-'+filterID+'*det'+det+'.fits')
+            skyFilePattern = os.path.join(repoDir,'rerun',skyCorrRerun,'skyCorr',f'{visit:08}-'+filterID,'*','skyCorr_'+f'{visit:08}-'+filterID+'*det'+det+'.fits')
             if debug > 0: print('skyFilePattern = ',skyFilePattern)
             skyFileList = glob.glob(skyFilePattern, recursive=True)
             if debug > 0: print('skyFileList = ',skyFileList)
@@ -57,12 +61,12 @@ def genCoaddVisitLists(repoDir,dbDir,dbFile,skyCorrDir,tractID,patchID,filterID,
         if keep: visitList.append(visit)
         pass
 
-    ## Prepare two visit list files:
+    ## Generate two visit list files:
     ##    1) one visit per line;
     ##    2) one line in --selectID format with visits separated by '^'
 
     if debug > 0: print('visitList = ',visitList)
-    fullVisitFile = os.path.join(repoDir,'rerun',dbDir,visitFile)
+    fullVisitFile = os.path.join(repoDir,'rerun',dbRerun,visitFile)
     with open(fullVisitFile,'w') as fd:
         print("\n".join(str(i) for i in visitList), file=fd)
         pass
@@ -70,7 +74,10 @@ def genCoaddVisitLists(repoDir,dbDir,dbFile,skyCorrDir,tractID,patchID,filterID,
     with open(visitFile2,'w') as fd:
         print("--selectId visit="+"^".join(str(i) for i in visitList), file=fd)
         pass
-    return
+
+    ## All done.
+    con.close()
+    return 0
 
     
 
@@ -82,9 +89,9 @@ if __name__ == '__main__':
 
     ## Needed inputs: metadata_dir, tract_id, patch_id, filter_id, visit_min, visit_max, visit_file
     parser.add_argument('repoDir',help='Butler repository')
-    parser.add_argument('dbDir',help='repo rerun directory containing DB to query')
+    parser.add_argument('dbRerun',help='repo rerun directory containing DB to query')
     parser.add_argument('dbFile',help='sqlite3 database filename')
-    parser.add_argument('skyCorrDir',help='repo rerun directory containing sky correction data')
+    parser.add_argument('skyCorrRerun',help='repo rerun directory containing sky correction data')
     
     parser.add_argument('tractID',help='Tract')
     parser.add_argument('patchID',help='Patch')
@@ -111,6 +118,6 @@ if __name__ == '__main__':
         print('command line args: ',args)
         pass
 
-    genCoaddVisitLists(args.repoDir,args.dbDir,args.dbFile,args.skyCorrDir,args.tractID,
+    genCoaddVisitLists(args.repoDir,args.dbRerun,args.dbFile,args.skyCorrRerun,args.tractID,
                        args.patchID,args.filterID,args.visitMin,args.visitMax,args.visitFile,
                        args.debug)
