@@ -12,8 +12,8 @@ logger = logging.getLogger("parsl.workflow")
 
 
 def genCoaddVisitLists(repoDir,dbRerun,dbFile,skyCorrRerun,tractID,patchID,filterID,visitMin,visitMax,visitFile,debug=False):
-    ## produce two coadd visit lists
-    
+    ## produce visit lists to drive the Coadd processing steps
+    if debug > 0: print(f'genCoaddVisitLists: tract {tractID}, patch {patchID}, filter {filterID}')
     ## Prepare DB query
     sql = f"SELECT DISTINCT visit FROM overlaps WHERE tract={tractID} AND filter='{filterID}' AND patch=\'{patchID}\' and visit >= {visitMin} and visit <= {visitMax};"
     if debug > 0:print('sql = ',sql)
@@ -27,10 +27,12 @@ def genCoaddVisitLists(repoDir,dbRerun,dbFile,skyCorrRerun,tractID,patchID,filte
     ## Query database for all visits (for tract/patch/filter and within a visit range)
     result = cur.execute(sql)
     rows = result.fetchall()   # <-- This is a list of db rows in the result set
-    if debug > 0: print('rows = ',rows)
+    if debug > 1: print('rows = ',rows)
+    if debug > 0: print(f'There are {len(rows)} visits')
 
     ## Prepare visit list
     visitList = []
+    lostDetectors = 0
     for row in rows:
         visit = row[0]
         if debug > 0: print('Candidate visit = ',visit)
@@ -44,24 +46,35 @@ def genCoaddVisitLists(repoDir,dbRerun,dbFile,skyCorrRerun,tractID,patchID,filte
         result = cur.execute(sql)
         dets = result.fetchall()
         if debug > 0: print('Detectors in this visit = ',dets)
-        keep = True
+        detList = []
         for line in dets:
             det = f'{line[0]:03}'
-            if debug > 0: print('type(det) = ',type(det))
-            if debug > 0: print('Check if skyCorr for det = ',det)
+            if debug > 1: print('Check if skyCorr for det = ',det)
             skyFilePattern = os.path.join(repoDir,'rerun',skyCorrRerun,'skyCorr',f'{visit:08}-'+filterID,'*','skyCorr_'+f'{visit:08}-'+filterID+'*det'+det+'.fits')
-            if debug > 0: print('skyFilePattern = ',skyFilePattern)
+            if debug > 1: print('skyFilePattern = ',skyFilePattern)
             skyFileList = glob.glob(skyFilePattern, recursive=True)
-            if debug > 0: print('skyFileList = ',skyFileList)
-            if len(skyFileList) <= 0:
-                keep = False
+            if debug > 1: print('skyFileList = ',skyFileList)
+            ## If skyCorr data exists, keep detector number in a list for later use
+            if len(skyFileList) > 0:
+                detList.append(det)
+            else:
+                lostDetectors += 1
                 logging.warning('WFLOWq: skyCorr missing for visit/filter/tract/patch/detector: '+'/'.join([str(visit),filterID,tractID,patchID,det]))
+                pass
             pass
-        if debug > 0: print('visit ',visit,', keep = ',keep)
-        if keep: visitList.append(visit)
+
+        ## Keep this visit for processing only if at least one detector has skyCorr data
+        if len(detList) > 0:
+            detOpt = '^'.join(str(i) for i in detList)
+            visitLine = ' '.join([str(visit),detOpt])
+            visitList.append(visitLine)
+            if debug > 0: print('visitLine = ',visitLine)
+        else:
+            logger.warning('Visit has no detectors with skyCorr data: '+str(visit))
+            pass
         pass
 
-    ## Generate two visit list files:
+    ## Generate visit list files:
     ##    1) one visit per line;
     ##    2) one line in --selectID format with visits separated by '^'
 
@@ -70,11 +83,13 @@ def genCoaddVisitLists(repoDir,dbRerun,dbFile,skyCorrRerun,tractID,patchID,filte
     with open(fullVisitFile,'w') as fd:
         if len(visitList) > 0: print("\n".join(str(i) for i in visitList), file=fd)
         pass
-    visitFile2 = fullVisitFile+".selectid"
-    with open(visitFile2,'w') as fd:
-        if len(visitList) > 0: print("--selectId visit="+"^".join(str(i) for i in visitList), file=fd)
-        pass
+    # visitFile2 = fullVisitFile+".selectid"   ## This file contains DM tool option format
+    # with open(visitFile2,'w') as fd:
+    #     if len(visitList) > 0: print("--selectId visit="+"^".join(str(i) for i in visitList), file=fd)
+    #     pass
 
+    if debug > 0: print(f'Total detectors without skyCorr data = {lostDetectors}')
+    
     ## All done.
     con.close()
     return 0
@@ -114,7 +129,7 @@ if __name__ == '__main__':
     print(sys.version)
     
     args = parser.parse_args()
-    if args.debug > 0:
+    if args.debug > 1:
         print('command line args: ',args)
         pass
 

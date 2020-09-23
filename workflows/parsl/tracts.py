@@ -61,12 +61,22 @@ def coadd_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_id, f
 
     patch_id_no_parens = re.sub("[() ]", "", patch_id)
 
-    visits = read_and_strip(visit_file)
+    visitLines = read_and_strip(visit_file)
 
-    logger.info("WFLOWx: There are "+str(len(visits))+" visits for filter/tract/patch "+str(filter_id)+'/'+str(tract_id)+'/'+str(patch_id))
 
-    if visits == []:  # skip if no visits
+    if visitLines == []:  # skip if no visits
+        logger.warning(f'No visits for tract {tract_id}, patch {patch_id}, filter {filter_id}')
         return const_future(None)
+
+    
+    ## 9/22/2020 - New visit file format, each line contains:  <visitID> <det1^det2^det3...>
+    visits = dets = []
+    for visitLine in visitLines:
+        visits.append(visitLine.split(' ')[0])
+        dets.append(visitLine.split(' ')[1])
+        pass
+                      
+    logger.info("WFLOWx: There are "+str(len(visits))+" visits for filter/tract/patch "+str(filter_id)+'/'+str(tract_id)+'/'+str(patch_id))
 
     visit_ids_for_dm = ""
     for el in intersperse("^", visits):
@@ -74,7 +84,7 @@ def coadd_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_id, f
 
     per_visit_futures = []
 
-    for visit in visits:
+    for visit,det in zip(visits,dets):
         input_deps = []
         if visit_futs:
             input_deps.append(visit_futs[visit])
@@ -95,7 +105,7 @@ def coadd_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_id, f
             logger.info('WFLOWx: Warp files already exist for: '+fpart+', skipping makeCoaddTempExp...')
         else:
             logger.info('WFLOWx: makeCoaddTempExp for: '+fpart)
-            per_visit_futures.append(make_coadd_temp_exp(repo_dir, rerun_in, rerun_out, tract_id, patch_id_no_parens, filter_id, visit, inputs=input_deps, obs_lsst_configs=configuration.obs_lsst_configs, wrap=wrap, stdout="{logbase}-visit-{visit}.stdout".format(logbase=logbase, visit=visit), stderr="{logbase}-visit-{visit}.stderr".format(logbase=logbase, visit=visit), parsl_resource_specification={"priority": (5000, tract_id, patch_id_no_parens, filter_id)}))
+            per_visit_futures.append(make_coadd_temp_exp(repo_dir, rerun_in, rerun_out, tract_id, patch_id_no_parens, filter_id, visit, det, inputs=input_deps, obs_lsst_configs=configuration.obs_lsst_configs, wrap=wrap, stdout="{logbase}-visit-{visit}.stdout".format(logbase=logbase, visit=visit), stderr="{logbase}-visit-{visit}.stderr".format(logbase=logbase, visit=visit), parsl_resource_specification={"priority": (5000, tract_id, patch_id_no_parens, filter_id)}))
             pass
         pass
 
@@ -108,9 +118,9 @@ def coadd_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_id, f
 
 
 @lsst_app3
-def make_coadd_temp_exp(repo_dir, rerun_in, rerun_out, tract_id, patch_id, filter_id, visit_id, obs_lsst_configs, inputs=None, wrap=None, parsl_resource_specification=None):
+def make_coadd_temp_exp(repo_dir, rerun_in, rerun_out, tract_id, patch_id, filter_id, visit_id, detector_ids, obs_lsst_configs, inputs=None, wrap=None, parsl_resource_specification=None):
 
-    f = "/usr/bin/time -v makeCoaddTempExp.py {repo_dir}/rerun/{rerun_in} --output {repo_dir}/rerun/{rerun_out} --id tract={tract_id} patch='{patch_id}' filter={filter_id} --selectId visit={visit_id} --configfile {obs_lsst_configs}/makeCoaddTempExp.py --calib {repo_dir}/CALIB".format(repo_dir=repo_dir, rerun_in=rerun_in, rerun_out=rerun_out, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, visit_id=visit_id, obs_lsst_configs=obs_lsst_configs)
+    f = f"/usr/bin/time -v makeCoaddTempExp.py {repo_dir}/rerun/{rerun_in} --output {repo_dir}/rerun/{rerun_out} --id tract={tract_id} patch='{patch_id}' filter={filter_id} --selectId visit={visit_id} detector={detector_ids} --configfile {obs_lsst_configs}/makeCoaddTempExp.py --calib {repo_dir}/CALIB"
 
     w = wrap(f)
     return w
