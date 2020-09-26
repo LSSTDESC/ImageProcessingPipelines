@@ -569,11 +569,6 @@ else:
 #     return wrap('/usr/bin/time -v sqlite3 "file:{metadata_dir}/tracts_mapping.sqlite3?mode=ro" "{sql}" > {visit_file} ; cat {visit_file}  | tr \'\\n\' \'^\' | sed s\'/.$//\' | sed \'s/^/--selectId visit=/\' > {visit_file}.selectid'.format(metadata_dir=metadata_dir, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, sql=sql, visit_file=visit_file))
 
 
-
-
-
-
-###@lsst_app2
 @parsl.python_app(executors=["batch-2"], cache=True)
 def visits_for_tract_patch_filter(repo_dir, metadata_dir, skycorr_dir, tract_id, patch_id,
                                   filter_id, visit_min, visit_max, visit_file,

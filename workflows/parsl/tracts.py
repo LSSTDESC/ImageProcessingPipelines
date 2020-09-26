@@ -70,7 +70,8 @@ def coadd_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_id, f
 
     
     ## 9/22/2020 - New visit file format, each line contains:  <visitID> <det1^det2^det3...>
-    visits = dets = []
+    visits = []
+    dets = []
     for visitLine in visitLines:
         visits.append(visitLine.split(' ')[0])
         dets.append(visitLine.split(' ')[1])
