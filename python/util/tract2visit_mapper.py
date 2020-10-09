@@ -176,20 +176,20 @@ def main(db, butler, skyMapPolys, layer="", margin=10, verbose=True, visit=None)
                 print("Skipping visit=%d, detector=%d: no calexp found." % (visit, detector))
             continue
 
-        # wcs = dataRef.get("calexp_wcs")
-        # bbox = dataRef.get("calexp_bbox")
-        # for tract, patches in skyMapPolys.findOverlaps(bbox, wcs, margin=margin):
-        #     print("Adding patches for visit=%d, detector=%d, tract=%d to overlap table." %
-        #           (visit, detector, tract))
-        #     #live with intermittent locking of the db....
-        #     while True:
-        #         try:
-        #             db.executemany(insertSql, [(tract, str(patch), visit, detector, filter, layer) for patch in patches])
-        #             break
-        #         except sqlite3.Error as e:
-        #             pass
-        #         else:
-        #             break
+        wcs = dataRef.get("calexp_wcs")
+        bbox = dataRef.get("calexp_bbox")
+        for tract, patches in skyMapPolys.findOverlaps(bbox, wcs, margin=margin):
+            print("Adding patches for visit=%d, detector=%d, tract=%d to overlap table." %
+                  (visit, detector, tract))
+            #live with intermittent locking of the db....
+            while True:
+                try:
+                    db.executemany(insertSql, [(tract, str(patch), visit, detector, filter, layer) for patch in patches])
+                    break
+                except sqlite3.Error as e:
+                    pass
+                else:
+                    break
         
         data_list = compute_conditions_data(dataRef)
         db.execute(insertSql2, [visit,detector,filter]+data_list)
