@@ -2,17 +2,104 @@
 
 from __future__ import print_function, division, absolute_import
 
+import os
+
+import warnings
 import sqlite3
+import pickle
+import numpy as np
+
 #import argparse
+from optparse import OptionParser
+
+import coord
 import lsst.sphgeom
 import lsst.geom
 from lsst.daf.persistence import Butler
-import numpy as np
-import os
-from optparse import OptionParser
-import pickle
 
+from astropy import units
+from astropy.time import Time
+from astropy.coordinates import EarthLocation
 from astropy.stats import sigma_clipped_stats
+
+
+def _get_localsiderealtime(mjd, obs):
+    """
+    Calculate Local Sidereal Time for one or many MJDs
+    
+    Parameters
+    ----------
+    mjd : `np.ndarray` or `float`
+        MJD value(s)
+    obs : `lsst.afw.coord.observatory.Observatory`
+        Observatory object from lsst afw coordinates module
+
+    Returns
+    -------
+    lsts : `np.ndarray` or `float` (same as mjd)
+        Local Sidereal Times at the provided observatory and MJDs
+    """
+
+    loc = EarthLocation(lat=obs.getLatitude().asDegrees()*units.deg,    
+                        lon=obs.getLongitude().asDegrees()*units.deg,
+                        height=obs.getElevation()*units.m)
+    astropy_times = Time(mjd, format='mjd', location=loc)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        # And compute the local sidereal times
+        astropy_lsts = astropy_times.sidereal_time('apparent')
+    lsts = astropy_lsts.to_value(units.degree)
+    return lsts
+
+def _compute_zenith_angle(latitude, lst, ra, dec):
+    """
+    Compute the zenith angle for one or many ra/dec.
+
+    Parameters
+    ----------
+    latitude : `float`
+        Observatory latitude (degrees)
+    lst : `float`
+        Local sidereal time (degrees)
+    ra : `np.ndarray`
+        Right ascension
+    dec : `np.ndarray`
+        Declination
+    Returns
+    -------
+    zenith : `np.ndarray`
+        Zenith angle(s) in radians
+    """
+    c_ra = ra*coord.degrees
+    c_dec = dec*coord.degrees
+    c_ha = (lst - ra)*coord.degrees
+    c_lat = latitude*coord.degrees
+    c_zenith = coord.CelestialCoord(c_ha + c_ra, c_lat)
+    c_pointing = coord.CelestialCoord(c_ra, c_dec)
+    zenith_angle = c_pointing.distanceTo(c_zenith).rad
+
+    return zenith_angle
+
+def _compute_airmass(zenith):
+    """
+    Compute the airmass for a list of zenith angles.
+    Computed using simple expansion formula.
+
+    Parameters
+    ----------
+    zenith : `np.ndarray`
+        Zenith angle(s), radians
+    Returns
+    -------
+    airmass : `np.ndarray`
+    """
+    secz = 1./np.cos(zenith)
+    airmass = (secz -
+                0.0018167*(secz - 1.0) -
+                0.002875*(secz - 1.0)**2.0 -
+                0.0008083*(secz - 1.0)**3.0)
+    return airmass
+
 
 class SkyMapPolygons(object):
 
@@ -85,21 +172,34 @@ class SkyMapPolygons(object):
                       if polygon.relate(patchPoly) != lsst.sphgeom.DISJOINT])
                 )
         return results
+    
 
 def compute_conditions_data(dataRef):
     rafac = 2*np.sqrt(2*np.log(2))
     platescale = 0.199598  # arscec/px
     cal = dataRef.get('calexp')
     pcal = dataRef.get('calexp_photoCalib')
-    cal_wcs = cal.getWcs()
+
+    # cal_wcs = cal.getWcs()
+    cal_wcs = dataRef.get('calexp_wcs')
     cal_box = cal.getBBox()
-    cal_info = cal.getInfo().getVisitInfo()
+    # cal_info = cal.getInfo().getVisitInfo()
+    cal_info = dataRef.get('calexp_visitInfo')
     cal_psf = cal.getPsf()
     cal_var = cal.getVariance()
 
     mjd = cal_info.getDate().get()
-    airmass = cal_info.getBoresightAirmass()
+    obs = cal_info.getObservatory()
+    obs_lat = obs.getLatitude().asDegrees()
+    center = cal_wcs.pixelToSky(cal_box.getCenter())
+    centerRa = center.getRa().asDegrees()
+    centerDec = center.getDec().asDegrees()
 
+    #  airmass = cal_info.getBoresightAirmass()  this is incorrect
+    lst = _get_localsiderealtime(mjd, obs)
+    zenith = _compute_zenith_angle(obs_lat, lst, centerRa, centerDec)
+    airmass = _compute_airmass(zenith)
+    
     psf_shape = cal_psf.computeShape()
     psf_img = cal_psf.computeImage()
     ixx, iyy, ixy = psf_shape.getParameterVector()
