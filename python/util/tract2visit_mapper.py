@@ -208,8 +208,8 @@ def compute_conditions_data(dataRef):
     #sqrt(0.5*(ixx+iyy))
     psf_traradius = psf_shape.getTraceRadius()
     # to FHWM by multiplying by 2*math.sqrt(2*math.log(2))
-    psf_detfhwm = psf_detradius*rafac
-    psf_trafhwm = psf_traradius*rafac
+    psf_detfwhm = psf_detradius*rafac
+    psf_trafwhm = psf_traradius*rafac
     A_pxsq = 1./np.sum(psf_img.array**2)
     A_arsecsq = platescale**2 * A_pxsq
 
@@ -234,29 +234,36 @@ def compute_conditions_data(dataRef):
 
     zeroflux = pcal.getInstFluxAtZeroMagnitude()
     trsf_zflux = 2.5*np.log10(zeroflux)
-    zeroflux_njy = pcal.instFluxToNanojansky(zeroflux)
-    trsf_zflux_njy = 2.5*np.log10(zeroflux_njy)
+    # zeroflux_njy = pcal.instFluxToNanojansky(zeroflux)  these are redundant
+    # trsf_zflux_njy = 2.5*np.log10(zeroflux_njy)
     calib_mean = pcal.getCalibrationMean()
     calib_err = pcal.getCalibrationErr()
     twenty_flux = pcal.magnitudeToInstFlux(20.)
     twentytwo_flux = pcal.magnitudeToInstFlux(22.)
     mag5sigma = trsf_zflux - 2.5 * np.log10(5 * median_sig * np.sqrt(A_pxsq))
 
-    return [mjd,airmass,ixx,iyy,ixy,psf_detradius,psf_traradius,psf_detfhwm,\
-        psf_trafhwm,A_pxsq,A_arsecsq,mag5sigma,ra1,dec1,ra2,dec2,ra3,dec3,ra4,dec4,\
-        mean_var,median_var,std_var,mean_sig,median_sig,std_sig,zeroflux,trsf_zflux,\
-        zeroflux_njy,trsf_zflux_njy,calib_mean,calib_err,twenty_flux,twentytwo_flux]
+    return [mjd, lst, zenith, airmass, ixx, iyy, ixy, \
+            psf_detradius, psf_traradius, psf_detfwhm, psf_trafwhm, \
+            A_pxsq, A_arsecsq, mag5sigma, centerRa, centerDec, \
+            ra1, dec1, ra2, dec2, ra3, dec3, ra4, dec4,\
+            mean_var, median_var, std_var, mean_sig, median_sig, std_sig,\
+            zeroflux, trsf_zflux, calib_mean, calib_err,\
+            twenty_flux, twentytwo_flux]
 
 def main(db, butler, skyMapPolys, layer="", margin=10, verbose=True, visit=None):
     checkSql = "SELECT COUNT(*) FROM overlaps WHERE visit=? AND detector=?"
     insertSql = "INSERT INTO overlaps (tract, patch, visit, detector, filter, layer) VALUES (?, ?, ?, ?, ?, ?)"
-    conditions_vars="mjd,airmass,psf_ixx,psf_iyy,psf_ixy,psf_detradius,psf_traradius,psf_detfhwm,\
-    psf_trafhwm,a_pxsq,a_arsecsq,mag5sigma,ccd_corner_1_ra,ccd_corner_1_dec,ccd_corner_2_ra,\
-    ccd_corner_2_dec,ccd_corner_3_ra,ccd_corner_3_dec,ccd_corner_4_ra,ccd_corner_4_dec,\
-    mean_variance,median_variance,std_variance,mean_sig,median_sig,std_sig,zeroflux,trsf_zflux,\
-    zeroflux_njy,trsf_zflux_njy,calib_mean,calib_err,twenty_flux,twentytwo_flux"
-    s="".join(['?, ' for i in range(37)])
-    insertSql2 = "INSERT INTO conditions (visit, detector, filter, {}) VALUES ({})".format(conditions_vars,s[:-2])
+    conditions_vars="mjd, lst, zenith, airmass, ixx, iyy, ixy, \
+            psf_detradius, psf_traradius, psf_detfwhm, psf_trafwhm, \
+            A_pxsq, A_arsecsq, mag5sigma, centerRa, centerDec, \
+            ra1, dec1, ra2, dec2, ra3, dec3, ra4, dec4, \
+            mean_var, median_var, std_var, mean_sig, median_sig, std_sig, \
+            zeroflux, trsf_zflux, calib_mean, calib_err, \
+            twenty_flux, twentytwo_flux"
+
+    s="".join(['?, ' for i in range(39)])
+    insertSql2 = "INSERT INTO conditions (visit, detector, filter, {}) VALUES ({})".format(conditions_vars, s[:-2])
+    
     if visit is None:
         dataRefs = butler.subset("calexp")
     else:
@@ -354,18 +361,22 @@ if __name__ == "__main__":
                                         visit integer NOT NULL,
                                         detector integer,
                                         filter text NOT NULL,
-                                        mjd integer NOT NULL,
+                                        mjd float NOT NULL,
+                                        lst float NOT NULL, 
+                                        zenith float NOT NULL,
                                         airmass float NOT NULL,
                                         psf_ixx float NOT NULL,
                                         psf_iyy float NOT NULL, 
                                         psf_ixy float NOT NULL, 
                                         psf_detradius float NOT NULL, 
                                         psf_traradius float NOT NULL, 
-                                        psf_detfhwm float NOT NULL, 
-                                        psf_trafhwm float NOT NULL, 
+                                        psf_detfwhm float NOT NULL, 
+                                        psf_trafwhm float NOT NULL, 
                                         a_pxsq float NOT NULL,
                                         a_arsecsq float NOT NULL, 
                                         mag5sigma float NOT NULL, 
+                                        centerRa float NOT NULL, 
+                                        centerDec float NOT NULL, 
                                         ccd_corner_1_ra float NOT NULL, 
                                         ccd_corner_1_dec float NOT NULL, 
                                         ccd_corner_2_ra float NOT NULL, 
@@ -382,8 +393,6 @@ if __name__ == "__main__":
                                         std_sig float NOT NULL, 
                                         zeroflux float NOT NULL, 
                                         trsf_zflux float NOT NULL, 
-                                        zeroflux_njy float NOT NULL, 
-                                        trsf_zflux_njy float NOT NULL, 
                                         calib_mean float NOT NULL, 
                                         calib_err float NOT NULL, 
                                         twenty_flux float NOT NULL, 
