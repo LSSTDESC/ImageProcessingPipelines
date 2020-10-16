@@ -253,11 +253,12 @@ def compute_conditions_data(dataRef):
 def main(db, butler, skyMapPolys, layer="", margin=10, verbose=True, visit=None):
     checkSql = "SELECT COUNT(*) FROM overlaps WHERE visit=? AND detector=?"
     insertSql = "INSERT INTO overlaps (tract, patch, visit, detector, filter, layer) VALUES (?, ?, ?, ?, ?, ?)"
-    conditions_vars="mjd, lst, zenith, airmass, ixx, iyy, ixy, \
+    conditions_vars="mjd, lst, zenith, airmass, psf_ixx, psf_iyy, psf_ixy, \
             psf_detradius, psf_traradius, psf_detfwhm, psf_trafwhm, \
             A_pxsq, A_arsecsq, mag5sigma, centerRa, centerDec, \
-            ra1, dec1, ra2, dec2, ra3, dec3, ra4, dec4, \
-            mean_var, median_var, std_var, mean_sig, median_sig, std_sig, \
+            ccd_corner_1_ra, ccd_corner_1_dec, ccd_corner_2_ra, ccd_corner_2_dec, ccd_corner_3_ra, \
+            ccd_corner_3_dec, ccd_corner_4_ra, ccd_corner_4_dec, \
+            mean_variance, median_variance, std_variance, mean_sig, median_sig, std_sig, \
             zeroflux, trsf_zflux, calib_mean, calib_err, \
             twenty_flux, twentytwo_flux"
 
