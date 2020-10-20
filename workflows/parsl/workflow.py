@@ -569,12 +569,21 @@ else:
 #     return wrap('/usr/bin/time -v sqlite3 "file:{metadata_dir}/tracts_mapping.sqlite3?mode=ro" "{sql}" > {visit_file} ; cat {visit_file}  | tr \'\\n\' \'^\' | sed s\'/.$//\' | sed \'s/^/--selectId visit=/\' > {visit_file}.selectid'.format(metadata_dir=metadata_dir, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, sql=sql, visit_file=visit_file))
 
 
+########## The following definition was removed 10/20/2020 due to parsl bug
+# @parsl.python_app(executors=["batch-2"], cache=True,
+#                   ignore_for_cache=["stdout", "stderr", "wrap", "parsl_resource_specification"])
+# def visits_for_tract_patch_filter(repo_dir, metadata_dir, skycorr_dir, tract_id, patch_id,
+#                                   filter_id, visit_min, visit_max, visit_file,
+#                                   stdout=None, stderr=None, wrap=None,
+#                                   parsl_resource_specification=None):
+
 @parsl.python_app(executors=["batch-2"], cache=True,
-                  ignore_for_cache=["stdout", "stderr", "wrap", "parsl_resource_specification"])
+                  ignore_for_cache=["stdout", "stderr", "wrap"])
 def visits_for_tract_patch_filter(repo_dir, metadata_dir, skycorr_dir, tract_id, patch_id,
                                   filter_id, visit_min, visit_max, visit_file,
-                                  stdout=None, stderr=None, wrap=None,
-                                  parsl_resource_specification=None):
+                                  stdout=None, stderr=None, wrap=None):
+
+
     import os
     import genCoaddVisitLists
 
