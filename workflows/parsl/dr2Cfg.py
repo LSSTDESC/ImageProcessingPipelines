@@ -102,11 +102,11 @@ cori_knl_2 = HighThroughputExecutor(
 
 
 cori_knl_3 = HighThroughputExecutor(
-    ## This executor is intended for large CPU/memory tasks
+    ## This executor is intended for large memory and modest run time tasks
     label='batch-3',
     address=address_by_hostname(),
     worker_debug=True,
-    max_workers=24,               ## workers(user tasks)/node
+    max_workers=22,               ## workers(user tasks)/node
     #cores_per_worker=30,          ## threads/user task
 
     # this overrides the default HighThroughputExecutor process workers
@@ -119,7 +119,9 @@ cori_knl_3 = HighThroughputExecutor(
     provider=SlurmProvider(
         "None",                   ## cori queue/partition/qos
 #        nodes_per_block=40,       ## nodes per batch job
-        nodes_per_block=5,       ## nodes per batch job
+        nodes_per_block=200,       ## nodes per batch job
+#        nodes_per_block=400,       ## nodes per batch job
+#        nodes_per_block=5,       ## nodes per batch job
         exclusive=True,
         init_blocks=0,            ## blocks (batch jobs) to start with (on spec)
         min_blocks=0,
@@ -128,10 +130,80 @@ cori_knl_3 = HighThroughputExecutor(
         scheduler_options="""#SBATCH --constraint=knl\n#SBATCH --qos=premium""",  ## cori queue
         launcher=SrunLauncher(overrides='-K0 -k --slurmd-debug=verbose'),
         cmd_timeout=300,          ## timeout (sec) for slurm commands (NERSC can be slow)
-        walltime="40:00:00",
+        walltime="10:00:00",
         worker_init=worker_init
     ),
 )
+
+
+cori_knl_4 = HighThroughputExecutor(
+    ## This executor is intended for short-medium time, small memory tasks
+    label='batch-4',
+    address=address_by_hostname(),
+    worker_debug=True,
+    max_workers=50,               ## workers(user tasks)/node
+    #cores_per_worker=30,          ## threads/user task
+
+    # this overrides the default HighThroughputExecutor process workers
+    # with process workers run inside the appropriate shifter container
+    # with lsst setup commands executed. That means that everything
+    # running in those workers will inherit the correct environment.
+
+    heartbeat_period=60,
+    heartbeat_threshold=180,      ## time-out betweeen batch and local nodes
+    provider=SlurmProvider(
+        "None",                   ## cori queue/partition/qos
+        nodes_per_block=10,       ## nodes per batch job
+#        nodes_per_block=5,       ## nodes per batch job
+        exclusive=True,
+        init_blocks=0,            ## blocks (batch jobs) to start with (on spec)
+        min_blocks=0,
+        max_blocks=2,             ## max # of batch jobs
+        parallelism=0,            ## >0 causes multiple batch jobs, even for simple WFs
+        scheduler_options="""#SBATCH --constraint=knl\n#SBATCH --qos=premium""",  ## cori queue
+        launcher=SrunLauncher(overrides='-K0 -k --slurmd-debug=verbose'),
+        cmd_timeout=300,          ## timeout (sec) for slurm commands (NERSC can be slow)
+        walltime="10:00:00",
+        worker_init=worker_init
+    ),
+)
+
+
+
+cori_knl_5 = HighThroughputExecutor(
+    ## This executor is intended for long-running tasks with small memory requirements
+    label='batch-5',
+    address=address_by_hostname(),
+    worker_debug=True,
+    max_workers=50,               ## workers(user tasks)/node
+    #cores_per_worker=30,          ## threads/user task
+
+    # this overrides the default HighThroughputExecutor process workers
+    # with process workers run inside the appropriate shifter container
+    # with lsst setup commands executed. That means that everything
+    # running in those workers will inherit the correct environment.
+
+    heartbeat_period=60,
+    heartbeat_threshold=180,      ## time-out betweeen batch and local nodes
+    provider=SlurmProvider(
+        "None",                   ## cori queue/partition/qos
+#        nodes_per_block=5,       ## nodes per batch job
+#        nodes_per_block=50,       ## nodes per batch job
+        nodes_per_block=100,       ## nodes per batch job
+        exclusive=True,
+        init_blocks=0,            ## blocks (batch jobs) to start with (on spec)
+        min_blocks=0,
+        max_blocks=1,             ## max # of batch jobs
+        parallelism=0,            ## >0 causes multiple batch jobs, even for simple WFs
+        scheduler_options="""#SBATCH --constraint=knl\n#SBATCH --qos=premium""",  ## cori queue
+        launcher=SrunLauncher(overrides='-K0 -k --slurmd-debug=verbose'),
+        cmd_timeout=300,          ## timeout (sec) for slurm commands (NERSC can be slow)
+        walltime="24:00:00",
+        worker_init=worker_init
+    ),
+)
+
+
 
 
 local_executor = ThreadPoolExecutor(max_threads=2, label="submit-node")
@@ -169,8 +241,8 @@ cori_shifter_debug_config = WorkflowConfig(
     #tract_subset = [4030,4031,4032,4033,4225],   ## 5 centrally located tracts
     #tract_subset = [4030,4031]   ## 2 centrally located tracts
     #tract_subset = [4030],   # 1 centrally located tract
-    tract_subset = [5063],    # 1 tract overlapping the DDF
-    #tract_subset = None,
+    #tract_subset = [5063],    # 1 tract overlapping the DDF
+    tract_subset = None,
 
     # set to None to process all patches
     #patch_subset =  ["1-6"],
@@ -218,7 +290,7 @@ cori_shifter_debug_config = WorkflowConfig(
 
 
     parsl_config=Config(
-        executors=[local_executor, cori_knl_1, cori_knl_2, cori_knl_3],
+        executors=[local_executor, cori_knl_1, cori_knl_2, cori_knl_3, cori_knl_4, cori_knl_5],
         app_cache=True,
         checkpoint_mode='task_exit',
         checkpoint_files=get_all_checkpoints(),

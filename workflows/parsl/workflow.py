@@ -569,7 +569,8 @@ else:
 #     return wrap('/usr/bin/time -v sqlite3 "file:{metadata_dir}/tracts_mapping.sqlite3?mode=ro" "{sql}" > {visit_file} ; cat {visit_file}  | tr \'\\n\' \'^\' | sed s\'/.$//\' | sed \'s/^/--selectId visit=/\' > {visit_file}.selectid'.format(metadata_dir=metadata_dir, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, sql=sql, visit_file=visit_file))
 
 
-@parsl.python_app(executors=["batch-2"], cache=True)
+@parsl.python_app(executors=["batch-2"], cache=True,
+                  ignore_for_cache=["stdout", "stderr", "wrap", "parsl_resource_specification"])
 def visits_for_tract_patch_filter(repo_dir, metadata_dir, skycorr_dir, tract_id, patch_id,
                                   filter_id, visit_min, visit_max, visit_file,
                                   stdout=None, stderr=None, wrap=None,
@@ -583,7 +584,7 @@ def visits_for_tract_patch_filter(repo_dir, metadata_dir, skycorr_dir, tract_id,
 
     return genCoaddVisitLists.genCoaddVisitLists(repo_dir,metaRerun,dbFile,skycorr_dir,
                                       tract_id,patch_id,filter_id,
-                                      visit_min,visit_max,visitFile,debug=False)
+                                      visit_min,visit_max,visitFile,debug=0)
 
 
 

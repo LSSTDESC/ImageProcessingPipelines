@@ -1,17 +1,17 @@
 ## genCoaddVisitLists.py - Perform query against the tracts_mapping.sqlite3 database
 ##
 ## T.Glanzman - Autumn 2020
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 import sys,os
 import sqlite3
 import argparse
 import glob
 import logging
-logger = logging.getLogger("parsl.workflow")
+logger = logging.getLogger("parsl.dr2.genCoaddVisitLists")
 
 
-def genCoaddVisitLists(repoDir,dbRerun,dbFile,skyCorrRerun,tractID,patchID,filterID,visitMin,visitMax,visitFile,debug=False):
+def genCoaddVisitLists(repoDir,dbRerun,dbFile,skyCorrRerun,tractID,patchID,filterID,visitMin,visitMax,visitFile,debug=0):
     ## produce visit lists to drive the Coadd processing steps
     if debug > 0: print(f'genCoaddVisitLists: tract {tractID}, patch {patchID}, filter {filterID}')
     ## Prepare DB query
@@ -59,7 +59,7 @@ def genCoaddVisitLists(repoDir,dbRerun,dbFile,skyCorrRerun,tractID,patchID,filte
                 detList.append(det)
             else:
                 lostDetectors += 1
-                logging.warning('WFLOWq: skyCorr missing for visit/filter/tract/patch/detector: '+'/'.join([str(visit),filterID,tractID,patchID,det]))
+                logger.warning('WFLOWq: skyCorr missing for visit/filter/tract/patch/detector: '+'/'.join([str(visit),filterID,tractID,patchID,det]))
                 pass
             pass
 
@@ -70,7 +70,7 @@ def genCoaddVisitLists(repoDir,dbRerun,dbFile,skyCorrRerun,tractID,patchID,filte
             visitList.append(visitLine)
             if debug > 0: print('visitLine = ',visitLine)
         else:
-            logger.warning('Visit has no detectors with skyCorr data: '+str(visit))
+            logger.warning('WFLOWq: Visit has no detectors with skyCorr data: '+str(visit))
             pass
         pass
 
