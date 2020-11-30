@@ -1,10 +1,13 @@
 #!/usr/bin/env python
+"""
+Script to estimate computing resources for DRP image processing.
+"""
 import os
 import argparse
 import sqlite3
 import pandas as pd
 from desc.ImageProcessingPipelines import extract_coadds, \
-    tabulate_pipe_task_resources, total_node_time
+    tabulate_pipe_task_resources, total_node_hours
 
 
 parser = argparse.ArgumentParser(description=('Computing resource estimator '
@@ -32,8 +35,10 @@ else:
 
 pt_df = tabulate_pipe_task_resources(df, coadd_df, verbose=args.verbose)
 
-node_time = total_node_time(pt_df, cpu_factor=args.knl_factor)
+node_hours, node_hours_opt = total_node_hours(pt_df,
+                                              cpu_factor=args.knl_factor)
 
+print()
 print(pt_df)
 print()
-print(f'KNL node days: {node_time/24.:.1f}')
+print(f'KNL node days: {node_hours/24.:.1f} ({node_hours_opt/24.:.1f})')
