@@ -23,8 +23,11 @@ parser.add_argument('--verbose', default=True, action='store_false',
 
 args = parser.parse_args()
 
-with sqlite3.connect(args.overlaps_db_file) as con:
-    df = pd.read_sql('select * from overlaps', con)
+if args.overlaps_db_file.endswith('.pickle'):
+    df = pd.read_pickle(args.overlaps_db_file)
+else:
+    with sqlite3.connect(args.overlaps_db_file) as con:
+        df = pd.read_sql('select * from overlaps', con)
 
 # coadds in each band with # visits per coadd:
 if not os.path.isfile(args.coadd_df_file):

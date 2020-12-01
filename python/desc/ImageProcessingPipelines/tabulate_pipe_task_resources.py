@@ -46,9 +46,10 @@ def extract_coadds(df, bands='ugrizy', verbose=False):
     -------
     pandas.DataFrame with the band, tract, patch, num_visits columns.
     """
+    band_colname = 'band' if 'band' in df else 'filter'
     data = defaultdict(list)
     for band in bands:
-        band_df = df.query(f'filter == "{band}"')
+        band_df = df.query(f'{band_colname} == "{band}"')
         tracts = set(band_df['tract'])
         for i, tract in enumerate(tracts):
             tract_df = band_df.query(f'tract == {tract}')
