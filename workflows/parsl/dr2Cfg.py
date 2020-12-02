@@ -1,5 +1,4 @@
-
-# run2.2i.py - Parsl workflow configuration for running DESC DRP
+# reuseTestCfg.py - Parsl workflow configuration for running DESC DRP test
 import dataclasses
 import importlib
 import os
@@ -41,7 +40,7 @@ cori_knl_1 = HighThroughputExecutor(
     label='batch-1',
     address=address_by_hostname(),
     worker_debug=True,
-    max_workers=25,               ## workers(user tasks)/node
+    max_workers=24,               ## workers(user tasks)/node
     #cores_per_worker=30,          ## threads/user task
 
     # this overrides the default HighThroughputExecutor process workers
@@ -55,7 +54,7 @@ cori_knl_1 = HighThroughputExecutor(
         "None",                   ## cori queue/partition/qos
 #        nodes_per_block=40,       ## nodes per batch job
 #        nodes_per_block=20,       ## nodes per batch job
-        nodes_per_block=1,       ## nodes per batch job
+        nodes_per_block=5,       ## nodes per batch job
         exclusive=True,
         init_blocks=0,            ## blocks (batch jobs) to start with (on spec)
         min_blocks=0,
@@ -103,11 +102,11 @@ cori_knl_2 = HighThroughputExecutor(
 
 
 cori_knl_3 = HighThroughputExecutor(
-    ## This executor is intended for large CPU/memory tasks
+    ## This executor is intended for large memory and modest run time tasks
     label='batch-3',
     address=address_by_hostname(),
     worker_debug=True,
-    max_workers=24,               ## workers(user tasks)/node
+    max_workers=22,               ## workers(user tasks)/node
     #cores_per_worker=30,          ## threads/user task
 
     # this overrides the default HighThroughputExecutor process workers
@@ -120,7 +119,9 @@ cori_knl_3 = HighThroughputExecutor(
     provider=SlurmProvider(
         "None",                   ## cori queue/partition/qos
 #        nodes_per_block=40,       ## nodes per batch job
-        nodes_per_block=1,       ## nodes per batch job
+        nodes_per_block=200,       ## nodes per batch job
+#        nodes_per_block=400,       ## nodes per batch job
+#        nodes_per_block=5,       ## nodes per batch job
         exclusive=True,
         init_blocks=0,            ## blocks (batch jobs) to start with (on spec)
         min_blocks=0,
@@ -129,10 +130,80 @@ cori_knl_3 = HighThroughputExecutor(
         scheduler_options="""#SBATCH --constraint=knl\n#SBATCH --qos=premium""",  ## cori queue
         launcher=SrunLauncher(overrides='-K0 -k --slurmd-debug=verbose'),
         cmd_timeout=300,          ## timeout (sec) for slurm commands (NERSC can be slow)
-        walltime="40:00:00",
+        walltime="10:00:00",
         worker_init=worker_init
     ),
 )
+
+
+cori_knl_4 = HighThroughputExecutor(
+    ## This executor is intended for short-medium time, small memory tasks
+    label='batch-4',
+    address=address_by_hostname(),
+    worker_debug=True,
+    max_workers=50,               ## workers(user tasks)/node
+    #cores_per_worker=30,          ## threads/user task
+
+    # this overrides the default HighThroughputExecutor process workers
+    # with process workers run inside the appropriate shifter container
+    # with lsst setup commands executed. That means that everything
+    # running in those workers will inherit the correct environment.
+
+    heartbeat_period=60,
+    heartbeat_threshold=180,      ## time-out betweeen batch and local nodes
+    provider=SlurmProvider(
+        "None",                   ## cori queue/partition/qos
+        nodes_per_block=10,       ## nodes per batch job
+#        nodes_per_block=5,       ## nodes per batch job
+        exclusive=True,
+        init_blocks=0,            ## blocks (batch jobs) to start with (on spec)
+        min_blocks=0,
+        max_blocks=2,             ## max # of batch jobs
+        parallelism=0,            ## >0 causes multiple batch jobs, even for simple WFs
+        scheduler_options="""#SBATCH --constraint=knl\n#SBATCH --qos=premium""",  ## cori queue
+        launcher=SrunLauncher(overrides='-K0 -k --slurmd-debug=verbose'),
+        cmd_timeout=300,          ## timeout (sec) for slurm commands (NERSC can be slow)
+        walltime="10:00:00",
+        worker_init=worker_init
+    ),
+)
+
+
+
+cori_knl_5 = HighThroughputExecutor(
+    ## This executor is intended for long-running tasks with small memory requirements
+    label='batch-5',
+    address=address_by_hostname(),
+    worker_debug=True,
+    max_workers=50,               ## workers(user tasks)/node
+    #cores_per_worker=30,          ## threads/user task
+
+    # this overrides the default HighThroughputExecutor process workers
+    # with process workers run inside the appropriate shifter container
+    # with lsst setup commands executed. That means that everything
+    # running in those workers will inherit the correct environment.
+
+    heartbeat_period=60,
+    heartbeat_threshold=180,      ## time-out betweeen batch and local nodes
+    provider=SlurmProvider(
+        "None",                   ## cori queue/partition/qos
+#        nodes_per_block=5,       ## nodes per batch job
+#        nodes_per_block=50,       ## nodes per batch job
+        nodes_per_block=100,       ## nodes per batch job
+        exclusive=True,
+        init_blocks=0,            ## blocks (batch jobs) to start with (on spec)
+        min_blocks=0,
+        max_blocks=1,             ## max # of batch jobs
+        parallelism=0,            ## >0 causes multiple batch jobs, even for simple WFs
+        scheduler_options="""#SBATCH --constraint=knl\n#SBATCH --qos=premium""",  ## cori queue
+        launcher=SrunLauncher(overrides='-K0 -k --slurmd-debug=verbose'),
+        cmd_timeout=300,          ## timeout (sec) for slurm commands (NERSC can be slow)
+        walltime="24:00:00",
+        worker_init=worker_init
+    ),
+)
+
+
 
 
 local_executor = ThreadPoolExecutor(max_threads=2, label="submit-node")
@@ -150,10 +221,10 @@ cori_shifter_debug_config = WorkflowConfig(
     #    repo_dir = "/global/cscratch1/sd/descdm/tomTest/DRPtest1",
     #    repo_dir = "/global/cscratch1/sd/descdm/tomTest/end2endr",
     #repo_dir = "/global/cscratch1/sd/descdm/DC2/Run2.2i-parsl/v19.0.0-v1",  # Run 2.2i data
-    repo_dir = "/global/cscratch1/sd/descdm/DC2/DR2/repo",   # Jim's Run3.1 data repo
+    repo_dir = "/global/cscratch1/sd/descdm/DC2/DR2/repo",   # DR2 Butler repo
     
     # A prefix for the 'rerun' directories to use within the DM repository
-    rerun_prefix="Tom2-",
+    rerun_prefix="dr2-",
 
     ## Define the beginning and ending visitIDs for DC2 Year 1 data
 #    visit_min = 230,
@@ -170,6 +241,7 @@ cori_shifter_debug_config = WorkflowConfig(
     #tract_subset = [4030,4031,4032,4033,4225],   ## 5 centrally located tracts
     #tract_subset = [4030,4031]   ## 2 centrally located tracts
     #tract_subset = [4030],   # 1 centrally located tract
+    #tract_subset = [5063],    # 1 tract overlapping the DDF
     tract_subset = None,
 
     # set to None to process all patches
@@ -186,31 +258,39 @@ cori_shifter_debug_config = WorkflowConfig(
     doMultiband = True,   # switch to enable Multiband tasks
     
 
-    # This is the location of the DM stack within the docker image
+    # This is the location of the DM stack within the docker (shifter) image
     dm_root="/opt/lsst/software/stack",
 
     ## This is the location of non-DM stack software needed by the workflow
     ## The SRS workflow may have added such software to its own task config area
     #  root_softs="/global/homes/b/bxc/dm/",
-    root_softs="/global/homes/d/descdm/tomTest/DRPtest/",
+#    root_softs="/global/homes/d/descdm/tomTest/DRPtest/",
+    root_softs="/global/cscratch1/sd/descdm/ParslRun/",
   # what is ROOT_SOFTS in general? this has come from the SRS workflow,
   # probably the path to this workflow's repo, up one level.
-
 
   # This specifies a function (str -> str) which rewrites a bash command into
   # one appropriately wrapped for whichever container/environment is being used
   # with this configuration (for example, wrap_shifter_container writes the
   # command to a temporary file and then invokes that file inside shifter)
-    #wrap=wrap_shifter_container,
-    #wrap_sql=wrap_shifter_container,
+  #  wrap=wrap_shifter_container,
+  #  wrap_sql=wrap_shifter_container,
 
-#disabled 8/21/2020    wrap=partial(wrap_shifter_container, image_id="lsstdesc/desc-drp-stack:v19-dc2-run2.2-v4"),
-    wrap=partial(wrap_shifter_container, image_id="lsstdesc/desc-drp-stack:v19-dc2-run2.2-v5"),
+  ## Specify the shifter image to use
+    ## NOTE: Due to limitations with NERSC's docker image server, use the image_id hash rather than its name
+    ##       To discover the hash, run the command "$ shifterimg lookup <image name>"
+    ## Image name = lsstdesc/desc-drp-stack:v19-dc2-run2.2-v5
+    ##     corresponds to
+    ## Hash = 2d1db8fd83d62956ca0fbbe544c7f194f7aee72c106afd58ad2f1094d4c77435
+    ##
+    ## --image=id:$(shifterimg lookup <image name>)
+    ## OLD WAY  wrap=partial(wrap_shifter_container, image_id="lsstdesc/desc-drp-stack:v19-dc2-run2.2-v5"),
+    wrap=partial(wrap_shifter_container, image_id="id:2d1db8fd83d62956ca0fbbe544c7f194f7aee72c106afd58ad2f1094d4c77435"),
     wrap_sql=wrap_no_op,
 
 
     parsl_config=Config(
-        executors=[local_executor, cori_knl_1, cori_knl_2, cori_knl_3],
+        executors=[local_executor, cori_knl_1, cori_knl_2, cori_knl_3, cori_knl_4, cori_knl_5],
         app_cache=True,
         checkpoint_mode='task_exit',
         checkpoint_files=get_all_checkpoints(),

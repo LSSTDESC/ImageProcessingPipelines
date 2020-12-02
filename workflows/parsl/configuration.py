@@ -35,6 +35,16 @@ class WorkflowConfig:
     # will be processed. Set to None to process all patches.
     patch_subset: Optional[List[int]]
 
+
+    ## Switches to enable parts of the workflow
+    doIngest:    bool  # switch to enable the ingest step
+    doSkyMap:    bool  # switch to enable sky map creation
+    doSensor:    bool  # switch to enable sensor/raft level tasks
+    doSqlite:    bool  # switch to enable various sqlite queries for tract-level tasks
+    doCoadd:     bool  # switch to enable coadd tasks
+    doMultiband: bool  # switch to enable multiband tasks
+
+    ##
     repo_dir: str
     rerun_prefix: str
     root_softs: str
