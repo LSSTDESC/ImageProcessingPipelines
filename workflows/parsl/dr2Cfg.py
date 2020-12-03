@@ -119,9 +119,9 @@ cori_knl_3 = HighThroughputExecutor(
     provider=SlurmProvider(
         "None",                   ## cori queue/partition/qos
 #        nodes_per_block=40,       ## nodes per batch job
-        nodes_per_block=200,       ## nodes per batch job
+#        nodes_per_block=200,       ## nodes per batch job
 #        nodes_per_block=400,       ## nodes per batch job
-#        nodes_per_block=5,       ## nodes per batch job
+        nodes_per_block=2,       ## nodes per batch job
         exclusive=True,
         init_blocks=0,            ## blocks (batch jobs) to start with (on spec)
         min_blocks=0,
@@ -153,8 +153,9 @@ cori_knl_4 = HighThroughputExecutor(
     heartbeat_threshold=180,      ## time-out betweeen batch and local nodes
     provider=SlurmProvider(
         "None",                   ## cori queue/partition/qos
-        nodes_per_block=10,       ## nodes per batch job
+#        nodes_per_block=10,       ## nodes per batch job
 #        nodes_per_block=5,       ## nodes per batch job
+        nodes_per_block=2,       ## nodes per batch job
         exclusive=True,
         init_blocks=0,            ## blocks (batch jobs) to start with (on spec)
         min_blocks=0,
@@ -187,9 +188,9 @@ cori_knl_5 = HighThroughputExecutor(
     heartbeat_threshold=180,      ## time-out betweeen batch and local nodes
     provider=SlurmProvider(
         "None",                   ## cori queue/partition/qos
-#        nodes_per_block=5,       ## nodes per batch job
+        nodes_per_block=2,       ## nodes per batch job
 #        nodes_per_block=50,       ## nodes per batch job
-        nodes_per_block=100,       ## nodes per batch job
+#        nodes_per_block=100,       ## nodes per batch job
         exclusive=True,
         init_blocks=0,            ## blocks (batch jobs) to start with (on spec)
         min_blocks=0,
@@ -224,7 +225,7 @@ cori_shifter_debug_config = WorkflowConfig(
     repo_dir = "/global/cscratch1/sd/descdm/DC2/DR2/repo",   # DR2 Butler repo
     
     # A prefix for the 'rerun' directories to use within the DM repository
-    rerun_prefix="dr2-",
+    rerun_prefix="tgdev-",
 
     ## Define the beginning and ending visitIDs for DC2 Year 1 data
 #    visit_min = 230,
@@ -240,13 +241,13 @@ cori_shifter_debug_config = WorkflowConfig(
     #tract_subset = [4030,4031,4032,4033,4225,4226,4227,4228,4229,4230]   ## 10 centrally located tracts
     #tract_subset = [4030,4031,4032,4033,4225],   ## 5 centrally located tracts
     #tract_subset = [4030,4031]   ## 2 centrally located tracts
-    #tract_subset = [4030],   # 1 centrally located tract
+    tract_subset = [4030],   # 1 centrally located tract
     #tract_subset = [5063],    # 1 tract overlapping the DDF
-    tract_subset = None,
+    #tract_subset = None,
 
     # set to None to process all patches
-    #patch_subset =  ["1-6"],
-    patch_subset = None,
+    patch_subset =  ["1-6"],
+    #patch_subset = None,
 
     # Enable/Disable parts of the workflow
     ## NOTE: these are mostly set for development; use with care
@@ -261,13 +262,12 @@ cori_shifter_debug_config = WorkflowConfig(
     # This is the location of the DM stack within the docker (shifter) image
     dm_root="/opt/lsst/software/stack",
 
-    ## This is the location of non-DM stack software needed by the workflow
-    ## The SRS workflow may have added such software to its own task config area
-    #  root_softs="/global/homes/b/bxc/dm/",
-#    root_softs="/global/homes/d/descdm/tomTest/DRPtest/",
-    root_softs="/global/cscratch1/sd/descdm/ParslRun/",
-  # what is ROOT_SOFTS in general? this has come from the SRS workflow,
-  # probably the path to this workflow's repo, up one level.
+    ## This is the location of non-DM stack software needed by the
+    ## workflow including code reused from the SRS workflow in the
+    ## ImageProcessingPipeline repo
+#    root_softs="/global/cscratch1/sd/descdm/ParslRun/",
+    root_softs="/global/cscratch1/sd/descdm/ParslDev/",
+
 
   # This specifies a function (str -> str) which rewrites a bash command into
   # one appropriately wrapped for whichever container/environment is being used
