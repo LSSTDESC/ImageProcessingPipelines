@@ -9,19 +9,29 @@
 
 
 
-## The following needs be done *just once* (per conda environment)
+## The following sequence needs be done *just once* (per conda
+## environment)
 
+# make desired python version visible
 module load python/3.8-anaconda-2020.11
 
+# create a new conda "environment"
 conda create --name=parsl-lsst-3.8 python=3.8
+
 #THIS MAY BE NEEDED#conda init bash
 # (then restart shell, 'exec bash')
 
+# activate specified conda environment
 source activate parsl-lsst-3.8
 
-pip install 'parsl[monitoring] @ git+https://github.com/parsl/parsl@lsst-dm-202012'
 
-## Primarily for wstat
+
+## Add in needed 3rd party packages
+pip install 'parsl[monitoring] @ git+https://github.com/parsl/parsl@lsst-dm-202012'
+pip install more-itertools
+
+
+## These are for Perp (wstat)
 conda install matplotlib
 conda install tabulate
 

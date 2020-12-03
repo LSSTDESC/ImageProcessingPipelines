@@ -1,7 +1,7 @@
 # setup.source - establish environment for running Parsl at NERSC
 
 # updated 12/2/2020
-module load python/3.8-anaconda-2020.11
+module load python/3.8-anaconda-2020.11 >&/dev/null
 source activate parsl-lsst-3.8
 
 # retired 12/2/2020
