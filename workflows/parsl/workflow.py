@@ -74,12 +74,29 @@ rerun3 = configuration.rerun_prefix+'skyCorr'
 rerun4 = configuration.rerun_prefix+'coadd'
 rerun5 = configuration.rerun_prefix+'multiband'
 
-# Metadata is stored in the repo rerun subdirectory, but there
-# is nothing "rerun"-like about it.
+# Metadata is stored in the repo rerun subdirectory, but there is
+# nothing "rerun"-like about it.  Create dir if it does not exist.
 
 metadata_dir = os.path.join(configuration.repo_dir, 'rerun', configuration.rerun_prefix+'metadata')
 if not os.path.exists(metadata_dir):
     os.makedirs(metadata_dir)
+
+## To prevent Metadata directory from getting too full, create
+## subdirectories for certain types of metadata.  Create directories
+## if they do not exist.
+
+patchLists = 'patchLists'
+visitLists = 'visitLists'
+
+if not os.path.exists(os.path.join(metadata_dir,patchLists)):
+    os.makedirs(os.path.join(metadata_dir,patchLists))
+    pass
+
+if not os.path.exists(os.path.join(metadata_dir,visitLists)):
+    os.makedirs(os.path.join(metadata_dir,visitLists))
+    pass
+
+                      
     
 
 logger.info("WFLOW: Output to rerun/"+rerun1+" (etc)")
@@ -124,7 +141,7 @@ terminal_futures = []
 # logger.info("ingest(s) completed")
 
 if doIngest:
-    ingest_future = ingest.perform_ingest(configuration, logdir, rerun1)
+    ingest_future = ingest.perform_ingest(configuration, f'{logdir}/ingest', rerun1)
 else:
     logger.warning("WFLOW: Skip ingest")
 
@@ -161,8 +178,8 @@ def make_sky_map(repo_dir, rerun, stdout=None, stderr=None, wrap=None, parsl_res
 if doSkyMap:
     logger.info("WFLOW: launching makeSkyMap")
     skymap_future = make_sky_map(configuration.repo_dir, rerun1,
-                                 stdout=logdir+"make_sky_map.stdout",
-                                 stderr=logdir+"make_sky_map.stderr",
+                                 stdout=f'{logdir}/skyMap/make_sky_map.stdout',
+                                 stderr=f'{logdir}/skyMap/make_sky_map.stderr',
                                  wrap=configuration.wrap,
                                  parsl_resource_specification={"priority": (1000,)})
 else:
@@ -264,8 +281,8 @@ def process_visit_rafts(visit_id, raft_list_fn, inputs=None):
             outrepo,
             visit_id,
             raft_name,
-            stdout=logdir+sfd_output_basename+".stdout",
-            stderr=logdir+sfd_output_basename+".stderr",
+            stdout=f'{logdir}/singleFrameDvr/{sfd_output_basename}.stdout',
+            stderr=f'{logdir}/singleFrameDvr/{sfd_output_basename}.stderr',
             wrap=configuration.wrap,
             parsl_resource_specification={"priority": (1200, visit_id)})
         
@@ -284,8 +301,8 @@ def process_visit_rafts(visit_id, raft_list_fn, inputs=None):
             visit_id,
             raft_name,
             inputs=[this_raft_single_frame_fut],
-            stdout=logdir+sky_correction_stdbase+".stdout",
-            stderr=logdir+sky_correction_stdbase+".stderr",
+            stdout=f'{logdir}/skyCorr/{sky_correction_stdbase}.stdout',
+            stderr=f'{logdir}/skyCorr/{sky_correction_stdbase}.stderr',
             wrap=configuration.wrap,
             parsl_resource_specification={"priority": (1100, visit_id)}))
 
@@ -309,8 +326,8 @@ def process_visit_rafts(visit_id, raft_list_fn, inputs=None):
         rerun3,
         visit_id,
         inputs=this_visit_sky_correction_futs,
-        stdout=logdir+check_ccd_stdbase+".stdout",
-        stderr=logdir+check_ccd_stdbase+".stderr",
+        stdout=f'{logdir}/checkCcdAstrmy/{check_ccd_stdbase}.stdout',
+        stderr=f'{logdir}/checkCcdAstrmy/{check_ccd_stdbase}.stderr',
         wrap=configuration.wrap)
 
     # some caution on re-running this: the DB is additive, I think, so if there
@@ -326,8 +343,8 @@ def process_visit_rafts(visit_id, raft_list_fn, inputs=None):
         metadata_dir,
         visit_id,
         inputs=this_visit_single_frame_futs,
-        stdout=logdir+tract2visit_mapper_stdbase+".stdout",
-        stderr=logdir+tract2visit_mapper_stdbase+".stderr",
+        stdout=f'{logdir}/tractMapper/{tract2visit_mapper_stdbase}.stdout',
+        stderr=f'{logdir}/tractMapper/{tract2visit_mapper_stdbase}.stderr',
         wrap=configuration.wrap,
         parsl_resource_specification={"priority": (1200, visit_id)})
 
@@ -357,8 +374,8 @@ def process_visit(visit_id):
         configuration.repo_dir,
         visit_id,
         raft_list_fn,
-        stdout=os.path.join(logdir,os.path.basename(raft_list_fn))+".stdout",
-        stderr=os.path.join(logdir,os.path.basename(raft_list_fn))+".stderr",
+        stdout=f'{logdir}/raftList/{os.path.basename(raft_list_fn)}.stdout',
+        stderr=f'{logdir}/raftList/{os.path.basename(raft_list_fn)}.stderr',
         wrap=configuration.wrap)
 
     return process_visit_rafts(visit_id, raft_list_fn, inputs=[raft_list_future])
@@ -409,8 +426,8 @@ if doSensor:
     visit_file_future = make_visit_file(
         configuration.repo_dir,
         visit_file,
-        stdout=logdir+"make_visit_file.stdout",
-        stderr=logdir+"make_visit_file.stderr",
+        stdout=f'{logdir}/mkVisitFile/make_visit_file.stdout',
+        stderr=f'{logdir}/mkVisitFile/make_visit_file.stderr',
         wrap=configuration.wrap_sql,
         parsl_resource_specification={"priority": (1000,)})
 
@@ -505,8 +522,8 @@ if doSqlite:
         visit_min,
         visit_max,
         tracts_file,
-        stdout=logdir+"make_tract_list.stdout",
-        stderr=logdir+"make_tract_list.stderr",
+        stdout=f'{logdir}/mkTractList/make_tract_list.stdout',
+        stderr=f'{logdir}/mkTractList/make_tract_list.stderr',
         wrap=configuration.wrap)
 
     logger.info("WFLOW: Awaiting results from make_tract_list")
@@ -524,15 +541,15 @@ if doSqlite:
         logger.info("WFLOW: process tract {}".format(tract_id))
 
         # assemble a patch list for this tract, as in setup_patch
-        patches_file = "{metadata_dir}/patches-for-tract-{tract}.list".format(tract=tract_id, metadata_dir=metadata_dir)
+        patches_file = f'{metadata_dir}/{patchLists}/patches-for-tract-{tract_id}.list'
         tract_patch_futures[tract_id] = make_patch_list_for_tract(
             metadata_dir,
             tract_id,
             visit_min,
             visit_max,
             patches_file,
-            stdout=logdir+"make_patch_list_for_tract_{}.stdout".format(tract_id),
-            stderr=logdir+"make_patch_list_for_tract_{}.stderr".format(tract_id),
+            stdout=f'{logdir}/mkPatchList/make_patch_list_for_tract_{tract_id}.stdout',
+            stderr=f'{logdir}/mkPatchList/make_patch_list_for_tract_{tract_id}.stderr',
             wrap=configuration.wrap_sql)
 
     # for each tract, for each patch, generate a list of visits that
@@ -580,7 +597,7 @@ else:
 @parsl.python_app(executors=["batch-2"], cache=True,
                   ignore_for_cache=["stdout", "stderr", "wrap"])
 def visits_for_tract_patch_filter(repo_dir, metadata_dir, skycorr_dir, tract_id, patch_id,
-                                  filter_id, visit_min, visit_max, visit_file,
+                                  filter_id, visit_min, visit_max, visitLists, visit_file,
                                   stdout=None, stderr=None, wrap=None):
 
 
@@ -591,7 +608,7 @@ def visits_for_tract_patch_filter(repo_dir, metadata_dir, skycorr_dir, tract_id,
     dbFile = 'tracts_mapping.sqlite3'
     visitFile = os.path.basename(visit_file)
 
-    return genCoaddVisitLists.genCoaddVisitLists(repo_dir,metaRerun,dbFile,skycorr_dir,
+    return genCoaddVisitLists.genCoaddVisitLists(repo_dir,metaRerun,visitLists,dbFile,skycorr_dir,
                                       tract_id,patch_id,filter_id,
                                       visit_min,visit_max,visitFile,debug=0)
 
@@ -642,22 +659,25 @@ def process_patches(tract_id, patches_file, inputs=None):
             # remove shell-fussy characters for filename. this avoids shell escaping. be careful that this still generates unique filenames.
             filename_patch_id = patch_id.replace(" ", "-").replace("(", "").replace(")", "").replace(",", "")
 
-            visit_file = "{metadata_dir}/visits-for-tract-{tract_id}-patch-{filename_patch_id}-filter-{filter_id}.list".format(metadata_dir=metadata_dir, tract_id=tract_id, patch_id=patch_id, filename_patch_id=filename_patch_id, filter_id=filter_id)
+            visit_file = f'{metadata_dir}/{visitLists}/visits-for-tract-{tract_id}-patch-{filename_patch_id}-filter-{filter_id}.list'
 
             # Slight variation depending on whether the sqlite query results have already been produced
             if doSqlite:
-                fut = visits_for_tract_patch_filter(repo_dir,
-                                                    metadata_dir,
-                                                    rerun3,
-                                                    tract_id,
-                                                    patch_id,
-                                                    filter_id,
-                                                    visit_min,
-                                                    visit_max,
-                                                    visit_file,
-                                                    stdout=logdir+"visit_for_tract_{}_patch_{}_filter_{}.stdout".format(tract_id, patch_idl, filter_id),
-                                                    stderr=logdir+"visit_for_tract_{}_patch_{}_filter_{}.stderr".format(tract_id, patch_idl, filter_id),
-                                                    wrap=configuration.wrap_sql)
+                fut = visits_for_tract_patch_filter(
+                             repo_dir,
+                             metadata_dir,
+                             rerun3,
+                             tract_id,
+                             patch_id,
+                             filter_id,
+                             visit_min,
+                             visit_max,
+                             visitLists,
+                             visit_file,
+                             stdout=f'{logdir}/visits4TPF/visit_for_tract_{tract_id}_patch_{patch_idl}_filter_{filter_id}.stdout',
+                             stderr=f'{logdir}/visits4TPF/visit_for_tract_{tract_id}_patch_{patch_idl}_filter_{filter_id}.stderr',
+                             wrap=configuration.wrap_sql)
+
                 # TODO: this visit_file should become an input/output File
                 # object to give the dependency instead of relying on
                 # 'fut'
@@ -674,17 +694,18 @@ def process_patches(tract_id, patches_file, inputs=None):
 
             if doCoadd:
                 # Perform coadd tasks
-                fut2 = tracts.coadd_parsl_driver(configuration,
-                                                 rerun3,
-                                                 rerun4,
-                                                 tract_id,
-                                                 patch_idx,
-                                                 filter_id,
-                                                 visit_file,
-                                                 None,
-                                                 inputs=iList,
-                                                 logbase=logdir+"coadd_for_tract_{}_patch_{}_filter_{}".format(tract_id, patch_idl, filter_id),
-                                                 wrap=configuration.wrap)
+                fut2 = tracts.coadd_parsl_driver(
+                              configuration,
+                              rerun3,
+                              rerun4,
+                              tract_id,
+                              patch_idx,
+                              filter_id,
+                              visit_file,
+                              None,
+                              inputs=iList,
+                              logbase=f'{logdir}/coadd/coadd_for_tract_{tract_id}_patch_{patch_idl}_filter_{filter_id}',
+                              wrap=configuration.wrap)
                 this_patch_futures.append(fut2)
             else:
                 log.warning('WFLOW: Skipping Coadd tasks')
@@ -706,15 +727,16 @@ def process_patches(tract_id, patches_file, inputs=None):
 
         if doMultiband:
             logger.info("WFLOW: setup multiband processing for tract {} patch {}".format(tract_id, patch_idx))
-            fut3 = tracts.multiband_parsl_driver(configuration,
-                                                 rerun4,
-                                                 rerun5,
-                                                 tract_id,
-                                                 patch_idx,
-                                                 ["u", "g", "r", "i", "z", "y"],
-                                                 inputs=this_patch_futures,
-                                                 logbase=logdir+"multiband_for_tract_{}_patch_{}".format(tract_id, patch_idl),
-                                                 wrap=configuration.wrap)
+            fut3 = tracts.multiband_parsl_driver(
+                          configuration,
+                          rerun4,
+                          rerun5,
+                          tract_id,
+                          patch_idx,
+                          ["u", "g", "r", "i", "z", "y"],
+                          inputs=this_patch_futures,
+                          logbase=f'{logdir}/multiband/multiband_for_tract_{tract_id}_patch_{patch_idl}',
+                          wrap=configuration.wrap)
             this_tract_all_patches_futures.append(fut3)
         else:
             logger.warning("WFLOW: skipping multiBand processing")
@@ -740,7 +762,7 @@ if doCoadd or doMultiband:
 
         # TODO: this filename should be coming from a File output object from
         # the earlier futures, and not hardcoded here and in patch list generator.
-        patches_file = "{metadata_dir}/patches-for-tract-{tract}.list".format(tract=tract_id, repo_dir=configuration.repo_dir, metadata_dir=metadata_dir)
+        patches_file = f'{metadata_dir}/{patchLists}/patches-for-tract-{tract_id}.list'
 
         tract_patch_list_futures = []
         if tract_id in tract_patch_futures.keys():
@@ -771,7 +793,9 @@ else:
 ## Finale
 ########################
 logger.info("WFLOW: Awaiting results from terminal_futures")
-#logger.info("WFLOW: #tracts = "+str(ntracts)+", #patches = "+str(npatches))
+
 concurrent.futures.wait(terminal_futures)
+
 [future.result() for future in terminal_futures]
+
 logger.info("WFLOW: Reached the end of the parsl driver for DM pipeline")

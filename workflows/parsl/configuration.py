@@ -57,7 +57,14 @@ class WorkflowConfig:
 def load_configuration():
     if len(sys.argv) < 2:
         raise RuntimeError("Specify configuration file as first argument")
-    spec = importlib.util.spec_from_file_location('imported_config', sys.argv[1])
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    module = importlib.import_module(sys.argv[1])
     return module.configuration
+
+
+# def load_configuration():
+#     if len(sys.argv) < 2:
+#         raise RuntimeError("Specify configuration file as first argument")
+#     spec = importlib.util.spec_from_file_location('imported_config', sys.argv[1])
+#     module = importlib.util.module_from_spec(spec)
+#     spec.loader.exec_module(module)
+#     return module.configuration

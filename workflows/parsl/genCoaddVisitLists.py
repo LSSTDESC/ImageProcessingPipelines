@@ -11,7 +11,7 @@ import logging
 logger = logging.getLogger("parsl.dr2.genCoaddVisitLists")
 
 
-def genCoaddVisitLists(repoDir,dbRerun,dbFile,skyCorrRerun,tractID,patchID,filterID,visitMin,visitMax,visitFile,debug=0):
+def genCoaddVisitLists(repoDir,dbRerun,visitDir,dbFile,skyCorrRerun,tractID,patchID,filterID,visitMin,visitMax,visitFile,debug=0):
     ## produce visit lists to drive the Coadd processing steps
     if debug > 0: print(f'genCoaddVisitLists: tract {tractID}, patch {patchID}, filter {filterID}')
     ## Prepare DB query
@@ -79,7 +79,7 @@ def genCoaddVisitLists(repoDir,dbRerun,dbFile,skyCorrRerun,tractID,patchID,filte
     ##    2) one line in --selectID format with visits separated by '^'
 
     if debug > 0: print('visitList = ',visitList)
-    fullVisitFile = os.path.join(repoDir,'rerun',dbRerun,visitFile)
+    fullVisitFile = os.path.join(repoDir,'rerun',dbRerun,visitDir,visitFile)
     with open(fullVisitFile,'w') as fd:
         if len(visitList) > 0: print("\n".join(str(i) for i in visitList), file=fd)
         pass

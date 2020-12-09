@@ -1,4 +1,4 @@
-# reuseTestCfg.py - Parsl workflow configuration for running DESC DRP test
+# dr2Cfg.py - Parsl workflow configuration for running DESC DR2 processing
 import dataclasses
 import importlib
 import os
@@ -28,10 +28,24 @@ workflow_src_dir = os.path.dirname(os.path.abspath(__file__))
 
 # initialize a Parsl worker environment (typically on batch node)
 worker_init = """
+echo "Starting batch job on "`date`
+echo "Submitted from "$HOST
 cd {workflow_cwd}
-source setup.source
+echo "workflow_cwd = "{workflow_cwd}
+echo "source setup.source"
+source {workflow_src_dir}/setup.source
+conda env list
+echo "workflow_src_dir = "{workflow_src_dir}
 export PYTHONPATH={workflow_src_dir}  # to get at workflow modules on remote side
 export OMP_NUM_THREADS=1
+echo
+echo "PATH="$PATH
+echo
+echo "which process_worker_pool.py"
+which process_worker_pool.py
+echo
+echo "SLURM env-vars:"
+printenv|grep SLURM|sort
 """.format(workflow_cwd=workflow_cwd, workflow_src_dir=workflow_src_dir)
 
 
@@ -121,7 +135,7 @@ cori_knl_3 = HighThroughputExecutor(
 #        nodes_per_block=40,       ## nodes per batch job
 #        nodes_per_block=200,       ## nodes per batch job
 #        nodes_per_block=400,       ## nodes per batch job
-        nodes_per_block=2,       ## nodes per batch job
+        nodes_per_block=5,       ## nodes per batch job
         exclusive=True,
         init_blocks=0,            ## blocks (batch jobs) to start with (on spec)
         min_blocks=0,
@@ -155,7 +169,7 @@ cori_knl_4 = HighThroughputExecutor(
         "None",                   ## cori queue/partition/qos
 #        nodes_per_block=10,       ## nodes per batch job
 #        nodes_per_block=5,       ## nodes per batch job
-        nodes_per_block=2,       ## nodes per batch job
+        nodes_per_block=1,       ## nodes per batch job
         exclusive=True,
         init_blocks=0,            ## blocks (batch jobs) to start with (on spec)
         min_blocks=0,
@@ -188,7 +202,7 @@ cori_knl_5 = HighThroughputExecutor(
     heartbeat_threshold=180,      ## time-out betweeen batch and local nodes
     provider=SlurmProvider(
         "None",                   ## cori queue/partition/qos
-        nodes_per_block=2,       ## nodes per batch job
+        nodes_per_block=1,       ## nodes per batch job
 #        nodes_per_block=50,       ## nodes per batch job
 #        nodes_per_block=100,       ## nodes per batch job
         exclusive=True,
@@ -300,8 +314,8 @@ cori_shifter_debug_config = WorkflowConfig(
             hub_port=55055,
             monitoring_debug=False,
             resource_monitoring_enabled=True,
-            resource_monitoring_interval=100,  # seconds
-            workflow_name="DRPtest"
+            resource_monitoring_interval=900,  # seconds
+            workflow_name="DR2prod"
         )
     )
 )
