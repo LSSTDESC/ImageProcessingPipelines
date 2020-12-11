@@ -1,11 +1,23 @@
 #!/bin/bash -e
 ## initWorkflow.sh - setup the bits needed for a workflow environment
+##                   Complete and fresh install of all needed components
 
-## Note that to *only* update Parsl (with a given branch), one can
+
+## -------------------------------------------------------------------------------------
+## To update only an existing Parsl (with a given branch), one can
 ## just do this:
-##
+
 ## 1. Obtain the proper workflow environment
 ## 2. $ pip install --upgrade 'parsl[monitoring] @ git+https://github.com/parsl/parsl@lsst-dm-202002'
+##
+
+## This scheme ^^^^^ is not always 100% successful.  It is worth
+## checking the files match with the appropriate branch/release in
+## github.  If not, then you may reinstall Parsl:
+
+## $ pip uninstall parsl
+## $ pip install 'parsl[monitoring] @ git+https://github.com/parsl/parsl@lsst-dm-202012'
+## -------------------------------------------------------------------------------------
 
 
 

@@ -78,7 +78,7 @@ def coadd_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_id, f
         dets.append(visitLine.split(' ')[1])
         pass
                       
-    logger.info("WFLOWx: There are "+str(len(visits))+" visits for filter/tract/patch "+str(filter_id)+'/'+str(tract_id)+'/'+str(patch_id))
+    logger.info("WFLOWt: There are "+str(len(visits))+" visits for filter/tract/patch "+str(filter_id)+'/'+str(tract_id)+'/'+str(patch_id))
 
     visit_ids_for_dm = ""
     for el in intersperse("^", visits):
@@ -100,29 +100,81 @@ def coadd_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_id, f
         fpart = '-'.join([filter_id,tract_id,patch_id,str(visit)])
         w1 = os.path.join(warpath,'psfMatchedWarp-' + fpart + '.fits')
         w2 = os.path.join(warpath,'warp-' + fpart + '.fits')
-        logger.info('WFLOWx: Searching for warp files for: '+fpart)
-        logger.info('WFLOWx: w1 = '+w1)
-        logger.info('WFLOWx: w2 = '+w2)
+        logger.info('WFLOWt: Searching for warp files for: '+fpart)
+        logger.info('WFLOWt: w1 = '+w1)
+        logger.info('WFLOWt: w2 = '+w2)
         if os.path.exists(w1) and os.path.exists(w2):
-            logger.info('WFLOWx: Warp files already exist for: '+fpart+', skipping makeCoaddTempExp...')
+            logger.info('WFLOWt: Warp files already exist for: '+fpart+', skipping makeCoaddTempExp...')
         else:
-            logger.info('WFLOWx: makeCoaddTempExp for: '+fpart)
-            per_visit_futures.append(make_coadd_temp_exp(repo_dir, rerun_in, rerun_out, tract_id, patch_id_no_parens, filter_id, visit, det, inputs=input_deps, obs_lsst_configs=configuration.obs_lsst_configs, wrap=wrap, stdout="{logbase}-visit-{visit}.stdout".format(logbase=logbase, visit=visit), stderr="{logbase}-visit-{visit}.stderr".format(logbase=logbase, visit=visit), parsl_resource_specification={"priority": (5000, tract_id, patch_id_no_parens, filter_id)}))
+            logger.info('WFLOWt: makeCoaddTempExp for: '+fpart)
+            per_visit_futures.append(
+                make_coadd_temp_exp(
+                    repo_dir,
+                    rerun_in,
+                    rerun_out,
+                    tract_id,
+                    patch_id_no_parens,
+                    filter_id, visit,
+                    det,
+                    inputs=input_deps,
+                    obs_lsst_configs=configuration.obs_lsst_configs,
+                    wrap=wrap,
+                    stdout=f'{logbase}.visit-{visit}.makeWarp.stdout',
+                    stderr=f'{logbase}.visit-{visit}.makeWarp.stderr',
+                    parsl_resource_specification={"priority": (5000, tract_id, patch_id_no_parens, filter_id)}
+                )
+            )
             pass
         pass
 
-    fut2 = assemble_coadd(repo_dir, rerun_out, tract_id, patch_id_no_parens, filter_id, visit_ids_for_dm, inputs=per_visit_futures, obs_lsst_configs=configuration.obs_lsst_configs, wrap=wrap, stdout="{logbase}.assemble_coadd.stdout".format(logbase=logbase), stderr="{logbase}.assemble_coadd.stderr".format(logbase=logbase), parsl_resource_specification={"priority": (5010, tract_id, patch_id_no_parens, filter_id)})
+    fut2 = assemble_coadd(
+        repo_dir,
+        rerun_out,
+        tract_id,
+        patch_id_no_parens,
+        filter_id,
+        visit_ids_for_dm,
+        inputs=per_visit_futures,
+        obs_lsst_configs=configuration.obs_lsst_configs,
+        wrap=wrap,
+        stdout=f'{logbase}.assemble_coadd.stdout',
+        stderr=f'{logbase}.assemble_coadd.stderr',
+        parsl_resource_specification={"priority": (5010, tract_id, patch_id_no_parens, filter_id)}
+    )
 
-    fut3 = detect_coadd_sources(repo_dir, rerun_out, tract_id, patch_id_no_parens, filter_id, visit_file, inputs=[fut2], wrap=wrap, stdout="{logbase}.detect_coadd_sources.stdout".format(logbase=logbase), stderr="{logbase}.detect_coadd_sources.stderr".format(logbase=logbase), parsl_resource_specification={"priority": (5020, tract_id, patch_id_no_parens, filter_id)})
-
+    fut3 = detect_coadd_sources(
+        repo_dir,
+        rerun_out,
+        tract_id,
+        patch_id_no_parens,
+        filter_id,
+        visit_file,
+        inputs=[fut2],
+        wrap=wrap,
+        stdout=f'{logbase}.detect_coadd_sources.stdout',
+        stderr=f'{logbase}.detect_coadd_sources.stderr',
+        parsl_resource_specification={"priority": (5020, tract_id, patch_id_no_parens, filter_id)}
+    )
     return fut3
 
 
 
 @lsst_app3
-def make_coadd_temp_exp(repo_dir, rerun_in, rerun_out, tract_id, patch_id, filter_id, visit_id, detector_ids, obs_lsst_configs, inputs=None, wrap=None, parsl_resource_specification=None):
+def make_coadd_temp_exp(
+        repo_dir,
+        rerun_in, rerun_out,
+        tract_id, patch_id, filter_id, visit_id, detector_ids,
+        obs_lsst_configs,
+        inputs=None,
+        wrap=None,
+        parsl_resource_specification=None):
 
-    f = f"/usr/bin/time -v makeCoaddTempExp.py {repo_dir}/rerun/{rerun_in} --output {repo_dir}/rerun/{rerun_out} --id tract={tract_id} patch='{patch_id}' filter={filter_id} --selectId visit={visit_id} detector={detector_ids} --configfile {obs_lsst_configs}/makeCoaddTempExp.py --calib {repo_dir}/CALIB"
+    f = (f'makeCoaddTempExp.py {repo_dir}/rerun/{rerun_in} '
+         f'--output {repo_dir}/rerun/{rerun_out} '
+         f'--id tract={tract_id} patch=\'{patch_id}\' filter={filter_id} '
+         f'--selectId visit={visit_id} detector={detector_ids} '
+         f'--configfile {obs_lsst_configs}/makeCoaddTempExp.py '
+         f'--calib {repo_dir}/CALIB')
 
     w = wrap(f)
     return w
@@ -130,19 +182,59 @@ def make_coadd_temp_exp(repo_dir, rerun_in, rerun_out, tract_id, patch_id, filte
 
 
 @lsst_app4
-def assemble_coadd(repo_dir, rerun, tract_id, patch_id, filter_id, visit_ids_for_dm, obs_lsst_configs, inputs=None, wrap=None, parsl_resource_specification=None):
-    f = "/usr/bin/time -v assembleCoadd.py {repo_dir}/rerun/{rerun} --output {repo_dir}/rerun/{rerun} --id tract={tract_id} patch='{patch_id}' filter={filter_id} --selectId visit={visit_ids_for_dm}  --configfile {obs_lsst_configs}/assembleCoadd.py --calib {repo_dir}/CALIB".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, visit_ids_for_dm=visit_ids_for_dm, obs_lsst_configs=obs_lsst_configs)
+def assemble_coadd(
+        repo_dir,
+        rerun,
+        tract_id,
+        patch_id,
+        filter_id,
+        visit_ids_for_dm,
+        obs_lsst_configs,
+        inputs=None,
+        wrap=None,
+        parsl_resource_specification=None):
+         
+    f = (f'assembleCoadd.py {repo_dir}/rerun/{rerun} '
+         f'--output {repo_dir}/rerun/{rerun} '
+         f'--id tract={tract_id} patch=\'{patch_id}\' filter={filter_id} '
+         f'--selectId visit={visit_ids_for_dm} '
+         f'--configfile {obs_lsst_configs}/assembleCoadd.py '
+         f'--calib {repo_dir}/CALIB')
     w = wrap(f)
     return w
 
 
 @lsst_app4
-def detect_coadd_sources(repo_dir, rerun, tract_id, patch_id, filter_id, visit_ids_for_dm, inputs=None, wrap=None, parsl_resource_specification=None):
-    return wrap("/usr/bin/time -v detectCoaddSources.py {repo_dir}/rerun/{rerun} --output {repo_dir}/rerun/{rerun} --id tract={tract_id} patch='{patch_id}' filter={filter_id} --calib {repo_dir}/CALIB".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id))
+def detect_coadd_sources(
+        repo_dir,
+        rerun,
+        tract_id,
+        patch_id,
+        filter_id,
+        visit_ids_for_dm,
+        inputs=None,
+        wrap=None,
+        parsl_resource_specification=None):
+
+    f = (f'detectCoaddSources.py {repo_dir}/rerun/{rerun} '
+         f'--output {repo_dir}/rerun/{rerun} '
+         f'--id tract={tract_id} patch=\'{patch_id}\' filter={filter_id} '
+         f'--calib {repo_dir}/CALIB')
+    
+    return wrap(f)
 
 
 @python_app(executors=['submit-node'], join=True)
-def multiband_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_id_no_parens, filter_list, logbase="", inputs=[], wrap=None):
+def multiband_parsl_driver(
+        configuration,
+        rerun_in,
+        rerun_out,
+        tract_id,
+        patch_id_no_parens,
+        filter_list,
+        logbase="",
+        inputs=[],
+        wrap=None):
     """This is a parsl-level replacement for multiBandDriver.py. There is no single final
     task for multiband driver - instead there is one per filter. So the future returned
     by this is a `combine` of those final filter tasks. Something following on from this
@@ -160,46 +252,178 @@ def multiband_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_i
     for el in intersperse("^", filter_list):
         filter_ids_for_dm += el
 
-    merge_coadd_det_fut = merge_coadd_detections(repo_dir, rerun_in, rerun_out, tract_id, patch_id_no_parens, obs_lsst_configs=configuration.obs_lsst_configs, filters=filter_ids_for_dm, wrap=wrap, inputs=inputs,  stdout="{logbase}.merge_coadd_detections.stdout".format(logbase=logbase), stderr="{logbase}.merge_coadd_detections.stderr".format(logbase=logbase), parsl_resource_specification={"priority": (6001, tract_id, patch_id_no_parens)})
+    merge_coadd_det_fut = merge_coadd_detections(
+        repo_dir,
+        rerun_in,
+        rerun_out,
+        tract_id,
+        patch_id_no_parens,
+        obs_lsst_configs=configuration.obs_lsst_configs,
+        filters=filter_ids_for_dm,
+        wrap=wrap,
+        inputs=inputs,
+        stdout=f'{logbase}.merge_coadd_detections.stdout',
+        stderr=f'{logbase}.merge_coadd_detections.stderr',
+        parsl_resource_specification={"priority": (6001, tract_id, patch_id_no_parens)}
+    )
 
     measure_futs = []
     for filter_id in filter_list:
-        deblend_coadd_sources_fut = deblend_coadd_sources(repo_dir, rerun_out, tract_id, patch_id_no_parens, filter_id, wrap=wrap, inputs=[merge_coadd_det_fut], stdout="{logbase}-filter-{filter_id}-deblend_coadd_sources.stdout".format(logbase=logbase, filter_id=filter_id), stderr="{logbase}-filter-{filter_id}-deblend_coadd_sources.stderr".format(logbase=logbase, filter_id=filter_id), parsl_resource_specification={"priority": (6002, tract_id, patch_id_no_parens)})
+        deblend_coadd_sources_fut = deblend_coadd_sources(
+            repo_dir,
+            rerun_out,
+            tract_id,
+            patch_id_no_parens,
+            filter_id,
+            wrap=wrap,
+            inputs=[merge_coadd_det_fut],
+            stdout=f'{logbase}.filter-{filter_id}.deblend_coadd_sources.stdout',
+            stderr=f'{logbase}.filter-{filter_id}.deblend_coadd_sources.stderr',
+            parsl_resource_specification={"priority": (6002, tract_id, patch_id_no_parens)}
+        )
 
-        measure_coadd_sources_fut = measure_coadd_sources(repo_dir, rerun_out, tract_id, patch_id_no_parens, filter_id, obs_lsst_configs=configuration.obs_lsst_configs, wrap=wrap, inputs=[deblend_coadd_sources_fut], stdout="{logbase}-filter-{filter_id}-measure_coadd_sources.stdout".format(logbase=logbase, filter_id=filter_id), stderr="{logbase}-filter-{filter_id}-measure_coadd_sources.stderr".format(logbase=logbase, filter_id=filter_id), parsl_resource_specification={"priority": (6003, tract_id, patch_id_no_parens)})
+        measure_coadd_sources_fut = measure_coadd_sources(
+            repo_dir,
+            rerun_out,
+            tract_id,
+            patch_id_no_parens,
+            filter_id,
+            obs_lsst_configs=configuration.obs_lsst_configs,
+            wrap=wrap,
+            inputs=[deblend_coadd_sources_fut],
+            stdout=f'{logbase}.filter-{filter_id}.measure_coadd_sources.stdout',
+            stderr=f'{logbase}.filter-{filter_id}.measure_coadd_sources.stderr',
+            parsl_resource_specification={"priority": (6003, tract_id, patch_id_no_parens)}
+        )
 
         measure_futs.append(measure_coadd_sources_fut)
 
-    merge_fut = merge_coadd_measurements(repo_dir, rerun_out, tract_id, patch_id_no_parens, obs_lsst_configs=configuration.obs_lsst_configs, wrap=wrap, inputs=measure_futs, stdout="{logbase}-merge-coadd-measurements.stdout".format(logbase=logbase), stderr="{logbase}-merge-coadd-measurements.stderr".format(logbase=logbase), parsl_resource_specification={"priority": (6004, tract_id, patch_id_no_parens)})
+    merge_fut = merge_coadd_measurements(
+        repo_dir,
+        rerun_out,
+        tract_id,
+        patch_id_no_parens,
+        obs_lsst_configs=configuration.obs_lsst_configs,
+        wrap=wrap,
+        inputs=measure_futs,
+        stdout=f'{logbase}.merge_coadd_measurements.stdout',
+        stderr=f'{logbase}.merge_coadd_measurements.stderr',
+        parsl_resource_specification={"priority": (6004, tract_id, patch_id_no_parens)}
+    )
 
     forced_phot_coadd_futs = []
     for filter_id in filter_list:
-        forced_phot_coadd_future = forced_phot_coadd(repo_dir, rerun_out, tract_id, patch_id_no_parens, filter_id, obs_lsst_configs=configuration.obs_lsst_configs, wrap=wrap, inputs=[merge_fut], stdout="{logbase}-filter-{filter_id}-forced_phot_coadd.stdout".format(filter_id=filter_id, logbase=logbase), stderr="{logbase}-filter-{filter_id}-forced_phot_coadd.stderr".format(filter_id=filter_id, logbase=logbase), parsl_resource_specification={"priority": (6005, tract_id, patch_id_no_parens)})
+        forced_phot_coadd_future = forced_phot_coadd(
+            repo_dir,
+            rerun_out,
+            tract_id,
+            patch_id_no_parens,
+            filter_id,
+            obs_lsst_configs=configuration.obs_lsst_configs,
+            wrap=wrap,
+            inputs=[merge_fut],
+            stdout=f'{logbase}.filter-{filter_id}.forced_phot_coadd.stdout',
+            stderr=f'{logbase}.filter-{filter_id}.forced_phot_coadd.stderr',
+            parsl_resource_specification={"priority": (6005, tract_id, patch_id_no_parens)}
+        )
         forced_phot_coadd_futs.append(forced_phot_coadd_future)
 
     return combine(inputs=forced_phot_coadd_futs)
 
 
 @lsst_app4
-def merge_coadd_detections(repo_dir, rerun_in, rerun_out, tract_id, patch_id, obs_lsst_configs, wrap, filters, inputs=None, parsl_resource_specification=None):
-    return wrap("/usr/bin/time -v mergeCoaddDetections.py {repo_dir}/rerun/{rerun_in} --output={repo_dir}/rerun/{rerun_out} --id tract={tract_id} patch='{patch_id}' filter={filters}  --configfile {obs_lsst_configs}/mergeCoaddDetections.py".format(repo_dir=repo_dir, rerun_in=rerun_in, rerun_out=rerun_out, tract_id=tract_id, patch_id=patch_id, obs_lsst_configs=obs_lsst_configs, filters=filters))
+def merge_coadd_detections(
+        repo_dir,
+        rerun_in,
+        rerun_out,
+        tract_id,
+        patch_id,
+        obs_lsst_configs,
+        wrap,
+        filters,
+        inputs=None,
+        parsl_resource_specification=None):
+
+    f = (f'mergeCoaddDetections.py {repo_dir}/rerun/{rerun_in} '
+         f'--output={repo_dir}/rerun/{rerun_out} '
+         f'--id tract={tract_id} patch=\'{patch_id}\' filter={filters}  '
+         f'--configfile {obs_lsst_configs}/mergeCoaddDetections.py '
+         )
+    
+    return wrap(f)
 
 
 @lsst_app4
-def deblend_coadd_sources(repo_dir, rerun, tract_id, patch_id, filter_id, wrap, inputs=None, parsl_resource_specification=None):
-    return wrap("/usr/bin/time -v deblendCoaddSources.py {repo_dir} --rerun {rerun} --id tract={tract_id} patch='{patch_id}' filter={filter_id}".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id))
+def deblend_coadd_sources(
+        repo_dir,
+        rerun,
+        tract_id, patch_id, filter_id,
+        wrap,
+        inputs=None,
+        parsl_resource_specification=None):
+
+    f = (f'deblendCoaddSources.py {repo_dir} '
+         f'--rerun {rerun} '
+         f'--id tract={tract_id} patch=\'{patch_id}\' filter={filter_id}'
+         )
+
+    return wrap(f)
 
 
 @lsst_app5
-def measure_coadd_sources(repo_dir, rerun, tract_id, patch_id, filter_id, obs_lsst_configs, wrap, inputs=None, parsl_resource_specification=None):
-    return wrap("/usr/bin/time -v measureCoaddSources.py {repo_dir} --rerun {rerun} --id tract={tract_id} patch='{patch_id}' filter={filter_id} --configfile {obs_lsst_configs}/measureCoaddSources.py".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, obs_lsst_configs=obs_lsst_configs))
+def measure_coadd_sources(
+        repo_dir,
+        rerun,
+        tract_id, patch_id, filter_id,
+        obs_lsst_configs,
+        wrap,
+        inputs=None,
+        parsl_resource_specification=None):
+
+    f = (f'measureCoaddSources.py {repo_dir} '
+         f'--rerun {rerun} '
+         f'--id tract={tract_id} patch=\'{patch_id}\' filter={filter_id} '
+         f'--configfile {obs_lsst_configs}/measureCoaddSources.py'
+         )
+    
+    return wrap(f)
 
 
 @lsst_app4
-def merge_coadd_measurements(repo_dir, rerun, tract_id, patch_id, obs_lsst_configs, wrap, inputs=None, parsl_resource_specification=None):
-    return wrap("/usr/bin/time -v mergeCoaddMeasurements.py {repo_dir}/rerun/{rerun} --output {repo_dir}/rerun/{rerun} --id tract={tract_id} patch='{patch_id}' filter=u^g^r^i^z^y  --configfile {obs_lsst_configs}/mergeCoaddMeasurements.py".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, obs_lsst_configs=obs_lsst_configs))
+def merge_coadd_measurements(
+        repo_dir,
+        rerun,
+        tract_id, patch_id,
+        obs_lsst_configs,
+        wrap,
+        inputs=None,
+        parsl_resource_specification=None):
+
+    f = (f'mergeCoaddMeasurements.py {repo_dir}/rerun/{rerun} '
+         f'--output {repo_dir}/rerun/{rerun} '
+         f'--id tract={tract_id} patch=\'{patch_id}\' filter=u^g^r^i^z^y '
+         f'--configfile {obs_lsst_configs}/mergeCoaddMeasurements.py'
+         )
+    
+    return wrap(f)
 
 
 @lsst_app5
-def forced_phot_coadd(repo_dir, rerun, tract_id, patch_id, filter_id, obs_lsst_configs, wrap, inputs=None, stdout=None, stderr=None, parsl_resource_specification=None):
-    return wrap("/usr/bin/time -v forcedPhotCoadd.py {repo_dir}/rerun/{rerun} --output {repo_dir}/rerun/{rerun} --id tract={tract_id} patch='{patch_id}' filter={filter_id}  --configfile {obs_lsst_configs}/forcedPhotCoadd.py".format(repo_dir=repo_dir, rerun=rerun, tract_id=tract_id, patch_id=patch_id, filter_id=filter_id, obs_lsst_configs=obs_lsst_configs))
+def forced_phot_coadd(
+        repo_dir,
+        rerun,
+        tract_id, patch_id, filter_id,
+        obs_lsst_configs,
+        wrap,
+        inputs=None,
+        stdout=None,
+        stderr=None,
+        parsl_resource_specification=None):
+
+    f = (f'forcedPhotCoadd.py {repo_dir}/rerun/{rerun} '
+         f'--output {repo_dir}/rerun/{rerun} '
+         f'--id tract={tract_id} patch=\'{patch_id}\' filter={filter_id} '
+         f'--configfile {obs_lsst_configs}/forcedPhotCoadd.py'
+         )
+    
+    return wrap(f)
