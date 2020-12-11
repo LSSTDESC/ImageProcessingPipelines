@@ -781,23 +781,31 @@ else:
 logger.info(f'WFLOW: Awaiting results for {len(terminal_futures)} terminal_futures to complete')
 fLists = concurrent.futures.wait(terminal_futures)
 
-# print out report of all tasks for this run
-# (based on the content of the Parsl futures)
-tblfmt='psql'
+# print out summary table of all tasks for this run
+# (based on the content of the Parsl task list)
+tasks = parsl.dfk().tasks
 rw = []
-for fut in terminal_futures:
-    rw.append([fut.task_def['id'],
-               fut.task_status(),
-               fut.task_def['func_name'],
-               fut.task_def['args'],
-               fut.task_def['kwargs'],
-               fut.exception()
-               ]
-              )
+for taskNum in tasks:
+    task = tasks[taskNum]
+    fut = task['app_fu']       # app future
+    result = ''
+    exception = fut.exception()
+    if exception == None: result=fut.result()
+
+    rw.append([
+        task['id'],
+        task['status'].name,
+        task['func_name'],
+        task['args'],
+        task['kwargs'],
+        result,
+        exception
+        ])
     pass
 
-titles = ['taskID','status','function','args','kwargs','exception']
-logger.info('terminal_futures:')
+titles = ['taskID','status','function','args','kwargs','result','exception']
+tblfmt='psql'
+logger.info(f'Task list (with {len(tasks)} entries):')
 logger.info('\n'+tabulate(rw,headers=titles,tablefmt=tblfmt))
-
+logger.info(f'Tasks in table = {len(tasks)}')
 logger.info("WFLOW: Reached the end of the parsl driver for DM pipeline")
