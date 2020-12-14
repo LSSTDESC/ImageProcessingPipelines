@@ -454,7 +454,7 @@ logger.info("WFLOW: Setup tract/patch processing")
 ##
 ##   1. Override the input rerun directory for subsequent steps.
 ##
-rerun3 = 'dr2-calexp'    ## Location of calibrated exposures for DR2 WFD
+##rerun3 = 'dr2-calexp'    ## Location of calibrated exposures for DR2 WFD
 ##
 ##
 ####################################################################################################
