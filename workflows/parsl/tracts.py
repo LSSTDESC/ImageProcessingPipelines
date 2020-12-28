@@ -114,8 +114,7 @@ def coadd_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_id, f
                     rerun_out,
                     tract_id,
                     patch_id_no_parens,
-                    filter_id, visit,
-                    det,
+                    filter_id, visit,det,
                     inputs=input_deps,
                     obs_lsst_configs=configuration.obs_lsst_configs,
                     wrap=wrap,
@@ -163,9 +162,11 @@ def coadd_parsl_driver(configuration, rerun_in, rerun_out, tract_id, patch_id, f
 def make_coadd_temp_exp(
         repo_dir,
         rerun_in, rerun_out,
-        tract_id, patch_id, filter_id, visit_id, detector_ids,
+        tract_id, patch_id,
+        filter_id, visit_id, detector_ids,
         obs_lsst_configs,
         inputs=None,
+        stdout=None, stderr=None,
         wrap=None,
         parsl_resource_specification=None):
 
@@ -185,12 +186,11 @@ def make_coadd_temp_exp(
 def assemble_coadd(
         repo_dir,
         rerun,
-        tract_id,
-        patch_id,
-        filter_id,
-        visit_ids_for_dm,
+        tract_id, patch_id,
+        filter_id, visit_ids_for_dm,
         obs_lsst_configs,
         inputs=None,
+        stdout=None, stderr=None,
         wrap=None,
         parsl_resource_specification=None):
          
@@ -213,6 +213,7 @@ def detect_coadd_sources(
         filter_id,
         visit_ids_for_dm,
         inputs=None,
+        stdout=None, stderr=None,
         wrap=None,
         parsl_resource_specification=None):
 
@@ -339,8 +340,9 @@ def merge_coadd_detections(
         tract_id,
         patch_id,
         obs_lsst_configs,
-        wrap,
-        filters,
+        stdout=None, stderr=None,
+        wrap=None,
+        filters=None,
         inputs=None,
         parsl_resource_specification=None):
 
@@ -358,7 +360,8 @@ def deblend_coadd_sources(
         repo_dir,
         rerun,
         tract_id, patch_id, filter_id,
-        wrap,
+        stdout=None, stderr=None,
+        wrap=None,
         inputs=None,
         parsl_resource_specification=None):
 
@@ -376,7 +379,8 @@ def measure_coadd_sources(
         rerun,
         tract_id, patch_id, filter_id,
         obs_lsst_configs,
-        wrap,
+        stdout=None, stderr=None,
+        wrap=None,
         inputs=None,
         parsl_resource_specification=None):
 
@@ -395,7 +399,8 @@ def merge_coadd_measurements(
         rerun,
         tract_id, patch_id,
         obs_lsst_configs,
-        wrap,
+        stdout=None, stderr=None,
+        wrap=None,
         inputs=None,
         parsl_resource_specification=None):
 
@@ -414,7 +419,7 @@ def forced_phot_coadd(
         rerun,
         tract_id, patch_id, filter_id,
         obs_lsst_configs,
-        wrap,
+        wrap=None,
         inputs=None,
         stdout=None,
         stderr=None,
