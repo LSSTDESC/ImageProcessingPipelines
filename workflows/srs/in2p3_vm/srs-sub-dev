@@ -1,18 +1,22 @@
 #!/bin/bash
-export JARS=/home/descprod/Pipeline2/bsub/jars
+export PATH=/sps/lsst/users/tanugi/software/jdk1.8.0_161/bin:$PATH
+export LD_LIBRARY_PATH=/sps/lsst/users/tanugi/software/jdk1.8.0_161/lib:$LD_LIBRARY_PATH
+export JARS=/pbs/home/d/descprod/Pipeline2/bsub/jars
 
-export CLASSPATH=$JARS/org-srs-jobcontrol-2.1.0-jar-with-dependencies.jar
+export CLASSPATH=$JARS/org-srs-jobcontrol-2.1.1-SNAPSHOT-fix_array_oob-jar-with-dependencies.jar
+
 echo "CLASSPATH= $CLASSPATH"
 
 ulimit -S -n 10000
 
 mkdir -p /tmp/work
-/usr/bin/rmiregistry & 
+
+/sps/lsst/users/tanugi/software/jdk1.8.0_161/bin/rmiregistry &
 
 echo "GridEngine Setup"
-source /usr/local/shared/bin/ge_env.sh
+source /etc/profile.d/site/ge_env.sh
 
 echo $SGE_ROOT
-/usr/bin/java -verbose -Djava.util.logging.config.file=/home/descprod/Pipeline2/bsub/logging.grid.properties \
+/sps/lsst/users/tanugi/software/jdk1.8.0_161/bin/java -verbose -Djava.util.logging.config.file=/pbs/home/d/descprod/Pipeline2/bsub/logging.grid.properties \
      -Dorg.srs.jobcontrol.ge.group="P_lsst_desc" \
      org.srs.jobcontrol.gridEngine.gridEngineJobControlService &
